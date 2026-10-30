@@ -91,4 +91,17 @@ class PosTerminalAndReportTest extends TestCase
             $response->assertStatus(200);
         }
     }
+
+    public function test_can_add_retail_and_service_to_pos_cart(): void
+    {
+        $retailProduct = \App\Models\Product::where('inventory_type', 'RETAIL')->firstOrFail();
+        $service = \App\Models\Service::firstOrFail();
+
+        \Livewire\Livewire::actingAs($this->student)
+            ->test(\App\Livewire\Pos\PosTerminal::class)
+            ->call('addToCart', 'RETAIL', $retailProduct->id)
+            ->call('addToCart', 'SERVICE', $service->id)
+            ->assertCount('cart', 2);
+    }
 }
+

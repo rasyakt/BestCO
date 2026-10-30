@@ -117,7 +117,7 @@ final class PosTerminal extends Component
                 'subtotal_net' => (float) $product->selling_price,
             ];
         } else {
-            $service = Service::with('boms.rawMaterialProduct')->findOrFail($id);
+            $service = Service::with('boms.rawMaterial')->findOrFail($id);
 
             // Cek apakah sudah ada di cart
             foreach ($this->cart as $key => $item) {
@@ -422,3 +422,4 @@ final class PosTerminal extends Component
         ))->layout('layouts.app', ['title' => 'Terminal POS Kasir — BESTCO']);
     }
 }
+

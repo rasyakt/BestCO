@@ -59,4 +59,12 @@ class ServiceBom extends Model
     {
         return $this->belongsTo(Product::class, 'raw_material_product_id');
     }
+
+    /**
+     * Alias for rawMaterial.
+     */
+    public function rawMaterialProduct(): BelongsTo
+    {
+        return $this->rawMaterial();
+    }
 }
