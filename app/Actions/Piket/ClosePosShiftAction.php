@@ -74,8 +74,8 @@ final class ClosePosShiftAction
                     $journalData = new JournalEntryData(
                         journalNumber: 'JRN-' . Carbon::now()->format('Ymd') . '-' .
                             str_pad((string) (JournalEntry::count() + 1), 4, '0', STR_PAD_LEFT),
-                        accountingPeriodId: $period?->getKey() ?? '',
-                        posShiftId: $shift->id,
+                        accountingPeriodId: (string) ($period?->getKey() ?? ''),
+                        posShiftId: (string) $shift->id,
                         entryDate: Carbon::now(),
                         journalType: JournalType::CASH_DISCREPANCY,
                         referenceType: 'App\Models\PosShift',
@@ -95,7 +95,7 @@ final class ClosePosShiftAction
                                 lineDescription: 'Kredit Pendapatan Selisih Kas Lebih',
                             ),
                         ],
-                        createdByUserId: $closedBy->id,
+                        createdByUserId: (string) $closedBy->id,
                     );
                 } else {
                     // Kas kurang: Dr Beban Selisih Kas Kurang, Cr Kas.
@@ -104,8 +104,8 @@ final class ClosePosShiftAction
                     $journalData = new JournalEntryData(
                         journalNumber: 'JRN-' . Carbon::now()->format('Ymd') . '-' .
                             str_pad((string) (JournalEntry::count() + 1), 4, '0', STR_PAD_LEFT),
-                        accountingPeriodId: $period?->getKey() ?? '',
-                        posShiftId: $shift->id,
+                        accountingPeriodId: (string) ($period?->getKey() ?? ''),
+                        posShiftId: (string) $shift->id,
                         entryDate: Carbon::now(),
                         journalType: JournalType::CASH_DISCREPANCY,
                         referenceType: 'App\Models\PosShift',
@@ -125,7 +125,7 @@ final class ClosePosShiftAction
                                 lineDescription: 'Kredit Kas Laci Kasir',
                             ),
                         ],
-                        createdByUserId: $closedBy->id,
+                        createdByUserId: (string) $closedBy->id,
                     );
                 }
 

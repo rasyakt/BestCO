@@ -9,3 +9,4 @@ use RuntimeException;
 class UnbalancedJournalException extends RuntimeException
 {
 }
+

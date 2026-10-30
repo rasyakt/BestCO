@@ -1,0 +1,424 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\Pos;
+
+use App\Actions\Inventory\MutateRetailToRawMaterialAction;
+use App\Actions\Inventory\RecordSpoilageAction;
+use App\Actions\Pos\CheckoutPosTransactionAction;
+use App\DTOs\Inventory\InternalMutationData;
+use App\DTOs\Inventory\SpoilageData;
+use App\DTOs\Pos\CartItemData;
+use App\DTOs\Pos\CheckoutPayloadData;
+use App\Enums\PaymentMethod;
+use App\Enums\ShiftStatus;
+use App\Enums\SpoilageReason;
+use App\Models\PosShift;
+use App\Models\PosTransaction;
+use App\Models\Product;
+use App\Models\Service;
+use App\Models\UnitConversion;
+use App\Models\User;
+use App\Services\Pos\TieredPricingResolver;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Component;
+
+final class PosTerminal extends Component
+{
+    // Search & Filter
+    public string $searchQuery = '';
+    public string $selectedCategory = 'ALL';
+
+    // Customer & Cart
+    public string $customerName = 'Pelanggan Umum';
+    public array $cart = []; // list of items
+    public string $manualDiscountTotal = '0';
+
+    // Payment Modal State
+    public bool $showPaymentModal = false;
+    public string $paymentMethod = 'CASH';
+    public string $amountPaid = '0';
+
+    // Spoilage Modal State (F6)
+    public bool $showSpoilageModal = false;
+    public ?int $spoilageServiceId = null;
+    public string $spoilageFailedQty = '1';
+    public string $spoilageReason = 'PAPER_JAM';
+    public string $spoilageDescription = '';
+    public string $spoilageTeacherPin = '';
+
+    // Internal Mutation Modal State (F7 - Ambil dari Etalase)
+    public bool $showMutationModal = false;
+    public ?int $selectedConversionId = null;
+    public string $mutationSourceQty = '1';
+    public string $mutationNotes = '';
+    public string $mutationTeacherPin = '';
+
+    // Receipt Modal State
+    public ?int $completedTransactionId = null;
+
+    // Toast/Alert
+    public ?string $feedbackMessage = null;
+    public ?string $feedbackType = null; // 'success' or 'error'
+
+    public function mount(): void
+    {
+        $firstConversion = UnitConversion::first();
+        if ($firstConversion) {
+            $this->selectedConversionId = $firstConversion->id;
+        }
+
+        $firstService = Service::first();
+        if ($firstService) {
+            $this->spoilageServiceId = $firstService->id;
+        }
+    }
+
+    public function addToCart(string $type, int $id): void
+    {
+        $this->feedbackMessage = null;
+
+        if ($type === 'RETAIL') {
+            $product = Product::findOrFail($id);
+            if (bccomp((string) $product->current_stock, '1.0000', 4) === -1) {
+                $this->feedbackMessage = 'Stok barang ' . $product->name . ' habis!';
+                $this->feedbackType = 'error';
+                return;
+            }
+
+            // Cek apakah sudah ada di cart
+            foreach ($this->cart as $key => $item) {
+                if ($item['type'] === 'RETAIL' && $item['id'] === $id) {
+                    $newQty = bcadd((string) $item['qty'], '1.0000', 4);
+                    if (bccomp((string) $product->current_stock, $newQty, 4) === -1) {
+                        $this->feedbackMessage = 'Stok tidak mencukupi untuk menambah kuantitas.';
+                        $this->feedbackType = 'error';
+                        return;
+                    }
+                    $this->cart[$key]['qty'] = (float) $newQty;
+                    $this->recalculateCart();
+                    return;
+                }
+            }
+
+            $this->cart[] = [
+                'type' => 'RETAIL',
+                'id' => $product->id,
+                'name' => $product->name,
+                'unit' => $product->unit?->code ?? 'PCS',
+                'base_price' => (float) $product->selling_price,
+                'final_unit_price' => (float) $product->selling_price,
+                'qty' => 1.0,
+                'manual_discount' => 0.0,
+                'tier_discount_per_unit' => 0.0,
+                'tier_discount_total' => 0.0,
+                'subtotal_gross' => (float) $product->selling_price,
+                'subtotal_net' => (float) $product->selling_price,
+            ];
+        } else {
+            $service = Service::with('boms.rawMaterialProduct')->findOrFail($id);
+
+            // Cek apakah sudah ada di cart
+            foreach ($this->cart as $key => $item) {
+                if ($item['type'] === 'SERVICE' && $item['id'] === $id) {
+                    $this->cart[$key]['qty'] = (float) bcadd((string) $item['qty'], '1.0000', 4);
+                    $this->recalculateCart();
+                    return;
+                }
+            }
+
+            $this->cart[] = [
+                'type' => 'SERVICE',
+                'id' => $service->id,
+                'name' => $service->name,
+                'unit' => $service->unit_name ?? 'LBR',
+                'base_price' => (float) $service->base_price,
+                'final_unit_price' => (float) $service->base_price,
+                'qty' => 1.0,
+                'manual_discount' => 0.0,
+                'tier_discount_per_unit' => 0.0,
+                'tier_discount_total' => 0.0,
+                'subtotal_gross' => (float) $service->base_price,
+                'subtotal_net' => (float) $service->base_price,
+            ];
+        }
+
+        $this->recalculateCart();
+    }
+
+    public function updateQty(int $index, float $newQty): void
+    {
+        if ($newQty <= 0) {
+            $this->removeItem($index);
+            return;
+        }
+
+        $this->cart[$index]['qty'] = $newQty;
+        $this->recalculateCart();
+    }
+
+    public function removeItem(int $index): void
+    {
+        unset($this->cart[$index]);
+        $this->cart = array_values($this->cart);
+        $this->recalculateCart();
+    }
+
+    public function clearCart(): void
+    {
+        $this->cart = [];
+        $this->recalculateCart();
+    }
+
+    public function recalculateCart(): void
+    {
+        $resolver = app(TieredPricingResolver::class);
+
+        foreach ($this->cart as $key => $item) {
+            $qty = number_format((float) $item['qty'], 4, '.', '');
+            $manualDiscount = number_format((float) ($item['manual_discount'] ?? 0), 4, '.', '');
+
+            if ($item['type'] === 'SERVICE') {
+                $service = Service::find($item['id']);
+                if ($service) {
+                    $pricing = $resolver->resolve($service, $qty);
+                    $this->cart[$key]['base_price'] = (float) $pricing['base_unit_price'];
+                    $this->cart[$key]['final_unit_price'] = (float) $pricing['final_unit_price'];
+                    $this->cart[$key]['tier_discount_per_unit'] = (float) $pricing['tier_discount_per_unit'];
+                    $this->cart[$key]['tier_discount_total'] = (float) $pricing['line_tier_discount_total'];
+                    $this->cart[$key]['subtotal_gross'] = (float) $pricing['line_subtotal_gross'];
+                    $this->cart[$key]['subtotal_net'] = (float) bcsub($pricing['line_net_before_manual'], $manualDiscount, 4);
+                }
+            } else {
+                $gross = bcmul($qty, (string) $item['base_price'], 4);
+                $net = bcsub($gross, $manualDiscount, 4);
+                $this->cart[$key]['subtotal_gross'] = (float) $gross;
+                $this->cart[$key]['subtotal_net'] = (float) $net;
+            }
+        }
+    }
+
+    public function getSubtotalRetailProperty(): float
+    {
+        return (float) collect($this->cart)
+            ->where('type', 'RETAIL')
+            ->sum('subtotal_gross');
+    }
+
+    public function getSubtotalServiceProperty(): float
+    {
+        return (float) collect($this->cart)
+            ->where('type', 'SERVICE')
+            ->sum('subtotal_gross');
+    }
+
+    public function getTotalTierDiscountProperty(): float
+    {
+        return (float) collect($this->cart)
+            ->sum('tier_discount_total');
+    }
+
+    public function getGrandTotalProperty(): float
+    {
+        $gross = bcadd((string) $this->subtotalRetail, (string) $this->subtotalService, 4);
+        $discounts = bcadd((string) $this->totalTierDiscount, (string) $this->manualDiscountTotal, 4);
+        $grand = bcsub($gross, $discounts, 4);
+
+        return (float) (bccomp($grand, '0.0000', 4) === 1 ? $grand : '0.0000');
+    }
+
+    public function openPaymentModal(): void
+    {
+        if (empty($this->cart)) {
+            $this->feedbackMessage = 'Keranjang belanja masih kosong.';
+            $this->feedbackType = 'error';
+            return;
+        }
+
+        $this->amountPaid = (string) $this->grandTotal;
+        $this->showPaymentModal = true;
+    }
+
+    public function setQuickCash(int $amount): void
+    {
+        $this->amountPaid = (string) $amount;
+    }
+
+    public function executeCheckout(CheckoutPosTransactionAction $action): void
+    {
+        $activeShift = PosShift::where('status', ShiftStatus::OPEN->value)
+            ->whereDate('shift_date', today())
+            ->latest('opened_at')
+            ->first();
+
+        if (!$activeShift) {
+            $this->feedbackMessage = 'Shift kasir belum aktif.';
+            $this->feedbackType = 'error';
+            $this->showPaymentModal = false;
+            return;
+        }
+
+        $paid = number_format((float) $this->amountPaid, 4, '.', '');
+        $grand = number_format((float) $this->grandTotal, 4, '.', '');
+
+        if ($this->paymentMethod === 'CASH' && bccomp($paid, $grand, 4) === -1) {
+            $this->feedbackMessage = 'Uang pembayaran tunai kurang dari Grand Total!';
+            $this->feedbackType = 'error';
+            return;
+        }
+
+        $itemsPayload = [];
+        foreach ($this->cart as $item) {
+            $itemsPayload[] = new CartItemData(
+                itemType: $item['type'] === 'RETAIL' ? 'RETAIL_PRODUCT' : 'SERVICE',
+                productId: $item['type'] === 'RETAIL' ? (string) $item['id'] : null,
+                serviceId: $item['type'] === 'SERVICE' ? (string) $item['id'] : null,
+                qty: number_format((float) $item['qty'], 4, '.', ''),
+                manualDiscountAmount: number_format((float) ($item['manual_discount'] ?? 0), 4, '.', ''),
+            );
+        }
+
+        try {
+            $transaction = $action->execute(new CheckoutPayloadData(
+                posShiftId: (string) $activeShift->id,
+                cashierUserId: (string) auth()->id(),
+                customerName: $this->customerName,
+                paymentMethod: PaymentMethod::from($this->paymentMethod),
+                amountPaid: $paid,
+                manualDiscountTotal: number_format((float) $this->manualDiscountTotal, 4, '.', ''),
+                items: $itemsPayload,
+            ));
+
+            $this->completedTransactionId = $transaction->id;
+            $this->showPaymentModal = false;
+            $this->clearCart();
+            $this->customerName = 'Pelanggan Umum';
+            $this->feedbackMessage = 'Transaksi ' . $transaction->invoice_number . ' sukses diselesaikan!';
+            $this->feedbackType = 'success';
+        } catch (\Throwable $e) {
+            $this->feedbackMessage = 'Gagal memproses transaksi: ' . $e->getMessage();
+            $this->feedbackType = 'error';
+        }
+    }
+
+    public function executeSpoilage(RecordSpoilageAction $action): void
+    {
+        $activeShift = PosShift::where('status', 'OPEN')->latest('opened_at')->first();
+        if (!$activeShift) {
+            $this->feedbackMessage = 'Shift belum dibuka.';
+            $this->feedbackType = 'error';
+            return;
+        }
+
+        $teacher = $activeShift->supervisorTeacher;
+        if (!Hash::check($this->spoilageTeacherPin, $teacher->pin_code)) {
+            $this->feedbackMessage = 'PIN Guru Supervisor salah.';
+            $this->feedbackType = 'error';
+            return;
+        }
+
+        try {
+            $log = $action->execute(new SpoilageData(
+                posShiftId: (string) $activeShift->id,
+                spoilageSource: 'SERVICE_PRODUCTION',
+                serviceId: (string) $this->spoilageServiceId,
+                failedOutputQty: number_format((float) $this->spoilageFailedQty, 4, '.', ''),
+                reasonCategory: SpoilageReason::from($this->spoilageReason),
+                reasonDescription: $this->spoilageDescription ?: 'Kertas macet / gagal cetak fotocopy',
+                reportedByUserId: (string) auth()->id(),
+                verifiedByUserId: (string) $teacher->id,
+                directItems: [],
+            ));
+
+            $this->showSpoilageModal = false;
+            $this->spoilageTeacherPin = '';
+            $this->feedbackMessage = 'Barang rusak ' . $log->spoilage_number . ' berhasil dicatat (HPP terbebankan: Rp ' . number_format((float) $log->total_spoilage_cost, 0, ',', '.') . ')';
+            $this->feedbackType = 'success';
+        } catch (\Throwable $e) {
+            $this->feedbackMessage = 'Gagal mencatat barang rusak: ' . $e->getMessage();
+            $this->feedbackType = 'error';
+        }
+    }
+
+    public function executeInternalMutation(MutateRetailToRawMaterialAction $action): void
+    {
+        $activeShift = PosShift::where('status', 'OPEN')->latest('opened_at')->first();
+        if (!$activeShift) {
+            $this->feedbackMessage = 'Shift belum dibuka.';
+            $this->feedbackType = 'error';
+            return;
+        }
+
+        $teacher = $activeShift->supervisorTeacher;
+        if (!Hash::check($this->mutationTeacherPin, $teacher->pin_code)) {
+            $this->feedbackMessage = 'PIN Guru Supervisor salah.';
+            $this->feedbackType = 'error';
+            return;
+        }
+
+        try {
+            $mutation = $action->execute(new InternalMutationData(
+                posShiftId: (string) $activeShift->id,
+                unitConversionId: (string) $this->selectedConversionId,
+                sourceQtyToDeduct: number_format((float) $this->mutationSourceQty, 4, '.', ''),
+                requestedByUserId: (string) auth()->id(),
+                approvedByUserId: (string) $teacher->id,
+                notes: $this->mutationNotes ?: 'Ambil kertas dari etalase untuk bahan baku fotocopy',
+            ));
+
+            $this->showMutationModal = false;
+            $this->mutationTeacherPin = '';
+            $this->feedbackMessage = 'Mutasi ' . $mutation->mutation_number . ' sukses (+500 Lembar kertas bahan baku ditambahkan)!';
+            $this->feedbackType = 'success';
+        } catch (\Throwable $e) {
+            $this->feedbackMessage = 'Gagal mutasi internal: ' . $e->getMessage();
+            $this->feedbackType = 'error';
+        }
+    }
+
+    public function render()
+    {
+        $productsQuery = Product::where('inventory_type', 'RETAIL')
+            ->where('is_active', true);
+
+        if ($this->searchQuery !== '') {
+            $productsQuery->where(function ($q) {
+                $q->where('name', 'like', '%' . $this->searchQuery . '%')
+                    ->orWhere('sku', 'like', '%' . $this->searchQuery . '%');
+            });
+        }
+
+        $servicesQuery = Service::with('priceTiers')
+            ->where('is_active', true);
+
+        if ($this->searchQuery !== '') {
+            $servicesQuery->where(function ($q) {
+                $q->where('name', 'like', '%' . $this->searchQuery . '%')
+                    ->orWhere('code', 'like', '%' . $this->searchQuery . '%');
+            });
+        }
+
+        $retailProducts = ($this->selectedCategory === 'ALL' || $this->selectedCategory === 'RETAIL')
+            ? $productsQuery->get()
+            : collect();
+
+        $services = ($this->selectedCategory === 'ALL' || $this->selectedCategory === 'SERVICE')
+            ? $servicesQuery->get()
+            : collect();
+
+        $unitConversions = UnitConversion::with(['sourceProduct', 'targetProduct'])->get();
+        $allServices = Service::all();
+        $completedTransaction = $this->completedTransactionId
+            ? PosTransaction::with(['items.product', 'items.service', 'cashier'])->find($this->completedTransactionId)
+            : null;
+
+        return view('livewire.pos.pos-terminal', compact(
+            'retailProducts',
+            'services',
+            'unitConversions',
+            'allServices',
+            'completedTransaction'
+        ))->layout('layouts.app', ['title' => 'Terminal POS Kasir — BESTCO']);
+    }
+}

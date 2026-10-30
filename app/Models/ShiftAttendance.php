@@ -85,6 +85,14 @@ class ShiftAttendance extends Model
     }
 
     /**
+     * Get the active operator user (alias).
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'active_operator_user_id');
+    }
+
+    /**
      * Get the teacher who approved the attendance.
      */
     public function approvedByTeacher(): BelongsTo
