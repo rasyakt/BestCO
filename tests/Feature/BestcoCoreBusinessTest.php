@@ -1,0 +1,171 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Actions\Inventory\MutateRetailToRawMaterialAction;
+use App\Actions\Inventory\RecordSpoilageAction;
+use App\Actions\Pos\CheckoutPosTransactionAction;
+use App\DTOs\Inventory\InternalMutationData;
+use App\DTOs\Inventory\SpoilageData;
+use App\DTOs\Pos\CartItemData;
+use App\DTOs\Pos\CheckoutPayloadData;
+use App\Enums\PaymentMethod;
+use App\Enums\SpoilageReason;
+use App\Models\AccountingPeriod;
+use App\Models\ChartOfAccount;
+use App\Models\JournalEntry;
+use App\Models\PosShift;
+use App\Models\Product;
+use App\Models\Service;
+use App\Models\UnitConversion;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class BestcoCoreBusinessTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $teacher;
+    private User $student;
+    private PosShift $shift;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed();
+        $this->teacher = User::where('role_type', 'piket_guru')->firstOrFail();
+        $this->student = User::where('role_type', 'piket_siswa')->firstOrFail();
+        $this->shift = PosShift::create([
+            'shift_code' => 'SHF-TEST-' . now()->format('YmdHis'),
+            'shift_date' => today(),
+            'supervisor_teacher_id' => $this->teacher->id,
+            'opened_by_user_id' => $this->student->id,
+            'opening_cash_balance' => '200000.0000',
+            'system_expected_cash' => '200000.0000',
+            'status' => 'OPEN',
+            'opened_at' => now(),
+        ]);
+
+        // Pastikan periode akuntansi terbuka tersedia.
+        AccountingPeriod::firstOrCreate(
+            ['period_name' => now()->format('F Y')],
+            [
+                'start_date' => now()->startOfMonth(),
+                'end_date' => now()->endOfMonth(),
+                'is_closed' => false,
+            ]
+        );
+    }
+
+    public function test_converts_1_rim_retail_paper_into_500_sheets_service_raw_material_and_posts_balanced_journal(): void
+    {
+        $retailPaper = Product::where('sku', 'ATK-HVS-A4-RIM')->firstOrFail();
+        $rawPaper = Product::where('sku', 'RAW-HVS-A4-LBR')->firstOrFail();
+        $conversion = UnitConversion::where('source_product_id', $retailPaper->id)
+            ->where('target_product_id', $rawPaper->id)
+            ->firstOrFail();
+
+        $initialRetailStock = (string) $retailPaper->current_stock;
+        $initialRawStock = (string) $rawPaper->current_stock;
+
+        $action = app(MutateRetailToRawMaterialAction::class);
+        $mutation = $action->execute(new InternalMutationData(
+            posShiftId: (string) $this->shift->id,
+            unitConversionId: (string) $conversion->id,
+            sourceQtyToDeduct: '1.0000',
+            requestedByUserId: (string) $this->student->id,
+            approvedByUserId: (string) $this->teacher->id,
+            notes: 'Stok kertas fotocopy habis saat jam istirahat',
+        ));
+
+        $retailPaper->refresh();
+        $rawPaper->refresh();
+
+        $this->assertSame('1.0000', bcsub((string) $initialRetailStock, (string) $retailPaper->current_stock, 4));
+        $this->assertSame('500.0000', bcsub((string) $rawPaper->current_stock, (string) $initialRawStock, 4));
+
+        $journal = JournalEntry::findOrFail($mutation->journal_entry_id);
+        $this->assertSame($journal->total_debit, $journal->total_credit);
+        $this->assertSame($mutation->total_mutation_value, $journal->total_debit);
+    }
+
+    public function test_deducts_exact_0_0500_gram_toner_per_sheet_and_applies_wholesale_tier_discount(): void
+    {
+        $photocopyService = Service::where('code', 'SRV-FC-A4')->firstOrFail();
+        $rawPaper = Product::where('sku', 'RAW-HVS-A4-LBR')->firstOrFail();
+        $rawToner = Product::where('sku', 'RAW-TONER-GRM')->firstOrFail();
+
+        $initialPaper = (string) $rawPaper->current_stock;
+        $initialToner = (string) $rawToner->current_stock;
+
+        $checkoutAction = app(CheckoutPosTransactionAction::class);
+        $transaction = $checkoutAction->execute(new CheckoutPayloadData(
+            posShiftId: (string) $this->shift->id,
+            cashierUserId: (string) $this->student->id,
+            customerName: 'Budi Santoso',
+            paymentMethod: PaymentMethod::CASH,
+            amountPaid: '50000.0000',
+            manualDiscountTotal: '0.0000',
+            items: [
+                new CartItemData(
+                    itemType: 'SERVICE',
+                    productId: null,
+                    serviceId: (string) $photocopyService->id,
+                    qty: '150.0000',
+                    manualDiscountAmount: '0.0000',
+                ),
+            ],
+        ));
+
+        $rawPaper->refresh();
+        $rawToner->refresh();
+
+        $this->assertSame('150.0000', bcsub($initialPaper, (string) $rawPaper->current_stock, 4));
+        $this->assertSame('7.5000', bcsub($initialToner, (string) $rawToner->current_stock, 4));
+        $this->assertSame(1, bccomp((string) $transaction->tier_discount_total, '0.0000', 4));
+
+        $journal = JournalEntry::findOrFail($transaction->journal_entry_id);
+        $sumDebit = $journal->items->reduce(fn (string $carry, $item) => bcadd($carry, (string) $item->debit, 4), '0.0000');
+        $sumCredit = $journal->items->reduce(fn (string $carry, $item) => bcadd($carry, (string) $item->credit, 4), '0.0000');
+
+        $this->assertSame($sumDebit, $sumCredit);
+        $this->assertSame((string) $journal->total_debit, $sumDebit);
+    }
+
+    public function test_records_failed_photocopy_spoilage_deducting_paper_and_toner(): void
+    {
+        $photocopyService = Service::where('code', 'SRV-FC-A4')->firstOrFail();
+        $rawPaper = Product::where('sku', 'RAW-HVS-A4-LBR')->firstOrFail();
+        $rawToner = Product::where('sku', 'RAW-TONER-GRM')->firstOrFail();
+        $spoilageAccount = ChartOfAccount::where('account_code', '6-1101')->firstOrFail();
+
+        $initialPaper = (string) $rawPaper->current_stock;
+        $initialToner = (string) $rawToner->current_stock;
+        $initialSpoilageExpense = (string) $spoilageAccount->current_balance;
+
+        $spoilageAction = app(RecordSpoilageAction::class);
+        $spoilageLog = $spoilageAction->execute(new SpoilageData(
+            posShiftId: (string) $this->shift->id,
+            spoilageSource: 'SERVICE_PRODUCTION',
+            serviceId: (string) $photocopyService->id,
+            failedOutputQty: '20.0000',
+            reasonCategory: SpoilageReason::PAPER_JAM,
+            reasonDescription: 'Kertas nyangkut di roller pemanas mesin fotocopy',
+            reportedByUserId: (string) $this->student->id,
+            verifiedByUserId: (string) $this->teacher->id,
+            directItems: [],
+        ));
+
+        $rawPaper->refresh();
+        $rawToner->refresh();
+        $spoilageAccount->refresh();
+
+        $this->assertSame('20.0000', bcsub($initialPaper, (string) $rawPaper->current_stock, 4));
+        $this->assertSame('1.0000', bcsub($initialToner, (string) $rawToner->current_stock, 4));
+        $this->assertSame(
+            number_format((float) $spoilageLog->total_spoilage_cost, 4, '.', ''),
+            bcsub((string) $spoilageAccount->current_balance, $initialSpoilageExpense, 4)
+        );
+    }
+}
