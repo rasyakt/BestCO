@@ -21,7 +21,7 @@
                 <div class="flex justify-between h-14 items-center">
                     <!-- Brand & Context -->
                     <div class="flex items-center space-x-3">
-                        <a href="{{ route('pos.terminal') }}" class="flex items-center space-x-2">
+                        <a href="{{ route('dashboard') }}" class="flex items-center space-x-2">
                             <span class="inline-flex items-center justify-center w-8 h-8 rounded bg-brand-700 text-white font-bold text-sm tracking-wider">BC</span>
                             <div>
                                 <span class="font-bold text-slate-900 text-base leading-tight">BESTCO</span>
@@ -34,14 +34,14 @@
                                 $currentShift = \App\Models\PosShift::where('status', 'OPEN')->latest('opened_at')->first();
                             @endphp
                             @if($currentShift)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <a href="{{ route('shift.index') }}" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    Shift Aktif: {{ $currentShift->shift_code }}
-                                </span>
+                                    Shift: {{ $currentShift->shift_code }}
+                                </a>
                             @else
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                    Shift Belum Dibuka
-                                </span>
+                                <a href="{{ route('shift.index') }}" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition">
+                                    Shift Belum Buka
+                                </a>
                             @endif
                         @endauth
                     </div>
@@ -49,24 +49,41 @@
                     <!-- Navigation Links & User Menu -->
                     <div class="flex items-center space-x-4">
                         @auth
-                            <nav class="flex items-center space-x-1 sm:space-x-2">
-                                <a href="{{ route('pos.terminal') }}" class="px-3 py-1.5 rounded text-xs font-semibold {{ request()->routeIs('pos.terminal') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                                    Terminal POS
+                            <nav class="flex items-center space-x-1 overflow-x-auto text-xs font-semibold">
+                                <a href="{{ route('dashboard') }}" class="px-2.5 py-1.5 rounded {{ request()->routeIs('dashboard') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                    Dashboard
                                 </a>
-                                <a href="{{ route('shift.index') }}" class="px-3 py-1.5 rounded text-xs font-semibold {{ request()->routeIs('shift.*') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                                    Manajemen Shift
+                                <a href="{{ route('pos.terminal') }}" class="px-2.5 py-1.5 rounded {{ request()->routeIs('pos.terminal') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                    Kasir POS
+                                </a>
+                                <a href="{{ route('transactions.index') }}" class="px-2.5 py-1.5 rounded {{ request()->routeIs('transactions.*') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                    Transaksi
+                                </a>
+                                <a href="{{ route('inventory.index') }}" class="px-2.5 py-1.5 rounded {{ request()->routeIs('inventory.*') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                    Persediaan
+                                </a>
+                                <a href="{{ route('shift.index') }}" class="px-2.5 py-1.5 rounded {{ request()->routeIs('shift.*') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                    Shift Piket
+                                </a>
+                                <a href="{{ route('piket.index') }}" class="px-2.5 py-1.5 rounded {{ request()->routeIs('piket.*') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                    Presensi Siswa
                                 </a>
                                 @if(auth()->user()->hasAnyRole(['superadmin', 'admin', 'piket_guru']))
-                                    <a href="{{ route('reports.index') }}" class="px-3 py-1.5 rounded text-xs font-semibold {{ request()->routeIs('reports.*') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                    <a href="{{ route('reports.index') }}" class="px-2.5 py-1.5 rounded {{ request()->routeIs('reports.*') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                                         Laporan & BKU
+                                    </a>
+                                @endif
+                                @if(auth()->user()->hasRole('superadmin'))
+                                    <a href="{{ route('theme.index') }}" class="px-2.5 py-1.5 rounded {{ request()->routeIs('theme.*') ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                        Tema
                                     </a>
                                 @endif
                             </nav>
 
-                            <div class="h-4 w-px bg-slate-200"></div>
+                            <div class="h-4 w-px bg-slate-200 hidden sm:block"></div>
 
                             <div class="flex items-center space-x-3 text-xs">
-                                <div class="text-right hidden sm:block">
+                                <div class="text-right hidden md:block">
                                     <div class="font-medium text-slate-800">{{ auth()->user()->name }}</div>
                                     <div class="text-slate-500 text-[11px] uppercase tracking-wider">{{ auth()->user()->role_type->value }}</div>
                                 </div>
@@ -88,18 +105,18 @@
         </header>
 
         <!-- Main Content Area -->
-        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
             @if(session('success'))
-                <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-emerald-800 text-xs flex items-center justify-between">
-                    <span>{{ session('success') }}</span>
-                    <button type="button" onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-800">&times;</button>
+                <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-emerald-800 text-xs flex items-center justify-between shadow-xs">
+                    <span class="font-medium">{{ session('success') }}</span>
+                    <button type="button" onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-800 font-bold">&times;</button>
                 </div>
             @endif
 
-            @if(session('error'))
-                <div class="mb-4 p-3 bg-rose-50 border border-rose-200 rounded text-rose-800 text-xs flex items-center justify-between">
-                    <span>{{ session('error') }}</span>
-                    <button type="button" onclick="this.parentElement.remove()" class="text-rose-600 hover:text-rose-800">&times;</button>
+            @if(session('error') || $errors->has('error'))
+                <div class="mb-4 p-3 bg-rose-50 border border-rose-200 rounded text-rose-800 text-xs flex items-center justify-between shadow-xs">
+                    <span class="font-medium">{{ session('error') ?? $errors->first('error') }}</span>
+                    <button type="button" onclick="this.parentElement.remove()" class="text-rose-600 hover:text-rose-800 font-bold">&times;</button>
                 </div>
             @endif
 

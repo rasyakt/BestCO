@@ -66,3 +66,4 @@ final class DynamicThemeService
         Cache::forget('bestco.theme_css_vars');
     }
 }
+

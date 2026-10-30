@@ -32,3 +32,4 @@ final class ReportController extends Controller
         return view('reports.index', compact('tab', 'startDate', 'endDate', 'data'));
     }
 }
+

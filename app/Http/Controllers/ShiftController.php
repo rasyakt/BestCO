@@ -158,3 +158,4 @@ final class ShiftController extends Controller
         return redirect()->route('shift.index')->with('success', $msg);
     }
 }
+

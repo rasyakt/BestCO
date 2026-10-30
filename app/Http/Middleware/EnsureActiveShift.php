@@ -60,3 +60,4 @@ final class EnsureActiveShift
         return $next($request);
     }
 }
+

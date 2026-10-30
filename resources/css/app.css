@@ -44,18 +44,31 @@
     letter-spacing: -0.02em;
 }
 
-/* Clean Thermal Receipt Print Style */
+/* Clean Thermal Receipt & Report Print Styles */
 @media print {
-    body * {
+    /* Sembunyikan elemen navigasi, filter, dan tombol saat cetak */
+    header, nav, form, .no-print {
+        display: none !important;
+    }
+
+    /* Print receipt styling jika ada #thermal-receipt aktif */
+    body:has(#thermal-receipt:not(.hidden)) * {
         visibility: hidden;
     }
-    #thermal-receipt, #thermal-receipt * {
+    body:has(#thermal-receipt:not(.hidden)) #thermal-receipt,
+    body:has(#thermal-receipt:not(.hidden)) #thermal-receipt * {
         visibility: visible;
     }
-    #thermal-receipt {
+    body:has(#thermal-receipt:not(.hidden)) #thermal-receipt {
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
+    }
+
+    /* Standard A4 Report Margins */
+    @page {
+        size: A4 portrait;
+        margin: 15mm;
     }
 }

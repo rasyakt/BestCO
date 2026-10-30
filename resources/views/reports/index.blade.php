@@ -371,6 +371,40 @@
                 </div>
             </div>
         @endif
+
+        <!-- Lembar Pengesahan Standar Sekolah / Dinas (Muncul Saat Cetak & Tinjauan Dokumen Resmi) -->
+        <div class="mt-8 pt-6 border-t border-slate-200">
+            <div class="text-right text-xs text-slate-500 mb-6">
+                Dicetak pada: {{ now()->isoFormat('D MMMM Y, HH:mm') }} WIB
+            </div>
+
+            <div class="grid grid-cols-3 gap-6 text-center text-xs">
+                <div>
+                    <span class="text-slate-500 block mb-1">Mengetahui,</span>
+                    <span class="font-bold text-slate-900 block">Penanggung Jawab TeFa MPLB</span>
+                    <div class="h-16"></div>
+                    <span class="font-semibold text-slate-800 underline block">( ........................................ )</span>
+                    <span class="text-[11px] text-slate-400 font-mono">NIP. ........................................</span>
+                </div>
+
+                <div>
+                    <span class="text-slate-500 block mb-1">Diverifikasi Oleh,</span>
+                    <span class="font-bold text-slate-900 block">Guru Pembimbing Piket</span>
+                    <div class="h-16"></div>
+                    <span class="font-semibold text-slate-800 underline block">( {{ auth()->user()->name }} )</span>
+                    <span class="text-[11px] text-slate-400 font-mono">NIP. {{ auth()->user()->nip_nisn ?? '........................................' }}</span>
+                </div>
+
+                <div>
+                    <span class="text-slate-500 block mb-1">Disusun Oleh,</span>
+                    <span class="font-bold text-slate-900 block">Petugas Kasir / Pembukuan</span>
+                    <div class="h-16"></div>
+                    <span class="font-semibold text-slate-800 underline block">( ........................................ )</span>
+                    <span class="text-[11px] text-slate-400 font-mono">NISN. ........................................</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
+

@@ -138,3 +138,4 @@ class PiketShiftTest extends TestCase
         $this->assertSame('5000.0000', (string) $expenseAccount->current_balance);
     }
 }
+

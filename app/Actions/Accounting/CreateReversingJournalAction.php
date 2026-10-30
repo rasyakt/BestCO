@@ -46,15 +46,15 @@ final class CreateReversingJournalAction
 
             $data = new JournalEntryData(
                 journalNumber: $reversingJournalNumber,
-                accountingPeriodId: $originalJournal->accounting_period_id,
-                posShiftId: $originalJournal->pos_shift_id,
+                accountingPeriodId: (string) $originalJournal->accounting_period_id,
+                posShiftId: $originalJournal->pos_shift_id ? (string) $originalJournal->pos_shift_id : null,
                 entryDate: Carbon::now(),
                 journalType: JournalType::REVERSING,
                 referenceType: $originalJournal->reference_type,
                 referenceId: $originalJournal->reference_id,
                 description: 'Pembalikan jurnal ' . $originalJournal->journal_number . ': ' . $originalJournal->description,
                 lines: $lines,
-                createdByUserId: $createdBy->getKey(),
+                createdByUserId: (string) $createdBy->getKey(),
                 reversedByJournalId: null,
             );
 

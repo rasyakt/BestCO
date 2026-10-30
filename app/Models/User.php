@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
 
 #[Fillable([
     'name',
@@ -54,7 +55,7 @@ class User extends Authenticatable
     protected function pinCode(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value): ?string => $value === null ? null : bcrypt($value),
+            set: fn (?string $value): ?string => $value === null ? null : (Hash::needsRehash($value) ? Hash::make($value) : $value),
         );
     }
 

@@ -389,3 +389,4 @@ final class FinancialStatementGenerator
         return bcsub($credit, $debit, 4);
     }
 }
+

@@ -86,7 +86,7 @@ final class RecordPurchaseRestockAction
 
             $journalData = new JournalEntryData(
                 journalNumber: $journalNumber,
-                accountingPeriodId: $period?->getKey() ?? '',
+                accountingPeriodId: (string) ($period?->getKey() ?? ''),
                 posShiftId: null,
                 entryDate: Carbon::now(),
                 journalType: JournalType::PURCHASE,
@@ -108,7 +108,7 @@ final class RecordPurchaseRestockAction
                         lineDescription: 'Kredit Kas Besar / Utang Usaha',
                     ),
                 ],
-                createdByUserId: $createdByUserId,
+                createdByUserId: (string) $createdByUserId,
             );
 
             $journalEntry = app(\App\Actions\Accounting\PostDoubleEntryJournalAction::class)
