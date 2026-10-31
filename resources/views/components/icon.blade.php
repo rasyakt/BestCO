@@ -325,6 +325,27 @@
             <line x1="12" y1="17" x2="12.01" y2="17" />
             @break
 
+        @case('dots-vertical')
+        @case('more-vertical')
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+            <circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" />
+            <circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" />
+            @break
+
+        @case('dots-horizontal')
+        @case('more-horizontal')
+        @case('ellipsis')
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+            <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
+            <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
+            @break
+
+        @case('edit')
+        @case('pencil')
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+            <path d="m15 5 4 4" />
+            @break
+
         @case('inbound')
         @case('download')
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

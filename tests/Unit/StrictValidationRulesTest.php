@@ -13,7 +13,7 @@ class StrictValidationRulesTest extends TestCase
     // ========== STRICT CURRENCY TESTS ==========
 
     /** @test */
-    public function strict_currency_accepts_valid_positive_numbers()
+    public function test_strict_currency_accepts_valid_positive_numbers()
     {
         $rule = new StrictCurrency();
         
@@ -30,7 +30,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_currency_rejects_negative_numbers()
+    public function test_strict_currency_rejects_negative_numbers()
     {
         $rule = new StrictCurrency();
         
@@ -47,7 +47,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_currency_rejects_special_characters()
+    public function test_strict_currency_rejects_special_characters()
     {
         $rule = new StrictCurrency();
         
@@ -77,7 +77,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_currency_rejects_multiple_decimal_points()
+    public function test_strict_currency_rejects_multiple_decimal_points()
     {
         $rule = new StrictCurrency();
         
@@ -87,7 +87,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_currency_respects_min_max_values()
+    public function test_strict_currency_respects_min_max_values()
     {
         $rule = new StrictCurrency(min: 100, max: 10000);
         
@@ -105,7 +105,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_currency_accepts_max_2_decimal_digits()
+    public function test_strict_currency_accepts_max_2_decimal_digits()
     {
         $rule = new StrictCurrency();
         
@@ -121,7 +121,7 @@ class StrictValidationRulesTest extends TestCase
     // ========== STRICT QUANTITY TESTS ==========
 
     /** @test */
-    public function strict_quantity_accepts_valid_integers()
+    public function test_strict_quantity_accepts_valid_integers()
     {
         $rule = new StrictQuantity(allowDecimal: false);
         
@@ -138,7 +138,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_quantity_rejects_decimals_when_not_allowed()
+    public function test_strict_quantity_rejects_decimals_when_not_allowed()
     {
         $rule = new StrictQuantity(allowDecimal: false);
         
@@ -148,7 +148,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_quantity_accepts_decimals_when_allowed()
+    public function test_strict_quantity_accepts_decimals_when_allowed()
     {
         $rule = new StrictQuantity(allowDecimal: true);
         
@@ -158,7 +158,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_quantity_rejects_leading_zeros()
+    public function test_strict_quantity_rejects_leading_zeros()
     {
         $rule = new StrictQuantity();
         
@@ -175,7 +175,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_quantity_rejects_zero_and_negative()
+    public function test_strict_quantity_rejects_zero_and_negative()
     {
         $rule = new StrictQuantity();
         
@@ -189,7 +189,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_quantity_respects_min_max_range()
+    public function test_strict_quantity_respects_min_max_range()
     {
         $rule = new StrictQuantity(allowDecimal: false, min: 5, max: 100);
         
@@ -207,7 +207,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_quantity_rejects_special_characters()
+    public function test_strict_quantity_rejects_special_characters()
     {
         $rule = new StrictQuantity();
         
@@ -234,7 +234,7 @@ class StrictValidationRulesTest extends TestCase
     // ========== STRICT NUMERIC TESTS ==========
 
     /** @test */
-    public function strict_numeric_accepts_valid_numbers()
+    public function test_strict_numeric_accepts_valid_numbers()
     {
         $rule = new StrictNumeric();
         
@@ -251,7 +251,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_numeric_accepts_negative_when_allowed()
+    public function test_strict_numeric_accepts_negative_when_allowed()
     {
         $rule = new StrictNumeric(allowDecimal: true, allowNegative: true);
         
@@ -261,7 +261,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_numeric_rejects_negative_when_not_allowed()
+    public function test_strict_numeric_rejects_negative_when_not_allowed()
     {
         $rule = new StrictNumeric(allowDecimal: true, allowNegative: false);
         
@@ -271,7 +271,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function strict_numeric_rejects_scientific_notation()
+    public function test_strict_numeric_rejects_scientific_notation()
     {
         $rule = new StrictNumeric();
         
@@ -290,7 +290,7 @@ class StrictValidationRulesTest extends TestCase
     // ========== INTEGRATION TESTS ==========
 
     /** @test */
-    public function validation_works_with_multiple_rules()
+    public function test_validation_works_with_multiple_rules()
     {
         $rules = [
             'price' => ['required', new StrictCurrency(min: 0, max: 1000000)],
@@ -327,7 +327,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function empty_string_fails_when_required()
+    public function test_empty_string_fails_when_required()
     {
         $rule = new StrictCurrency(min: 0, required: true);
         
@@ -337,7 +337,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function empty_string_passes_when_not_required()
+    public function test_empty_string_passes_when_not_required()
     {
         $rule = new StrictCurrency(min: 0, required: false);
         
@@ -347,7 +347,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function null_value_passes_when_nullable()
+    public function test_null_value_passes_when_nullable()
     {
         $rule = new StrictCurrency(min: 0, required: false);
         
@@ -359,7 +359,7 @@ class StrictValidationRulesTest extends TestCase
     // ========== SECURITY TESTS ==========
 
     /** @test */
-    public function prevents_sql_injection_attempts()
+    public function test_prevents_sql_injection_attempts()
     {
         $rule = new StrictCurrency();
         
@@ -381,7 +381,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function prevents_xss_attempts()
+    public function test_prevents_xss_attempts()
     {
         $rule = new StrictCurrency();
         
@@ -402,7 +402,7 @@ class StrictValidationRulesTest extends TestCase
     }
 
     /** @test */
-    public function prevents_unicode_exploits()
+    public function test_prevents_unicode_exploits()
     {
         $rule = new StrictCurrency();
         

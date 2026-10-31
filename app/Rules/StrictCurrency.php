@@ -13,6 +13,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
  */
 class StrictCurrency implements ValidationRule
 {
+    public bool $implicit = false;
     protected ?float $min;
     protected ?float $max;
     protected bool $required;
@@ -30,6 +31,7 @@ class StrictCurrency implements ValidationRule
         $this->min = $min ?? 0;
         $this->max = $max;
         $this->required = $required;
+        $this->implicit = $required;
     }
 
     /**

@@ -59,6 +59,18 @@ Route::middleware('auth')->group(function (): void {
     // Manajemen Dual-Inventory, Restock Pembelian, Mutasi Internal, & Spoilage
     Route::middleware('role:superadmin,admin,piket_guru')->group(function (): void {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::post('/inventory/products', [InventoryController::class, 'storeProduct'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.products.store');
+        Route::put('/inventory/products/{id}', [InventoryController::class, 'updateProduct'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.products.update');
+        Route::post('/inventory/services', [InventoryController::class, 'storeService'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.services.store');
+        Route::put('/inventory/services/{id}', [InventoryController::class, 'updateService'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.services.update');
         Route::get('/inventory/inbound', [StockInboundController::class, 'index'])->name('inventory.inbound');
         Route::post('/inventory/inbound', [StockInboundController::class, 'store'])
             ->middleware('role:superadmin,admin')
