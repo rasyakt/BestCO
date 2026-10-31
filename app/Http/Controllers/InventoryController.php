@@ -8,6 +8,8 @@ use App\Actions\Inventory\RecordPurchaseRestockAction;
 use App\Models\ChartOfAccount;
 use App\Models\Product;
 use App\Models\StockLedgerEntry;
+use App\Rules\StrictCurrency;
+use App\Rules\StrictQuantity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -44,8 +46,8 @@ final class InventoryController extends Controller
     {
         $validated = $request->validate([
             'product_id' => ['required', 'exists:products,id'],
-            'qty_purchased' => ['required', 'numeric', 'min:0.0001'],
-            'purchase_unit_price' => ['required', 'numeric', 'min:0'],
+            'qty_purchased' => ['required', new StrictQuantity(allowDecimal: true, min: 0.0001)],
+            'purchase_unit_price' => ['required', new StrictCurrency(min: 0)],
             'account_id' => ['required', 'exists:chart_of_accounts,id'],
         ]);
 

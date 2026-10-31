@@ -20,6 +20,8 @@ use App\Models\Product;
 use App\Models\Service;
 use App\Models\UnitConversion;
 use App\Models\User;
+use App\Rules\StrictCurrency;
+use App\Rules\StrictQuantity;
 use App\Services\Pos\TieredPricingResolver;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
@@ -61,6 +63,50 @@ final class PosTerminal extends Component
     // Toast/Alert
     public ?string $feedbackMessage = null;
     public ?string $feedbackType = null; // 'success' or 'error'
+
+    /**
+     * Sanitasi input untuk mencegah karakter berbahaya
+     */
+    protected function sanitizeNumericInput(string $value, bool $allowDecimal = true): string
+    {
+        // Hapus semua karakter selain angka dan titik
+        $cleaned = preg_replace('/[^\d.]/', '', $value);
+        
+        if (!$allowDecimal) {
+            $cleaned = preg_replace('/\./', '', $cleaned);
+        } else {
+            // Pastikan hanya 1 titik desimal
+            $parts = explode('.', $cleaned);
+            if (count($parts) > 2) {
+                $cleaned = $parts[0] . '.' . implode('', array_slice($parts, 1));
+            }
+        }
+        
+        return $cleaned;
+    }
+
+    /**
+     * Hook untuk sanitasi real-time pada property updates
+     */
+    public function updatedManualDiscountTotal($value): void
+    {
+        $this->manualDiscountTotal = $this->sanitizeNumericInput($value);
+    }
+
+    public function updatedAmountPaid($value): void
+    {
+        $this->amountPaid = $this->sanitizeNumericInput($value);
+    }
+
+    public function updatedSpoilageFailedQty($value): void
+    {
+        $this->spoilageFailedQty = $this->sanitizeNumericInput($value, allowDecimal: false);
+    }
+
+    public function updatedMutationSourceQty($value): void
+    {
+        $this->mutationSourceQty = $this->sanitizeNumericInput($value, allowDecimal: false);
+    }
 
     public function mount(): void
     {
@@ -149,6 +195,10 @@ final class PosTerminal extends Component
 
     public function updateQty(int $index, float $newQty): void
     {
+        // Sanitasi input: hanya angka positif
+        $sanitized = preg_replace('/[^\d.]/', '', (string) $newQty);
+        $newQty = (float) $sanitized;
+        
         if ($newQty <= 0) {
             $this->removeItem($index);
             return;
@@ -252,6 +302,12 @@ final class PosTerminal extends Component
 
     public function executeCheckout(CheckoutPosTransactionAction $action): void
     {
+        // Validasi input
+        $this->validate([
+            'amountPaid' => ['required', new StrictCurrency(min: 0)],
+            'manualDiscountTotal' => ['nullable', new StrictCurrency(min: 0, required: false)],
+        ]);
+        
         $activeShift = PosShift::where('status', ShiftStatus::OPEN->value)
             ->whereDate('shift_date', today())
             ->latest('opened_at')

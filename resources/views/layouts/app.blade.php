@@ -360,5 +360,8 @@
     </div>
 
     @livewireScripts
+    
+    <!-- Currency & Quantity Input Security Guard -->
+    <script src="{{ asset('js/currency-input-guard.js') }}"></script>
 </body>
 </html>

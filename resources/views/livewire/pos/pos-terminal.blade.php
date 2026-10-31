@@ -205,7 +205,9 @@
                                         class="flex h-7 w-7 items-center justify-center bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800">
                                         <x-icon name="minus" class="h-3 w-3" />
                                     </button>
-                                    <input type="number" step="1" min="1" value="{{ (int) $item['qty'] }}"
+                                    <input type="number" step="1" min="1" 
+                                        value="{{ (int) $item['qty'] }}"
+                                        data-quantity="true"
                                         wire:change="updateQty({{ $index }}, $event.target.value)"
                                         class="h-7 w-10 border-x border-slate-300 text-center text-[11px] font-semibold text-slate-800 focus:outline-none num-tabular">
                                     <button wire:click="updateQty({{ $index }}, {{ $item['qty'] + 1 }})"
@@ -250,7 +252,9 @@
                                 <span class="text-slate-500">Diskon manual</span>
                                 <div class="relative w-28">
                                     <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400">Rp</span>
-                                    <input type="number" step="500" min="0" wire:model.live.debounce.300ms="manualDiscountTotal"
+                                    <input type="number" step="500" min="0" 
+                                        wire:model.live.debounce.300ms="manualDiscountTotal"
+                                        data-currency="true"
                                         class="input py-1.5 pl-7 text-right text-[11px] font-medium num-tabular">
                                 </div>
                             </div>
@@ -322,7 +326,10 @@
                         <div class="space-y-2.5">
                             <div>
                                 <label class="form-label">Uang diterima (Rp)</label>
-                                <input type="number" step="1000" wire:model.live="amountPaid"
+                                <input type="number" step="1000" 
+                                    wire:model.live="amountPaid"
+                                    data-currency="true"
+                                    min="0"
                                     class="input py-3 text-lg font-semibold text-slate-900 num-tabular">
                             </div>
 
@@ -401,7 +408,10 @@
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
                             <label class="form-label">Jumlah lembar gagal</label>
-                            <input type="number" step="1" min="1" wire:model="spoilageFailedQty" class="input font-mono">
+                            <input type="number" step="1" min="1" 
+                                wire:model="spoilageFailedQty" 
+                                data-quantity="true"
+                                class="input font-mono">
                         </div>
                         <div>
                             <label class="form-label">Penyebab</label>
@@ -474,7 +484,10 @@
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
                             <label class="form-label">Jumlah rim</label>
-                            <input type="number" step="1" min="1" wire:model="mutationSourceQty" class="input font-mono">
+                            <input type="number" step="1" min="1" 
+                                wire:model="mutationSourceQty" 
+                                data-quantity="true"
+                                class="input font-mono">
                         </div>
                         <div>
                             <label class="form-label">PIN guru</label>

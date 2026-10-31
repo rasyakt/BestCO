@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Currency Input Guard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        /* Hide spinner arrows for number input */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        .test-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .test-items {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .test-item {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-item.pass {
+            border-color: #4CAF50;
+            background: #f0f9f0;
+        }
+        .test-item.fail {
+            border-color: #f44336;
+            background: #fff0f0;
+        }
+        .status {
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #4CAF50;
+            color: white;
+        }
+        .status.error {
+            background: #f44336;
+            color: white;
+        }
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 Currency Input Guard - Testing</h1>
+        <p class="subtitle">Test proteksi input untuk nominal uang dan quantity</p>
+
+        <div class="instructions">
+            <h3>📋 Instruksi Testing</h3>
+            <p><strong>✨ PERUBAHAN BARU:</strong> Tanda panah naik-turun (spinner) sudah dihilangkan untuk tampilan lebih bersih!</p>
+            <ul>
+                <li>Coba ketik karakter berbahaya: <code>-</code>, <code>+</code>, <code>;</code>, <code>,</code>, <code>[</code>, <code>]</code>, huruf</li>
+                <li>Coba paste text: "Rp 5.000,00" atau "1.234.567"</li>
+                <li>Coba input angka negatif: "-100"</li>
+                <li>Perhatikan: <strong>Tidak ada spinner arrows</strong> di input field ✅</li>
+                <li>Semua karakter berbahaya harus <strong>DITOLAK</strong></li>
+            </ul>
+        </div>
+
+        <form onsubmit="return false;">
+            <!-- Currency Input -->
+            <div class="form-group">
+                <label for="price">Harga Satuan (Currency)</label>
+                <p class="help-text">✅ Hanya angka positif, max 2 desimal</p>
+                <input 
+                    type="number" 
+                    id="price" 
+                    name="purchase_unit_price"
+                    step="100"
+                    min="0"
+                    placeholder="Contoh: 50000"
+                >
+            </div>
+
+            <!-- Quantity Input (Integer) -->
+            <div class="form-group">
+                <label for="qty">Jumlah Barang (Quantity - Integer)</label>
+                <p class="help-text">✅ Hanya integer positif, tidak boleh desimal</p>
+                <input 
+                    type="number" 
+                    id="qty" 
+                    name="qty_purchased"
+                    step="1"
+                    min="1"
+                    placeholder="Contoh: 10"
+                >
+            </div>
+
+            <!-- Discount Input -->
+            <div class="form-group">
+                <label for="discount">Diskon Manual (Currency)</label>
+                <p class="help-text">✅ Optional, angka positif</p>
+                <input 
+                    type="number" 
+                    id="discount" 
+                    name="manual_discount_total"
+                    step="500"
+                    min="0"
+                    placeholder="Contoh: 5000"
+                >
+            </div>
+
+            <!-- Amount Paid -->
+            <div class="form-group">
+                <label for="paid">Uang Diterima (Currency)</label>
+                <p class="help-text">✅ Hanya angka positif</p>
+                <input 
+                    type="number" 
+                    id="paid" 
+                    name="amount_paid"
+                    step="1000"
+                    min="0"
+                    placeholder="Contoh: 100000"
+                >
+            </div>
+        </form>
+
+        <div class="test-section">
+            <h3>🧪 Test Cases - Coba Input Ini:</h3>
+            <div class="test-items">
+                <div class="test-item">1000 → ✅ PASS</div>
+                <div class="test-item">5000.50 → ✅ PASS</div>
+                <div class="test-item">-100 → ❌ DITOLAK</div>
+                <div class="test-item">100; → ❌ DITOLAK</div>
+                <div class="test-item">1,000 → ❌ DITOLAK</div>
+                <div class="test-item">100[test] → ❌ DITOLAK</div>
+                <div class="test-item">1e10 → ❌ DITOLAK</div>
+                <div class="test-item">abc123 → ❌ DITOLAK</div>
+            </div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- Include Currency Guard -->
+    <script src="js/currency-input-guard.js"></script>
+
+    <script>
+        // Real-time monitoring untuk testing
+        const inputs = document.querySelectorAll('input[type="number"]');
+        let testResults = [];
+
+        inputs.forEach(input => {
+            input.addEventListener('input', function(e) {
+                console.log(`Input [${input.name}]: "${input.value}"`);
+                
+                // Cek apakah ada karakter berbahaya
+                const hasDangerous = /[^0-9.]/.test(input.value);
+                if (hasDangerous) {
+                    console.warn('⚠️ Karakter berbahaya terdeteksi!', input.value);
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                const key = e.key;
+                const dangerous = ['-', '+', ';', ',', '[', ']', 'e', 'E'];
+                
+                if (dangerous.includes(key)) {
+                    console.log(`🛑 Blocked key: "${key}"`);
+                }
+            });
+        });
+
+        // Show status
+        setTimeout(() => {
+            const status = document.getElementById('status');
+            status.className = 'status success';
+            status.textContent = '✅ Currency Input Guard sudah aktif! Silakan test input di atas.';
+        }, 500);
+    </script>
+</body>
+</html>
