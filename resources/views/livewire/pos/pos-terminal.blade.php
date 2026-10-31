@@ -14,6 +14,11 @@
                 } else if (e.key === 'F7') {
                     e.preventDefault();
                     $wire.set('showMutationModal', true);
+                } else if (e.key === 'F10') {
+                    e.preventDefault();
+                    if (typeof togglePosFocus === 'function') {
+                        togglePosFocus();
+                    }
                 } else if (e.key === 'Escape') {
                     $wire.set('showPaymentModal', false);
                     $wire.set('showSpoilageModal', false);
@@ -24,29 +29,6 @@
         }
     }"
     x-init="initShortcuts()">
-
-    <!-- Header -->
-    <div class="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-            <h1 class="page-title">Kasir</h1>
-            <p class="page-subtitle">Pilih barang atau layanan, lalu selesaikan pembayaran.</p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3">
-            @if($activeShift)
-                <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                    Shift {{ $activeShift->shift_code }}
-                </span>
-            @else
-                <a href="{{ route('shift.index') }}" class="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 hover:text-amber-800">
-                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                    Shift belum dibuka
-                    <x-icon name="arrow-right" class="h-3 w-3" />
-                </a>
-            @endif
-        </div>
-    </div>
 
     <!-- Feedback -->
     @if($feedbackMessage)
@@ -59,53 +41,56 @@
         </div>
     @endif
 
-    <div class="grid min-h-0 flex-1 grid-cols-1 items-stretch gap-5 lg:grid-cols-12">
+    <div class="grid min-h-0 flex-1 grid-cols-1 items-stretch gap-4 lg:grid-cols-12">
         <!-- Katalog -->
-        <div class="flex min-h-0 flex-col gap-4 lg:col-span-8">
-            <div class="card shrink-0 p-4">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <div class="search-field flex-1">
-                        <x-icon name="search" />
-                        <input type="text" id="pos-search-input" wire:model.live.debounce.250ms="searchQuery"
-                            placeholder="Cari barang, barcode, atau layanan..."
-                            class="input">
+        <div class="flex min-h-0 flex-col gap-3 lg:col-span-8">
+            <!-- Toolbar Pencarian & Filter Ringkas -->
+            <div class="card shrink-0 p-3">
+                <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+                    <div class="relative flex-1">
+                        <div class="search-field w-full">
+                            <x-icon name="search" />
+                            <input type="text" id="pos-search-input" wire:model.live.debounce.250ms="searchQuery"
+                                placeholder="Cari barang, barcode, atau layanan..."
+                                class="input pr-10">
+                        </div>
+                        <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-slate-400">F2</span>
                     </div>
 
-                    <div class="segmented shrink-0">
-                        <button wire:click="$set('selectedCategory', 'ALL')"
-                            class="{{ $selectedCategory === 'ALL' ? 'is-active' : '' }}">Semua</button>
-                        <button wire:click="$set('selectedCategory', 'RETAIL')"
-                            class="{{ $selectedCategory === 'RETAIL' ? 'is-active' : '' }}">Barang</button>
-                        <button wire:click="$set('selectedCategory', 'SERVICE')"
-                            class="{{ $selectedCategory === 'SERVICE' ? 'is-active' : '' }}">Layanan</button>
-                    </div>
-                </div>
+                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <div class="segmented">
+                            <button wire:click="$set('selectedCategory', 'ALL')"
+                                class="{{ $selectedCategory === 'ALL' ? 'is-active' : '' }}">Semua</button>
+                            <button wire:click="$set('selectedCategory', 'RETAIL')"
+                                class="{{ $selectedCategory === 'RETAIL' ? 'is-active' : '' }}">Barang</button>
+                            <button wire:click="$set('selectedCategory', 'SERVICE')"
+                                class="{{ $selectedCategory === 'SERVICE' ? 'is-active' : '' }}">Layanan</button>
+                        </div>
 
-                <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
-                    <p class="hidden text-[10px] text-slate-400 sm:block">
-                        <span class="kbd">F2</span> Cari
-                        <span class="ml-2 kbd">F4</span> Bayar
-                        <span class="ml-2 kbd">F6</span> Barang rusak
-                        <span class="ml-2 kbd">F7</span> Ambil bahan
-                    </p>
-                    <div class="flex items-center gap-2">
-                        <button wire:click="$set('showSpoilageModal', true)"
-                            class="btn btn-sm border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100">
-                            <x-icon name="spoilage" class="h-3.5 w-3.5" />
-                            Barang rusak
-                        </button>
-                        <button wire:click="$set('showMutationModal', true)"
-                            class="btn btn-sm border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
-                            <x-icon name="swap" class="h-3.5 w-3.5" />
-                            Ambil bahan
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button wire:click="$set('showSpoilageModal', true)"
+                                class="btn btn-sm border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                title="Catat barang rusak saat produksi (F6)">
+                                <x-icon name="spoilage" class="h-3.5 w-3.5" />
+                                <span>Rusak</span>
+                                <span class="kbd text-[9px] border-amber-300/50 bg-amber-100/60 text-amber-800">F6</span>
+                            </button>
+                            <button wire:click="$set('showMutationModal', true)"
+                                class="btn btn-sm border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                                title="Ambil bahan baku dari etalase (F7)">
+                                <x-icon name="swap" class="h-3.5 w-3.5" />
+                                <span>Bahan</span>
+                                <span class="kbd text-[9px]">F7</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Produk (daftar ini yang bergulir sendiri) -->
             <div class="min-h-0 flex-1 overflow-y-auto pr-1 lg:pb-1">
-                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4"
+                    :class="posFocus ? '2xl:grid-cols-5' : ''">
                 @foreach($retailProducts as $p)
                     @php $isLow = (float) $p->current_stock <= 5; @endphp
                     <button type="button" wire:click="addToCart('RETAIL', {{ $p->id }})"
@@ -177,10 +162,12 @@
                             <p class="text-sm font-semibold text-slate-900">Keranjang</p>
                             <p class="mt-0.5 text-[11px] text-slate-400">{{ count($cart) }} item</p>
                         </div>
-                        <button wire:click="clearCart" class="flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-medium text-rose-600 transition hover:bg-rose-50">
-                            <x-icon name="trash" class="h-3.5 w-3.5" />
-                            Kosongkan
-                        </button>
+                        @if(count($cart) > 0)
+                            <button wire:click="clearCart" class="flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-medium text-rose-600 transition hover:bg-rose-50">
+                                <x-icon name="trash" class="h-3.5 w-3.5" />
+                                Kosongkan
+                            </button>
+                        @endif
                     </div>
 
                     <div class="mt-3">
@@ -242,33 +229,35 @@
                 </div>
 
                 <div class="shrink-0 border-t border-slate-100 bg-slate-50 p-4">
-                    <div class="space-y-1.5 text-[11px]">
-                        <div class="flex items-center justify-between text-slate-500">
-                            <span>Barang</span>
-                            <span class="font-medium text-slate-700 num-tabular">Rp {{ number_format($this->subtotalRetail, 0, ',', '.') }}</span>
-                        </div>
-                        <div class="flex items-center justify-between text-slate-500">
-                            <span>Layanan</span>
-                            <span class="font-medium text-slate-700 num-tabular">Rp {{ number_format($this->subtotalService, 0, ',', '.') }}</span>
-                        </div>
-                        @if($this->totalTierDiscount > 0)
-                            <div class="flex items-center justify-between font-medium text-amber-600">
-                                <span>Potongan grosir</span>
-                                <span class="num-tabular">-Rp {{ number_format($this->totalTierDiscount, 0, ',', '.') }}</span>
+                    @if(count($cart) > 0)
+                        <div class="space-y-1.5 text-[11px] pb-3 mb-3 border-b border-slate-200/60">
+                            <div class="flex items-center justify-between text-slate-500">
+                                <span>Barang</span>
+                                <span class="font-medium text-slate-700 num-tabular">Rp {{ number_format($this->subtotalRetail, 0, ',', '.') }}</span>
                             </div>
-                        @endif
+                            <div class="flex items-center justify-between text-slate-500">
+                                <span>Layanan</span>
+                                <span class="font-medium text-slate-700 num-tabular">Rp {{ number_format($this->subtotalService, 0, ',', '.') }}</span>
+                            </div>
+                            @if($this->totalTierDiscount > 0)
+                                <div class="flex items-center justify-between font-medium text-amber-600">
+                                    <span>Potongan grosir</span>
+                                    <span class="num-tabular">-Rp {{ number_format($this->totalTierDiscount, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
 
-                        <div class="flex items-center justify-between gap-3 pt-1">
-                            <span class="text-slate-500">Diskon manual</span>
-                            <div class="relative w-28">
-                                <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400">Rp</span>
-                                <input type="number" step="500" min="0" wire:model.live.debounce.300ms="manualDiscountTotal"
-                                    class="input py-1.5 pl-7 text-right text-[11px] font-medium num-tabular">
+                            <div class="flex items-center justify-between gap-3 pt-1">
+                                <span class="text-slate-500">Diskon manual</span>
+                                <div class="relative w-28">
+                                    <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400">Rp</span>
+                                    <input type="number" step="500" min="0" wire:model.live.debounce.300ms="manualDiscountTotal"
+                                        class="input py-1.5 pl-7 text-right text-[11px] font-medium num-tabular">
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    @endif
 
-                    <div class="mt-3 flex items-end justify-between border-t border-slate-200 pt-3">
+                    <div class="flex items-end justify-between">
                         <div>
                             <p class="text-[11px] font-medium text-slate-500">Total</p>
                             <p class="mt-0.5 text-2xl font-semibold tracking-tight text-brand-700 num-tabular">

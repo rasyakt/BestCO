@@ -63,13 +63,23 @@ class NewModulesFeatureTest extends TestCase
 
     public function test_authenticated_user_can_view_inventory_list_and_filters(): void
     {
-        $response = $this->actingAs($this->student)->get('/inventory');
+        $response = $this->actingAs($this->admin)->get('/inventory');
         $response->assertStatus(200);
         $response->assertSee('Stok barang etalase dan bahan baku jasa.');
         $response->assertSee('Daftar stok');
 
-        $responseRetail = $this->actingAs($this->student)->get('/inventory?type=RETAIL');
+        $responseRetail = $this->actingAs($this->admin)->get('/inventory?type=RETAIL');
         $responseRetail->assertStatus(200);
+    }
+
+    public function test_student_cannot_access_restricted_inventory_and_reports(): void
+    {
+        // Siswa tidak memiliki izin untuk mengakses modul persediaan & laporan keuangan
+        $responseInv = $this->actingAs($this->student)->get('/inventory');
+        $responseInv->assertStatus(403);
+
+        $responseReport = $this->actingAs($this->student)->get('/reports');
+        $responseReport->assertStatus(403);
     }
 
     public function test_user_can_restock_product_and_update_average_cost(): void

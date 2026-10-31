@@ -14,10 +14,12 @@
                 <x-icon name="spoilage" class="h-4 w-4" />
                 Barang rusak
             </a>
-            <button type="button" @click="showRestockModal = true" class="btn btn-primary">
-                <x-icon name="plus" class="h-4 w-4" />
-                Tambah stok
-            </button>
+            @if(auth()->user()?->hasAnyRole(['superadmin', 'admin']))
+                <button type="button" @click="showRestockModal = true" class="btn btn-primary">
+                    <x-icon name="plus" class="h-4 w-4" />
+                    Tambah stok
+                </button>
+            @endif
         </x-slot:actions>
     </x-page-header>
 

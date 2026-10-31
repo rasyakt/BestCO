@@ -26,17 +26,25 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/', function () {
+        if (auth()->user()?->hasRole('piket_siswa')) {
+            return redirect()->route('pos.terminal');
+        }
+
         return redirect()->route('dashboard');
     });
 
-    // Executive Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Executive Dashboard (Superadmin, Admin, Piket Guru)
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('role:superadmin,admin,piket_guru')
+        ->name('dashboard');
 
     // Manajemen Shift Kasir & Presensi Piket
     Route::get('/shift', [ShiftController::class, 'index'])->name('shift.index');
     Route::post('/shift/open', [ShiftController::class, 'open'])->name('shift.open');
     Route::post('/shift/close', [ShiftController::class, 'close'])->name('shift.close');
-    Route::get('/piket', [PiketAttendanceController::class, 'index'])->name('piket.index');
+    Route::get('/piket', [PiketAttendanceController::class, 'index'])
+        ->middleware('role:superadmin,admin,piket_guru')
+        ->name('piket.index');
 
     // Terminal POS Kasir (Diproteksi Shift Gate)
     Route::get('/pos', PosTerminal::class)
@@ -48,20 +56,28 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/transactions/{id}/void', [TransactionController::class, 'void'])->name('transactions.void');
 
     // Manajemen Dual-Inventory, Restock Pembelian, Mutasi Internal, & Spoilage
-    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
-    Route::post('/inventory/restock', [InventoryController::class, 'restock'])->name('inventory.restock');
-    Route::get('/inventory/mutations', [StockMutationController::class, 'index'])->name('inventory.mutations');
-    Route::get('/inventory/spoilage', [SpoilageController::class, 'index'])->name('inventory.spoilage');
-    Route::get('/inventory/{id}/ledger', [InventoryController::class, 'ledger'])->name('inventory.ledger');
+    Route::middleware('role:superadmin,admin,piket_guru')->group(function (): void {
+        Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::post('/inventory/restock', [InventoryController::class, 'restock'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.restock');
+        Route::get('/inventory/mutations', [StockMutationController::class, 'index'])->name('inventory.mutations');
+        Route::get('/inventory/spoilage', [SpoilageController::class, 'index'])->name('inventory.spoilage');
+        Route::get('/inventory/{id}/ledger', [InventoryController::class, 'ledger'])->name('inventory.ledger');
+    });
 
     // Laporan Akuntansi & BKU
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports', [ReportController::class, 'index'])
+        ->middleware('role:superadmin,admin,piket_guru')
+        ->name('reports.index');
 
-    // Kustomisasi Tema Dinamis
-    Route::get('/settings/theme', [ThemeController::class, 'index'])->name('theme.index');
-    Route::post('/settings/theme/preset', [ThemeController::class, 'applyPreset'])->name('theme.preset');
-    Route::get('/settings/theme/preview', [ThemeController::class, 'preview'])->name('theme.preview');
-    Route::post('/settings/theme/custom', [ThemeController::class, 'applyCustom'])->name('theme.custom');
-    Route::post('/settings/theme/reset', [ThemeController::class, 'reset'])->name('theme.reset');
+    // Kustomisasi Tema Dinamis (Khusus Superadmin)
+    Route::middleware('role:superadmin')->group(function (): void {
+        Route::get('/settings/theme', [ThemeController::class, 'index'])->name('theme.index');
+        Route::post('/settings/theme/preset', [ThemeController::class, 'applyPreset'])->name('theme.preset');
+        Route::get('/settings/theme/preview', [ThemeController::class, 'preview'])->name('theme.preview');
+        Route::post('/settings/theme/custom', [ThemeController::class, 'applyCustom'])->name('theme.custom');
+        Route::post('/settings/theme/reset', [ThemeController::class, 'reset'])->name('theme.reset');
+    });
 });
 

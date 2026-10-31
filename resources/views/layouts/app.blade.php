@@ -55,7 +55,7 @@
             [
                 'label' => 'Operasional',
                 'items' => [
-                    ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'dashboard', 'active' => 'dashboard'],
+                    ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'dashboard', 'active' => 'dashboard', 'roles' => ['superadmin', 'admin', 'piket_guru']],
                     ['label' => 'Kasir', 'route' => 'pos.terminal', 'icon' => 'pos', 'active' => 'pos.terminal'],
                     ['label' => 'Riwayat Transaksi', 'route' => 'transactions.index', 'icon' => 'receipt', 'active' => 'transactions.*'],
                 ],
@@ -63,16 +63,16 @@
             [
                 'label' => 'Persediaan',
                 'items' => [
-                    ['label' => 'Persediaan', 'route' => 'inventory.index', 'icon' => 'package', 'active' => 'inventory.index'],
-                    ['label' => 'Pindah Stok', 'route' => 'inventory.mutations', 'icon' => 'swap', 'active' => 'inventory.mutations'],
-                    ['label' => 'Barang Rusak', 'route' => 'inventory.spoilage', 'icon' => 'spoilage', 'active' => 'inventory.spoilage'],
+                    ['label' => 'Persediaan', 'route' => 'inventory.index', 'icon' => 'package', 'active' => 'inventory.index', 'roles' => ['superadmin', 'admin', 'piket_guru']],
+                    ['label' => 'Pindah Stok', 'route' => 'inventory.mutations', 'icon' => 'swap', 'active' => 'inventory.mutations', 'roles' => ['superadmin', 'admin', 'piket_guru']],
+                    ['label' => 'Barang Rusak', 'route' => 'inventory.spoilage', 'icon' => 'spoilage', 'active' => 'inventory.spoilage', 'roles' => ['superadmin', 'admin', 'piket_guru']],
                 ],
             ],
             [
                 'label' => 'Tim',
                 'items' => [
                     ['label' => 'Shift Kasir', 'route' => 'shift.index', 'icon' => 'clock', 'active' => 'shift.*'],
-                    ['label' => 'Presensi Piket', 'route' => 'piket.index', 'icon' => 'users', 'active' => 'piket.*'],
+                    ['label' => 'Presensi Piket', 'route' => 'piket.index', 'icon' => 'users', 'active' => 'piket.*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
                 ],
             ],
             [
@@ -90,18 +90,46 @@
         ];
     @endphp
 
-    <div x-data="{ sidebarOpen: false, userMenu: false }" class="min-h-screen {{ $isPosLayout ? 'lg:h-screen lg:min-h-0 lg:overflow-hidden' : '' }}">
-        <!-- Mobile overlay -->
+    <div x-data="{
+        sidebarOpen: false,
+        userMenu: false,
+        posFocus: localStorage.getItem('bestco_pos_focus') === 'true',
+        isFullscreen: false,
+        togglePosFocus() {
+            this.posFocus = !this.posFocus;
+            localStorage.setItem('bestco_pos_focus', this.posFocus);
+        },
+        toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().then(() => {
+                    this.isFullscreen = true;
+                }).catch(() => {});
+            } else {
+                document.exitFullscreen().then(() => {
+                    this.isFullscreen = false;
+                }).catch(() => {});
+            }
+        },
+        init() {
+            document.addEventListener('fullscreenchange', () => {
+                this.isFullscreen = !!document.fullscreenElement;
+            });
+        }
+    }" class="min-h-screen {{ $isPosLayout ? 'lg:h-screen lg:min-h-0 lg:overflow-hidden' : '' }}">
+        <!-- Mobile & Focus drawer overlay -->
         <div x-show="sidebarOpen" x-cloak @click="sidebarOpen = false"
-            class="fixed inset-0 z-40 bg-slate-900/50 lg:hidden"></div>
+            class="fixed inset-0 z-40 bg-slate-900/50"
+            :class="(posFocus && {{ $isPosLayout ? 'true' : 'false' }}) ? '' : 'lg:hidden'"></div>
 
         <!-- Sidebar -->
-        <aside class="app-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col transition-transform duration-200 ease-out lg:z-30 lg:translate-x-0"
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+        <aside class="app-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col transition-transform duration-200 ease-out lg:z-30"
+            :class="(posFocus && {{ $isPosLayout ? 'true' : 'false' }})
+                ? (sidebarOpen ? 'translate-x-0 shadow-2xl z-50' : '-translate-x-full')
+                : (sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0')">
 
             <!-- Brand -->
             <div class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-4">
-                <a href="{{ $user ? route('dashboard') : route('login') }}" class="flex items-center gap-3">
+                <a href="{{ $user ? ($user->hasRole('piket_siswa') ? route('pos.terminal') : route('dashboard')) : route('login') }}" class="flex items-center gap-3">
                     <img src="{{ asset('img/best.png') }}" alt="BESTCO"
                         class="h-10 w-20 shrink-0 object-cover object-center">
                     <div class="leading-tight">
@@ -143,6 +171,7 @@
                     @endforeach
                 </nav>
 
+                @unless($isPosLayout)
                 <!-- Shift status -->
                 <div class="mx-3 mb-3 rounded-md border border-slate-200 bg-slate-50 p-3">
                     <div class="flex items-center justify-between gap-2">
@@ -170,21 +199,20 @@
                         </a>
                     @endif
                 </div>
+                @endunless
             @endif
-
-            <!-- Footer -->
-            <div class="shrink-0 border-t border-slate-200 px-4 py-3">
-                <p class="text-[11px] text-slate-500">BESTCO v1.0</p>
-            </div>
         </aside>
 
         <!-- Main column -->
-        <div class="flex min-h-screen flex-col lg:pl-64 {{ $isPosLayout ? 'lg:h-screen lg:min-h-0' : '' }}">
+        <div class="flex min-h-screen flex-col transition-all duration-200 ease-out {{ $isPosLayout ? 'lg:h-screen lg:min-h-0' : '' }}"
+            :class="(posFocus && {{ $isPosLayout ? 'true' : 'false' }}) ? 'lg:pl-0' : 'lg:pl-64'">
             <!-- Top bar -->
             <header class="app-topbar">
-                <div class="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+                <div class="mx-auto flex h-16 w-full max-w-[1700px] items-center gap-3 px-4 sm:px-6 lg:px-8">
                     <button type="button" @click="sidebarOpen = true"
-                        class="flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-50 lg:hidden">
+                        class="h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-50"
+                        :class="(posFocus && {{ $isPosLayout ? 'true' : 'false' }}) ? 'flex' : 'flex lg:hidden'"
+                        title="Buka menu navigasi">
                         <x-icon name="menu" class="h-5 w-5" />
                     </button>
 
@@ -195,7 +223,31 @@
                         <span class="truncate font-semibold text-slate-800">{{ $pageLabel }}</span>
                     </div>
 
-                    <div class="ml-auto flex items-center gap-2 sm:gap-4">
+                    <div class="ml-auto flex items-center gap-2 sm:gap-3">
+                        @if($isPosLayout)
+                            <!-- Tombol Mode Bersih / Fokus Kasir (1 Tombol Toggle) -->
+                            <button type="button" @click="togglePosFocus()"
+                                class="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition"
+                                :class="posFocus ? 'border-brand-600 bg-brand-50 text-brand-700 shadow-sm' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'"
+                                :title="posFocus ? 'Kembali ke tampilan standar' : 'Aktifkan mode fokus / tampilan bersih kasir'">
+                                <x-icon name="focus" class="h-4 w-4" />
+                                <span class="hidden sm:inline" x-text="posFocus ? 'Mode Standar' : 'Mode Bersih'"></span>
+                            </button>
+
+                            <!-- Tombol Fullscreen Browser -->
+                            <button type="button" @click="toggleFullscreen()"
+                                class="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-50"
+                                :title="isFullscreen ? 'Keluar layar penuh' : 'Layar penuh (Fullscreen)'">
+                                <span x-show="!isFullscreen">
+                                    <x-icon name="fullscreen" class="h-4 w-4" />
+                                </span>
+                                <span x-show="isFullscreen" x-cloak>
+                                    <x-icon name="minimize" class="h-4 w-4" />
+                                </span>
+                            </button>
+
+                            <div class="hidden h-4 w-px bg-slate-200 sm:block"></div>
+                        @endif
                         @if($user)
                             <a href="{{ route('shift.index') }}"
                                 class="hidden items-center gap-1.5 text-[11px] font-medium transition sm:inline-flex {{ $currentShift ? 'text-emerald-700 hover:text-emerald-800' : 'text-amber-700 hover:text-amber-800' }}">
@@ -226,10 +278,17 @@
                                         <p class="mt-0.5 text-[11px] text-slate-500">{{ $user->role_type->label() }} &bull; {{ $user->username }}</p>
                                     </div>
                                     <div class="p-1">
-                                        <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
-                                            <x-icon name="dashboard" class="h-4 w-4 text-slate-400" />
-                                            Dashboard
-                                        </a>
+                                        @if($user->hasRole('piket_siswa'))
+                                            <a href="{{ route('pos.terminal') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                                                <x-icon name="pos" class="h-4 w-4 text-slate-400" />
+                                                Kasir
+                                            </a>
+                                        @else
+                                            <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                                                <x-icon name="dashboard" class="h-4 w-4 text-slate-400" />
+                                                Dashboard
+                                            </a>
+                                        @endif
                                         @if($user->hasRole('superadmin'))
                                             <a href="{{ route('theme.index') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                                                 <x-icon name="palette" class="h-4 w-4 text-slate-400" />
@@ -258,8 +317,9 @@
             </header>
 
             <!-- Main content -->
-            <main class="app-main mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8
-                {{ $isPosLayout ? 'lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:py-5' : '' }}">
+            <main class="app-main mx-auto w-full max-w-[1700px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8
+                {{ $isPosLayout ? 'lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:py-4' : '' }}"
+                :class="(posFocus && {{ $isPosLayout ? 'true' : 'false' }}) ? 'lg:px-4 lg:py-3.5' : ''">
                 @if(session('success'))
                     <div x-data="{ show: true }" x-show="show" x-transition
                         class="alert alert-success mb-5 shrink-0">

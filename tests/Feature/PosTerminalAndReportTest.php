@@ -78,7 +78,7 @@ class PosTerminalAndReportTest extends TestCase
 
         $response = $this->actingAs($this->student)->get('/pos');
         $response->assertStatus(200);
-        $response->assertSee('Pilih barang atau layanan, lalu selesaikan pembayaran.');
+        $response->assertSee('Cari barang, barcode, atau layanan...');
         $response->assertSee('Keranjang');
     }
 
