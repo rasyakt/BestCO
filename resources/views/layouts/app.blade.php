@@ -6,17 +6,20 @@
     <meta name="theme-color" content="#111827">
     <title>{{ $title ?? 'BESTCO — Kasir & Persediaan' }}</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('img/best.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('img/best.png') }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <!-- Injeksi Tema Dinamis dari System Settings -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
+
+    <!-- Tema dinamis dimuat setelah CSS bawaan agar warnanya tidak tertimpa. -->
     <style>
         {!! app(\App\Services\Theme\DynamicThemeService::class)->getCssVariables() !!}
     </style>
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @livewireStyles
 </head>
 <body class="min-h-full font-sans text-slate-800 antialiased">
     @php
@@ -28,6 +31,10 @@
         $initials = $user
             ? collect(explode(' ', $user->name))->filter()->take(2)->map(fn ($word) => mb_strtoupper(mb_substr($word, 0, 1)))->implode('')
             : 'BC';
+
+        // Halaman kasir memakai tata letak khusus: tinggi layar penuh,
+        // hanya daftar produk & isi keranjang yang bergulir sendiri.
+        $isPosLayout = request()->routeIs('pos.terminal');
 
         $pageLabel = match (true) {
             request()->routeIs('dashboard') => 'Dashboard',
@@ -83,7 +90,7 @@
         ];
     @endphp
 
-    <div x-data="{ sidebarOpen: false, userMenu: false }" class="min-h-screen">
+    <div x-data="{ sidebarOpen: false, userMenu: false }" class="min-h-screen {{ $isPosLayout ? 'lg:h-screen lg:min-h-0 lg:overflow-hidden' : '' }}">
         <!-- Mobile overlay -->
         <div x-show="sidebarOpen" x-cloak @click="sidebarOpen = false"
             class="fixed inset-0 z-40 bg-slate-900/50 lg:hidden"></div>
@@ -93,19 +100,18 @@
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
 
             <!-- Brand -->
-            <div class="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4">
+            <div class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-4">
                 <a href="{{ $user ? route('dashboard') : route('login') }}" class="flex items-center gap-3">
-                    <span class="flex h-9 w-9 items-center justify-center rounded-md bg-white text-xs font-bold text-slate-900">
-                        BC
-                    </span>
+                    <img src="{{ asset('img/best.png') }}" alt="BESTCO"
+                        class="h-10 w-20 shrink-0 object-cover object-center">
                     <div class="leading-tight">
-                        <span class="block text-sm font-semibold tracking-wide text-white">BESTCO</span>
-                        <span class="mt-0.5 block text-[11px] text-slate-400">Teaching Factory MPLB</span>
+                        <span class="block text-sm font-semibold tracking-wide text-slate-900">BESTCO</span>
+                        <span class="mt-0.5 block text-[11px] text-slate-500">Teaching Factory MPLB</span>
                     </div>
                 </a>
 
                 <button type="button" @click="sidebarOpen = false"
-                    class="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white lg:hidden">
+                    class="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 lg:hidden">
                     <x-icon name="x" class="h-5 w-5" />
                 </button>
             </div>
@@ -127,7 +133,7 @@
                                         <a href="{{ route($item['route']) }}"
                                             class="sidebar-link {{ $isActive ? 'sidebar-link-active' : '' }}">
                                             <x-icon :name="$item['icon']"
-                                                class="h-[17px] w-[17px] shrink-0 {{ $isActive ? 'text-slate-200' : 'text-slate-500' }}" />
+                                                class="h-[17px] w-[17px] shrink-0 {{ $isActive ? 'text-brand-600' : 'text-slate-400' }}" />
                                             <span>{{ $item['label'] }}</span>
                                         </a>
                                     @endforeach
@@ -138,10 +144,10 @@
                 </nav>
 
                 <!-- Shift status -->
-                <div class="mx-3 mb-3 rounded-md border border-white/10 bg-white/5 p-3">
+                <div class="mx-3 mb-3 rounded-md border border-slate-200 bg-slate-50 p-3">
                     <div class="flex items-center justify-between gap-2">
-                        <span class="text-[11px] font-medium text-slate-400">Shift kasir</span>
-                        <span class="text-[11px] font-semibold {{ $currentShift ? 'text-emerald-400' : 'text-amber-400' }}">
+                        <span class="text-[11px] font-medium text-slate-500">Shift kasir</span>
+                        <span class="text-[11px] font-semibold {{ $currentShift ? 'text-emerald-700' : 'text-amber-700' }}">
                             {{ $currentShift ? 'Aktif' : 'Tutup' }}
                         </span>
                     </div>
@@ -149,16 +155,16 @@
                     @if($currentShift)
                         <div class="mt-2 flex items-center justify-between gap-2">
                             <div class="min-w-0">
-                                <p class="truncate font-mono text-xs font-medium text-white">{{ $currentShift->shift_code }}</p>
-                                <p class="mt-0.5 text-[11px] text-slate-400">Kas Rp {{ number_format((float) $currentShift->system_expected_cash, 0, ',', '.') }}</p>
+                                <p class="truncate font-mono text-xs font-medium text-slate-900">{{ $currentShift->shift_code }}</p>
+                                <p class="mt-0.5 text-[11px] text-slate-500">Kas Rp {{ number_format((float) $currentShift->system_expected_cash, 0, ',', '.') }}</p>
                             </div>
-                            <a href="{{ route('shift.index') }}" class="flex h-7 w-7 shrink-0 items-center justify-center rounded text-slate-400 transition hover:bg-white/10 hover:text-white" title="Lihat shift">
+                            <a href="{{ route('shift.index') }}" class="flex h-7 w-7 shrink-0 items-center justify-center rounded text-slate-400 transition hover:bg-white hover:text-slate-900" title="Lihat shift">
                                 <x-icon name="arrow-right" class="h-4 w-4" />
                             </a>
                         </div>
                     @else
-                        <p class="mt-1.5 text-[11px] leading-relaxed text-slate-400">Belum dibuka hari ini.</p>
-                        <a href="{{ route('shift.index') }}" class="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-200 transition hover:text-white">
+                        <p class="mt-1.5 text-[11px] leading-relaxed text-slate-500">Belum dibuka hari ini.</p>
+                        <a href="{{ route('shift.index') }}" class="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 transition hover:text-brand-800">
                             Buka shift
                             <x-icon name="arrow-right" class="h-3 w-3" />
                         </a>
@@ -167,13 +173,13 @@
             @endif
 
             <!-- Footer -->
-            <div class="shrink-0 border-t border-white/10 px-4 py-3">
+            <div class="shrink-0 border-t border-slate-200 px-4 py-3">
                 <p class="text-[11px] text-slate-500">BESTCO v1.0</p>
             </div>
         </aside>
 
         <!-- Main column -->
-        <div class="flex min-h-screen flex-col lg:pl-64">
+        <div class="flex min-h-screen flex-col lg:pl-64 {{ $isPosLayout ? 'lg:h-screen lg:min-h-0' : '' }}">
             <!-- Top bar -->
             <header class="app-topbar">
                 <div class="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
@@ -252,10 +258,11 @@
             </header>
 
             <!-- Main content -->
-            <main class="app-main mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <main class="app-main mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8
+                {{ $isPosLayout ? 'lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:py-5' : '' }}">
                 @if(session('success'))
                     <div x-data="{ show: true }" x-show="show" x-transition
-                        class="alert alert-success mb-5">
+                        class="alert alert-success mb-5 shrink-0">
                         <x-icon name="check-circle" class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                         <span class="flex-1 leading-relaxed">{{ session('success') }}</span>
                         <button type="button" @click="show = false" class="rounded p-0.5 text-emerald-600/70 transition hover:bg-emerald-100 hover:text-emerald-800">
@@ -266,7 +273,7 @@
 
                 @if(session('error') || $errors->has('error'))
                     <div x-data="{ show: true }" x-show="show" x-transition
-                        class="alert alert-danger mb-5">
+                        class="alert alert-danger mb-5 shrink-0">
                         <x-icon name="x-circle" class="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
                         <span class="flex-1 leading-relaxed">{{ session('error') ?? $errors->first('error') }}</span>
                         <button type="button" @click="show = false" class="rounded p-0.5 text-rose-600/70 transition hover:bg-rose-100 hover:text-rose-800">
@@ -275,18 +282,20 @@
                     </div>
                 @endif
 
-                <div class="page-enter">
+                <div class="page-enter {{ $isPosLayout ? 'lg:flex lg:min-h-0 lg:flex-1 lg:flex-col' : '' }}">
                     @yield('content')
                     {{ $slot ?? '' }}
                 </div>
             </main>
 
+            @unless($isPosLayout)
             <footer class="no-print border-t border-slate-200 px-4 py-4 sm:px-6 lg:px-8">
                 <div class="mx-auto flex max-w-[1600px] flex-col items-center justify-between gap-1 text-[11px] text-slate-400 sm:flex-row">
                     <span>&copy; {{ now()->year }} BESTCO — Teaching Factory MPLB</span>
                     <span>Sistem kasir dan persediaan sekolah</span>
                 </div>
             </footer>
+            @endunless
         </div>
     </div>
 

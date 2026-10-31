@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\Theme\ColorPaletteGenerator;
 use App\Services\Theme\DynamicThemeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -79,7 +81,8 @@ final class ThemeController extends Controller
     ];
 
     public function __construct(
-        private readonly DynamicThemeService $themeService
+        private readonly DynamicThemeService $themeService,
+        private readonly ColorPaletteGenerator $paletteGenerator,
     ) {}
 
     public function index(): View
@@ -87,18 +90,70 @@ final class ThemeController extends Controller
         $currentPalette = $this->themeService->getPalette();
         $presets = self::PRESETS;
 
-        return view('settings.theme', compact('currentPalette', 'presets'));
+        $isCustomPalette = ! collect($presets)->contains(
+            fn (array $preset): bool => collect($preset['palette'])->every(
+                fn (string $value, string $token): bool => ($currentPalette[$token] ?? null) === $value,
+            ),
+        );
+
+        $customColor = $isCustomPalette
+            ? ($this->themeService->getCustomBaseColor() ?? $currentPalette['--color-primary-600'] ?? '#2563eb')
+            : ($currentPalette['--color-primary-600'] ?? '#2563eb');
+
+        return view('settings.theme', compact(
+            'currentPalette',
+            'presets',
+            'customColor',
+            'isCustomPalette',
+        ));
     }
 
     public function applyPreset(Request $request): RedirectResponse
     {
         $presetKey = $request->input('preset_key');
+        $presetKey = is_string($presetKey) ? $presetKey : '';
+
         if (isset(self::PRESETS[$presetKey])) {
             $this->themeService->updatePalette(self::PRESETS[$presetKey]['palette']);
+            $this->themeService->clearCustomBaseColor();
+
             return back()->with('success', 'Tema ' . self::PRESETS[$presetKey]['name'] . ' berhasil diterapkan!');
         }
 
         return back()->withErrors(['preset_key' => 'Preset tidak ditemukan.']);
+    }
+
+    public function preview(Request $request): JsonResponse
+    {
+        $color = $request->query('color');
+        $color = is_string($color) ? trim($color) : '';
+
+        if (! $this->isValidColor($color)) {
+            return response()->json(['message' => 'Kode warna tidak valid.'], 422);
+        }
+
+        return response()->json([
+            'color' => $this->paletteGenerator->normalize($color),
+            'palette' => $this->paletteGenerator->generate($color),
+        ]);
+    }
+
+    public function applyCustom(Request $request): RedirectResponse
+    {
+        $color = $request->input('color');
+        $color = is_string($color) ? trim($color) : '';
+
+        if (! $this->isValidColor($color)) {
+            return back()->with('error', 'Kode warna tidak valid. Gunakan format #RRGGBB.');
+        }
+
+        $this->themeService->updatePalette($this->paletteGenerator->generate($color));
+        $this->themeService->updateCustomBaseColor($this->paletteGenerator->normalize($color));
+
+        return back()->with(
+            'success',
+            'Warna ' . strtoupper($this->paletteGenerator->normalize($color)) . ' berhasil diterapkan.',
+        );
     }
 
     public function reset(): RedirectResponse
@@ -106,6 +161,11 @@ final class ThemeController extends Controller
         $this->themeService->resetPalette();
 
         return back()->with('success', 'Tema berhasil direset ke Enterprise Blue default.');
+    }
+
+    private function isValidColor(string $color): bool
+    {
+        return preg_match('/^#?(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $color) === 1;
     }
 }
 

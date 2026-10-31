@@ -1,4 +1,4 @@
-<div class="space-y-5"
+<div class="flex h-full min-h-0 flex-col gap-4"
     x-data="{
         initShortcuts() {
             window.addEventListener('keydown', (e) => {
@@ -26,7 +26,7 @@
     x-init="initShortcuts()">
 
     <!-- Header -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div class="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
             <h1 class="page-title">Kasir</h1>
             <p class="page-subtitle">Pilih barang atau layanan, lalu selesaikan pembayaran.</p>
@@ -50,7 +50,7 @@
 
     <!-- Feedback -->
     @if($feedbackMessage)
-        <div class="alert {{ $feedbackType === 'success' ? 'alert-success' : 'alert-danger' }}">
+        <div class="alert shrink-0 {{ $feedbackType === 'success' ? 'alert-success' : 'alert-danger' }}">
             <x-icon :name="$feedbackType === 'success' ? 'check-circle' : 'x-circle'" class="mt-0.5 h-4 w-4 shrink-0" />
             <span class="flex-1 leading-relaxed">{{ $feedbackMessage }}</span>
             <button wire:click="$set('feedbackMessage', null)" class="rounded p-0.5 opacity-60 transition hover:bg-black/5 hover:opacity-100">
@@ -59,10 +59,10 @@
         </div>
     @endif
 
-    <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
+    <div class="grid min-h-0 flex-1 grid-cols-1 items-stretch gap-5 lg:grid-cols-12">
         <!-- Katalog -->
-        <div class="space-y-4 lg:col-span-8">
-            <div class="card p-4">
+        <div class="flex min-h-0 flex-col gap-4 lg:col-span-8">
+            <div class="card shrink-0 p-4">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <div class="search-field flex-1">
                         <x-icon name="search" />
@@ -103,8 +103,9 @@
                 </div>
             </div>
 
-            <!-- Produk -->
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            <!-- Produk (daftar ini yang bergulir sendiri) -->
+            <div class="min-h-0 flex-1 overflow-y-auto pr-1 lg:pb-1">
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
                 @foreach($retailProducts as $p)
                     @php $isLow = (float) $p->current_stock <= 5; @endphp
                     <button type="button" wire:click="addToCart('RETAIL', {{ $p->id }})"
@@ -152,23 +153,24 @@
                         </div>
                     </button>
                 @endforeach
-            </div>
-
-            @if($retailProducts->isEmpty() && $services->isEmpty())
-                <div class="card">
-                    <div class="empty-state">
-                        <span class="empty-state-icon"><x-icon name="search" class="h-5 w-5" /></span>
-                        <p class="text-sm font-semibold text-slate-700">Barang tidak ditemukan</p>
-                        <p class="mt-1 max-w-xs text-xs leading-relaxed text-slate-400">Coba kata kunci lain atau ganti kategori.</p>
-                        <button wire:click="$set('searchQuery', '')" class="btn btn-secondary btn-sm mt-4">Hapus pencarian</button>
-                    </div>
                 </div>
-            @endif
+
+                @if($retailProducts->isEmpty() && $services->isEmpty())
+                    <div class="card">
+                        <div class="empty-state">
+                            <span class="empty-state-icon"><x-icon name="search" class="h-5 w-5" /></span>
+                            <p class="text-sm font-semibold text-slate-700">Barang tidak ditemukan</p>
+                            <p class="mt-1 max-w-xs text-xs leading-relaxed text-slate-400">Coba kata kunci lain atau ganti kategori.</p>
+                            <button wire:click="$set('searchQuery', '')" class="btn btn-secondary btn-sm mt-4">Hapus pencarian</button>
+                        </div>
+                    </div>
+                @endif
+            </div>
         </div>
 
         <!-- Keranjang -->
-        <div class="lg:col-span-4">
-            <div class="card flex flex-col overflow-hidden lg:sticky lg:top-[84px] lg:max-h-[calc(100vh-108px)]">
+        <div class="flex min-h-0 flex-col lg:col-span-4">
+            <div class="card flex min-h-0 flex-col overflow-hidden lg:h-full">
                 <div class="shrink-0 border-b border-slate-100 p-4">
                     <div class="flex items-center justify-between">
                         <div>
@@ -188,7 +190,7 @@
                     </div>
                 </div>
 
-                <div class="flex-1 space-y-2 overflow-y-auto p-3">
+                <div class="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
                     @forelse($cart as $index => $item)
                         <div class="rounded-md border border-slate-200 p-3">
                             <div class="flex items-start justify-between gap-2">

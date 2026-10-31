@@ -45,7 +45,10 @@ final class DynamicThemeService
     public function getCssVariables(): string
     {
         $palette = $this->getPalette();
-        $css = ":root {\n";
+
+        // html:root has a higher specificity than Tailwind's :root defaults,
+        // so the saved palette keeps winning even in Vite dev mode.
+        $css = "html:root {\n";
         foreach ($palette as $var => $value) {
             $css .= "    {$var}: {$value};\n";
         }
@@ -68,9 +71,41 @@ final class DynamicThemeService
         Cache::forget('bestco.theme_css_vars');
     }
 
+    public function getCustomBaseColor(): ?string
+    {
+        try {
+            $setting = SystemSetting::where('setting_key', 'ui_theme_custom_base')->first();
+        } catch (QueryException) {
+            return null;
+        }
+
+        $value = $setting?->setting_value;
+
+        return is_array($value) && is_string($value['color'] ?? null)
+            ? $value['color']
+            : null;
+    }
+
+    public function updateCustomBaseColor(string $color): void
+    {
+        SystemSetting::updateOrCreate(
+            ['setting_key' => 'ui_theme_custom_base'],
+            [
+                'setting_group' => 'theme',
+                'setting_value' => ['color' => $color],
+            ]
+        );
+    }
+
+    public function clearCustomBaseColor(): void
+    {
+        SystemSetting::where('setting_key', 'ui_theme_custom_base')->delete();
+    }
+
     public function resetPalette(): void
     {
         SystemSetting::where('setting_key', 'ui_theme_palette')->delete();
+        $this->clearCustomBaseColor();
         Cache::forget('bestco.theme_css_vars');
     }
 }

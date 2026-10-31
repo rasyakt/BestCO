@@ -223,6 +223,58 @@ class NewModulesFeatureTest extends TestCase
 
         $resetPalette = $themeService->getPalette();
         $this->assertSame('#3b82f6', $resetPalette['--color-primary-500']);
+        $this->assertNull($themeService->getCustomBaseColor());
+    }
+
+    public function test_theme_custom_color_generates_full_palette(): void
+    {
+        $previewResponse = $this->actingAs($this->superadmin)
+            ->getJson('/settings/theme/preview?color=%23ff0000');
+
+        $previewResponse->assertOk();
+
+        $preview = $previewResponse->json();
+        $this->assertSame('#ff0000', $preview['color']);
+        $this->assertCount(11, $preview['palette']);
+        $this->assertArrayHasKey('--color-primary-600', $preview['palette']);
+        $this->assertMatchesRegularExpression('/^#[0-9a-f]{6}$/', $preview['palette']['--color-primary-600']);
+
+        $customResponse = $this->actingAs($this->superadmin)->post('/settings/theme/custom', [
+            'color' => '#ff0000',
+        ]);
+
+        $customResponse->assertSessionHas('success');
+
+        $themeService = app(DynamicThemeService::class);
+        $palette = $themeService->getPalette();
+        $this->assertCount(11, $palette);
+        $this->assertArrayHasKey('--color-primary-950', $palette);
+        $this->assertMatchesRegularExpression('/^#[0-9a-f]{6}$/', $palette['--color-primary-700']);
+        $this->assertSame('#ff0000', $themeService->getCustomBaseColor());
+
+        $invalidResponse = $this->actingAs($this->superadmin)->post('/settings/theme/custom', [
+            'color' => 'merah',
+        ]);
+
+        $invalidResponse->assertSessionHas('error');
+    }
+
+    public function test_theme_css_is_rendered_after_vite_assets(): void
+    {
+        $response = $this->actingAs($this->superadmin)->get('/settings/theme');
+
+        $response->assertOk();
+        $response->assertSee('Warna sendiri');
+        $response->assertSee('Ambil warna');
+        $response->assertSee('Terapkan warna');
+
+        $html = $response->getContent();
+        $assetPosition = strpos($html, 'build/assets/');
+        $themePosition = strpos($html, 'html:root');
+
+        $this->assertNotFalse($assetPosition);
+        $this->assertNotFalse($themePosition);
+        $this->assertGreaterThan($assetPosition, $themePosition);
     }
 
     public function test_user_can_view_piket_attendance_and_roster(): void

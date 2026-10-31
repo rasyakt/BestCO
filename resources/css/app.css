@@ -1,7 +1,6 @@
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
@@ -104,15 +103,15 @@
 @layer components {
     /* --- Layout shell ------------------------------------------------------ */
     .app-sidebar {
-        background-color: #111827;
+        @apply border-r border-slate-200 bg-white;
     }
 
     .sidebar-link {
-        @apply flex items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium text-slate-400 transition-colors duration-150 hover:bg-white/5 hover:text-slate-100;
+        @apply flex items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900;
     }
 
     .sidebar-link-active {
-        @apply bg-white/10 font-semibold text-white;
+        @apply bg-brand-50 font-semibold text-brand-700;
     }
 
     .app-topbar {
@@ -471,14 +470,16 @@
     }
 }
 
+/* Hanya animate opacity. Jangan pakai transform di sini:
+   transform yang tersisa setelah animasi akan menjadikan .page-enter
+   sebagai containing block, sehingga .modal-backdrop (position: fixed)
+   terkunci di area konten, bukan menutupi seluruh layar. */
 @keyframes page-in {
     from {
         opacity: 0;
-        transform: translateY(2px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 

@@ -89,36 +89,37 @@
             </div>
 
             <div class="lg:col-span-2">
-                <div class="h-full rounded-md bg-slate-900 p-5 text-white">
+                <div class="h-full rounded-md border border-slate-200 bg-white p-5">
                     <div class="flex items-center gap-2.5">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-md bg-white text-[10px] font-bold text-slate-900">BC</span>
+                        <img src="{{ asset('img/best.png') }}" alt="BESTCO"
+                            class="h-9 w-20 shrink-0 object-cover object-center">
                         <div>
-                            <p class="text-[11px] font-semibold">BESTCO</p>
-                            <p class="text-[10px] text-slate-400">Teaching Factory MPLB</p>
+                            <p class="text-[11px] font-semibold text-slate-900">BESTCO</p>
+                            <p class="text-[10px] text-slate-500">Teaching Factory MPLB</p>
                         </div>
                     </div>
 
                     <div class="mt-5 space-y-1">
-                        <div class="flex items-center gap-2 rounded bg-white/10 px-2.5 py-2 text-[10px] font-medium">
-                            <x-icon name="dashboard" class="h-3.5 w-3.5 text-slate-300" />
+                        <div class="flex items-center gap-2 rounded bg-brand-50 px-2.5 py-2 text-[10px] font-semibold text-brand-700">
+                            <x-icon name="dashboard" class="h-3.5 w-3.5" />
                             Dashboard
                         </div>
-                        <div class="flex items-center gap-2 rounded px-2.5 py-2 text-[10px] text-slate-400">
-                            <x-icon name="pos" class="h-3.5 w-3.5" />
+                        <div class="flex items-center gap-2 rounded px-2.5 py-2 text-[10px] text-slate-600">
+                            <x-icon name="pos" class="h-3.5 w-3.5 text-slate-400" />
                             Kasir
                         </div>
-                        <div class="flex items-center gap-2 rounded px-2.5 py-2 text-[10px] text-slate-400">
-                            <x-icon name="package" class="h-3.5 w-3.5" />
+                        <div class="flex items-center gap-2 rounded px-2.5 py-2 text-[10px] text-slate-600">
+                            <x-icon name="package" class="h-3.5 w-3.5 text-slate-400" />
                             Persediaan
                         </div>
                     </div>
 
-                    <div class="mt-5 rounded border border-white/10 bg-white/5 p-3">
+                    <div class="mt-5 rounded border border-slate-200 bg-slate-50 p-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-[10px] text-slate-400">Shift kasir</span>
-                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                            <span class="text-[10px] text-slate-500">Shift kasir</span>
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                         </div>
-                        <p class="mt-1.5 font-mono text-[11px] font-medium">SHIFT-A-2026</p>
+                        <p class="mt-1.5 font-mono text-[11px] font-medium text-slate-800">SHIFT-A-2026</p>
                     </div>
                 </div>
             </div>
@@ -181,9 +182,221 @@
         </div>
     </div>
 
+    <!-- Warna sendiri -->
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Warna sendiri</h2>
+                <p class="card-subtitle">Pilih satu warna, variasi terang dan gelap dibuat otomatis.</p>
+            </div>
+            @if($isCustomPalette)
+                <span class="badge badge-success">Aktif</span>
+            @endif
+        </div>
+
+        <form id="custom-color-form" method="POST" action="{{ route('theme.custom') }}" class="space-y-5 p-5">
+            @csrf
+
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div class="shrink-0">
+                    <label for="custom-color" class="form-label">Warna dasar</label>
+                    <input type="color" id="custom-color" name="color" value="{{ $customColor }}" required
+                        class="h-10 w-20 cursor-pointer rounded-md border border-slate-300 bg-white p-1">
+                </div>
+
+                <div class="flex-1">
+                    <label for="custom-hex" class="form-label">Kode warna</label>
+                    <input type="text" id="custom-hex" value="{{ strtoupper($customColor) }}" maxlength="7"
+                        spellcheck="false" autocomplete="off" required
+                        class="input font-mono uppercase" placeholder="#2563EB">
+                    <p class="form-hint">Format #RRGGBB. Bisa diketik atau diambil dari layar.</p>
+                </div>
+
+                <div class="sm:pt-[26px]">
+                    <button type="button" id="eyedropper-button" class="btn btn-secondary w-full sm:w-auto">
+                        <x-icon name="eyedropper" class="h-4 w-4" />
+                        Ambil warna
+                    </button>
+                </div>
+            </div>
+
+            <p id="eyedropper-status" role="status" class="hidden text-[11px] text-amber-700"></p>
+
+            <div>
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-xs font-medium text-slate-700">Variasi warna</p>
+                    <span class="text-[11px] text-slate-400">50–950</span>
+                </div>
+                <div id="custom-palette-preview" class="mt-2 grid grid-cols-6 gap-1.5 sm:grid-cols-11">
+                    @foreach(['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'] as $shade)
+                        @php
+                            $token = '--color-primary-' . $shade;
+                            $value = $currentPalette[$token] ?? '#e2e8f0';
+                        @endphp
+                        <div data-shade="{{ $token }}" class="h-9 rounded border border-slate-200"
+                            style="background-color: {{ $value }};" title="{{ $shade }} {{ $value }}"></div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                <p class="text-[11px] text-slate-500">Berlaku untuk tombol, menu, dan tabel.</p>
+                <button type="submit" class="btn btn-primary">Terapkan warna</button>
+            </div>
+        </form>
+    </div>
+
     <div class="alert alert-info">
         <x-icon name="info" class="mt-0.5 h-4 w-4 shrink-0" />
         <span class="leading-relaxed">Warna berlaku di seluruh aplikasi, termasuk tombol, menu, dan tabel. Tidak perlu build ulang.</span>
     </div>
 </div>
+
+<script>
+    (() => {
+        const form = document.getElementById('custom-color-form');
+        const colorInput = document.getElementById('custom-color');
+        const hexInput = document.getElementById('custom-hex');
+        const preview = document.getElementById('custom-palette-preview');
+        const eyedropperButton = document.getElementById('eyedropper-button');
+        const eyedropperStatus = document.getElementById('eyedropper-status');
+
+        if (!form || !colorInput || !hexInput || !preview) {
+            return;
+        }
+
+        const previewUrl = @json(route('theme.preview'));
+
+        const normalizeHex = (value) => {
+            let hex = String(value ?? '').trim().replace(/^#/, '');
+
+            if (/^[0-9a-f]{3}$/i.test(hex)) {
+                hex = hex.split('').map((character) => character + character).join('');
+            }
+
+            return /^[0-9a-f]{6}$/i.test(hex) ? `#${hex.toLowerCase()}` : null;
+        };
+
+        const renderPalette = (palette) => {
+            preview.querySelectorAll('[data-shade]').forEach((element) => {
+                const value = palette[element.dataset.shade];
+
+                if (!value) {
+                    return;
+                }
+
+                element.style.backgroundColor = value;
+                element.title = `${element.dataset.shade.replace('--color-primary-', '')} ${value}`;
+            });
+        };
+
+        let previewTimer;
+        let previewRequestId = 0;
+
+        const requestPreview = (hex) => {
+            const requestId = ++previewRequestId;
+
+            window.clearTimeout(previewTimer);
+            previewTimer = window.setTimeout(async () => {
+                try {
+                    const response = await fetch(`${previewUrl}?color=${encodeURIComponent(hex)}`, {
+                        headers: { Accept: 'application/json' },
+                    });
+
+                    if (!response.ok || requestId !== previewRequestId) {
+                        return;
+                    }
+
+                    const data = await response.json();
+
+                    if (requestId === previewRequestId) {
+                        renderPalette(data.palette ?? {});
+                    }
+                } catch (error) {
+                    // Keep the last preview when the request fails.
+                }
+            }, 180);
+        };
+
+        const setColor = (value, syncText = true) => {
+            const hex = normalizeHex(value);
+
+            if (!hex) {
+                return false;
+            }
+
+            colorInput.value = hex;
+
+            if (syncText) {
+                hexInput.value = hex.toUpperCase();
+            }
+
+            hexInput.setCustomValidity('');
+            hexInput.classList.remove('border-rose-400');
+            requestPreview(hex);
+
+            return true;
+        };
+
+        colorInput.addEventListener('input', () => setColor(colorInput.value));
+
+        hexInput.addEventListener('input', () => {
+            const hex = normalizeHex(hexInput.value);
+
+            if (hex) {
+                colorInput.value = hex;
+                hexInput.setCustomValidity('');
+                hexInput.classList.remove('border-rose-400');
+                requestPreview(hex);
+
+                return;
+            }
+
+            hexInput.setCustomValidity('Gunakan format #RRGGBB.');
+            hexInput.classList.add('border-rose-400');
+        });
+
+        hexInput.addEventListener('blur', () => {
+            const hex = normalizeHex(hexInput.value);
+
+            if (hex) {
+                hexInput.value = hex.toUpperCase();
+            }
+        });
+
+        form.addEventListener('submit', (event) => {
+            const hex = normalizeHex(hexInput.value);
+
+            if (!hex) {
+                event.preventDefault();
+                hexInput.reportValidity();
+
+                return;
+            }
+
+            colorInput.value = hex;
+            hexInput.value = hex.toUpperCase();
+        });
+
+        if (eyedropperButton) {
+            if (!('EyeDropper' in window)) {
+                eyedropperButton.addEventListener('click', () => {
+                    eyedropperStatus.textContent = 'Eyedropper hanya tersedia di Chrome atau Edge terbaru.';
+                    eyedropperStatus.classList.remove('hidden');
+                });
+            } else {
+                eyedropperButton.addEventListener('click', async () => {
+                    eyedropperStatus.classList.add('hidden');
+
+                    try {
+                        const result = await new window.EyeDropper().open();
+                        setColor(result.sRGBHex);
+                    } catch (error) {
+                        // User cancelled the eyedropper.
+                    }
+                });
+            }
+        }
+    })();
+</script>
 @endsection

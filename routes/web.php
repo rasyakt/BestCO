@@ -60,6 +60,8 @@ Route::middleware('auth')->group(function (): void {
     // Kustomisasi Tema Dinamis
     Route::get('/settings/theme', [ThemeController::class, 'index'])->name('theme.index');
     Route::post('/settings/theme/preset', [ThemeController::class, 'applyPreset'])->name('theme.preset');
+    Route::get('/settings/theme/preview', [ThemeController::class, 'preview'])->name('theme.preview');
+    Route::post('/settings/theme/custom', [ThemeController::class, 'applyCustom'])->name('theme.custom');
     Route::post('/settings/theme/reset', [ThemeController::class, 'reset'])->name('theme.reset');
 });
 

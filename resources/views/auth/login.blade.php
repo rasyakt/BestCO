@@ -6,15 +6,19 @@
     <meta name="theme-color" content="#111827">
     <title>Masuk — BESTCO</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('img/best.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('img/best.png') }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Tema dinamis dimuat setelah CSS bawaan agar warnanya tidak tertimpa. -->
     <style>
         {!! app(\App\Services\Theme\DynamicThemeService::class)->getCssVariables() !!}
     </style>
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-full bg-slate-50 font-sans text-slate-800 antialiased">
     <div class="grid min-h-screen lg:grid-cols-[1fr_0.9fr]">
@@ -22,8 +26,9 @@
         <!-- Panel kiri -->
         <section class="hidden flex-col justify-between bg-slate-900 p-10 text-white lg:flex xl:p-14">
             <div class="flex items-center gap-3">
-                <span class="flex h-10 w-10 items-center justify-center rounded-md bg-white text-xs font-bold text-slate-900">
-                    BC
+                <span class="flex h-16 w-36 shrink-0 items-center justify-center rounded-md bg-white p-1">
+                    <img src="{{ asset('img/best.png') }}" alt="BESTCO"
+                        class="h-full w-full object-cover object-center">
                 </span>
                 <div class="leading-tight">
                     <span class="block text-sm font-semibold tracking-wide">BESTCO</span>
@@ -71,7 +76,10 @@
 
                 <!-- Brand mobile -->
                 <div class="mb-8 flex items-center gap-3 lg:hidden">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-md bg-slate-900 text-xs font-bold text-white">BC</span>
+                    <span class="flex h-14 w-28 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white p-1">
+                        <img src="{{ asset('img/best.png') }}" alt="BESTCO"
+                            class="h-full w-full object-cover object-center">
+                    </span>
                     <div class="leading-tight">
                         <span class="block text-sm font-semibold tracking-wide text-slate-900">BESTCO</span>
                         <span class="mt-0.5 block text-[11px] text-slate-400">Teaching Factory MPLB</span>
@@ -133,18 +141,25 @@
                     </summary>
                     <div class="mt-3 space-y-2 border-t border-slate-100 pt-3 text-[11px] text-slate-500">
                         <div class="flex items-center justify-between gap-3">
-                            <span>Siswa operator</span>
-                            <span class="chip">siswa.x1 / password</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-3">
-                            <span>Guru supervisor</span>
-                            <span class="chip">guru.dewi / password</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-3">
                             <span>Superadmin</span>
-                            <span class="chip">superadmin / password</span>
+                            <span class="chip">superadmin</span>
                         </div>
-                        <p class="pt-1 text-[10px] leading-relaxed text-slate-400">PIN guru default: <span class="font-mono font-medium text-slate-500">123456</span></p>
+                        <div class="flex items-center justify-between gap-3">
+                            <span>Admin</span>
+                            <span class="chip">admin</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span>Guru piket</span>
+                            <span class="chip">guru_piket_1</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span>Siswa piket</span>
+                            <span class="chip">siswa_X_1</span>
+                        </div>
+                        <p class="pt-1 text-[10px] leading-relaxed text-slate-400">
+                            Semua akun: password <span class="font-mono font-medium text-slate-500">password</span>.
+                            Bisa juga login pakai NIP/NISN. PIN guru: <span class="font-mono font-medium text-slate-500">123456</span>.
+                        </p>
                     </div>
                 </details>
 
