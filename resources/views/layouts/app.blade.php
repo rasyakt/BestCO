@@ -40,6 +40,7 @@
             request()->routeIs('dashboard') => 'Dashboard',
             request()->routeIs('pos.terminal') => 'Kasir',
             request()->routeIs('transactions.*') => 'Riwayat Transaksi',
+            request()->routeIs('inventory.inbound*') => 'Barang Masuk',
             request()->routeIs('inventory.index') => 'Persediaan',
             request()->routeIs('inventory.mutations') => 'Pindah Stok',
             request()->routeIs('inventory.spoilage') => 'Barang Rusak',
@@ -64,6 +65,7 @@
                 'label' => 'Persediaan',
                 'items' => [
                     ['label' => 'Persediaan', 'route' => 'inventory.index', 'icon' => 'package', 'active' => 'inventory.index', 'roles' => ['superadmin', 'admin', 'piket_guru']],
+                    ['label' => 'Barang Masuk', 'route' => 'inventory.inbound', 'icon' => 'download', 'active' => 'inventory.inbound*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
                     ['label' => 'Pindah Stok', 'route' => 'inventory.mutations', 'icon' => 'swap', 'active' => 'inventory.mutations', 'roles' => ['superadmin', 'admin', 'piket_guru']],
                     ['label' => 'Barang Rusak', 'route' => 'inventory.spoilage', 'icon' => 'spoilage', 'active' => 'inventory.spoilage', 'roles' => ['superadmin', 'admin', 'piket_guru']],
                 ],

@@ -9,6 +9,7 @@ use App\Http\Controllers\PiketAttendanceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SpoilageController;
+use App\Http\Controllers\StockInboundController;
 use App\Http\Controllers\StockMutationController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\TransactionController;
@@ -58,6 +59,10 @@ Route::middleware('auth')->group(function (): void {
     // Manajemen Dual-Inventory, Restock Pembelian, Mutasi Internal, & Spoilage
     Route::middleware('role:superadmin,admin,piket_guru')->group(function (): void {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::get('/inventory/inbound', [StockInboundController::class, 'index'])->name('inventory.inbound');
+        Route::post('/inventory/inbound', [StockInboundController::class, 'store'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.inbound.store');
         Route::post('/inventory/restock', [InventoryController::class, 'restock'])
             ->middleware('role:superadmin,admin')
             ->name('inventory.restock');

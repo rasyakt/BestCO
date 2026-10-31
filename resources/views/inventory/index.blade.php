@@ -6,6 +6,10 @@
         title="Persediaan"
         subtitle="Stok barang etalase dan bahan baku jasa.">
         <x-slot:actions>
+            <a href="{{ route('inventory.inbound') }}" class="btn btn-primary">
+                <x-icon name="download" class="h-4 w-4" />
+                Barang masuk (Multi-item)
+            </a>
             <a href="{{ route('inventory.mutations') }}" class="btn btn-secondary">
                 <x-icon name="swap" class="h-4 w-4" />
                 Pindah stok
@@ -15,9 +19,9 @@
                 Barang rusak
             </a>
             @if(auth()->user()?->hasAnyRole(['superadmin', 'admin']))
-                <button type="button" @click="showRestockModal = true" class="btn btn-primary">
+                <button type="button" @click="showRestockModal = true" class="btn btn-secondary">
                     <x-icon name="plus" class="h-4 w-4" />
-                    Tambah stok
+                    Tambah 1 barang
                 </button>
             @endif
         </x-slot:actions>
