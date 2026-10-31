@@ -205,6 +205,7 @@
             </div>
 
             <form method="POST" action="{{ route('inventory.restock') }}"
+                class="flex min-h-0 flex-1 flex-col"
                 x-data="{ qty: 1, price: 0, get total() { return (parseFloat(this.qty || 0) * parseFloat(this.price || 0)).toLocaleString('id-ID'); } }">
                 @csrf
                 <div class="modal-body">

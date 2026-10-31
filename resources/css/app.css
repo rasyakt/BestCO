@@ -376,25 +376,74 @@
 
     /* --- Modals ------------------------------------------------------------ */
     .modal-backdrop {
-        @apply fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/40 p-4;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow-y: auto;
+        background-color: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        padding: 1.5rem 1rem;
+    }
+
+    @media (min-width: 640px) {
+        .modal-backdrop {
+            padding: 2.5rem 1.5rem;
+        }
     }
 
     .modal-card {
-        @apply my-auto w-full overflow-hidden rounded-lg border border-slate-200 bg-white;
-        box-shadow: 0 20px 40px -20px rgba(15, 23, 42, 0.35);
-        animation: modal-in 150ms ease-out;
+        position: relative;
+        margin: auto;
+        width: 100%;
+        max-height: calc(100dvh - 3rem);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-radius: 1rem;
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        background-color: #ffffff;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+        animation: modal-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (min-width: 640px) {
+        .modal-card {
+            max-height: calc(100dvh - 5rem);
+            border-radius: 1.25rem;
+        }
     }
 
     .modal-header {
-        @apply flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+        background-color: #ffffff;
+        padding: 1.125rem 1.5rem;
     }
 
     .modal-body {
-        @apply space-y-4 px-5 py-5;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 1.25rem 1.5rem;
     }
 
     .modal-footer {
-        @apply flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4;
+        flex-shrink: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.625rem;
+        border-top: 1px solid #f1f5f9;
+        background-color: #f8fafc;
+        padding: 1rem 1.5rem;
     }
 
     /* --- Empty states ------------------------------------------------------ */
@@ -448,7 +497,9 @@
     }
 
     .page-enter {
-        animation: page-in 180ms ease-out both;
+        /* Jangan gunakan animation / transform / opacity animation dengan fill-mode di sini
+           agar tidak membentuk Stacking Context artifisial yang mengurung position: fixed (modal-backdrop). */
+        position: relative;
     }
 }
 
@@ -462,24 +513,11 @@
 @keyframes modal-in {
     from {
         opacity: 0;
-        transform: translateY(6px);
+        transform: scale(0.97) translateY(8px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Hanya animate opacity. Jangan pakai transform di sini:
-   transform yang tersisa setelah animasi akan menjadikan .page-enter
-   sebagai containing block, sehingga .modal-backdrop (position: fixed)
-   terkunci di area konten, bukan menutupi seluruh layar. */
-@keyframes page-in {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
+        transform: scale(1) translateY(0);
     }
 }
 

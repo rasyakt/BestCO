@@ -151,7 +151,7 @@
                 </button>
             </div>
 
-            <form method="POST" :action="'/transactions/' + voidTxId + '/void'">
+            <form method="POST" :action="'/transactions/' + voidTxId + '/void'" class="flex min-h-0 flex-1 flex-col">
                 @csrf
                 <div class="modal-body">
                     <div class="alert alert-warning">

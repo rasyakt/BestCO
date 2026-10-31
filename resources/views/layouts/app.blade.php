@@ -96,7 +96,7 @@
             class="fixed inset-0 z-40 bg-slate-900/50 lg:hidden"></div>
 
         <!-- Sidebar -->
-        <aside class="app-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col transition-transform duration-200 ease-out lg:translate-x-0"
+        <aside class="app-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col transition-transform duration-200 ease-out lg:z-30 lg:translate-x-0"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
 
             <!-- Brand -->

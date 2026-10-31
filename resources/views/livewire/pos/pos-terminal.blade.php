@@ -300,13 +300,13 @@
                         <h3 class="text-sm font-semibold text-slate-900">Pembayaran</h3>
                         <p class="mt-0.5 text-[11px] text-slate-500">{{ count($cart) }} item &bull; {{ $customerName }}</p>
                     </div>
-                    <button wire:click="$set('showPaymentModal', false)" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <button type="button" wire:click="$set('showPaymentModal', false)" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
                         <x-icon name="x" class="h-4 w-4" />
                     </button>
                 </div>
 
                 <div class="modal-body">
-                    <div class="rounded-md bg-slate-900 px-5 py-4 text-white">
+                    <div class="rounded-xl bg-slate-900 px-5 py-4 text-white shadow-sm">
                         <p class="text-[11px] text-slate-400">Total tagihan</p>
                         <p class="mt-1 text-3xl font-semibold tracking-tight num-tabular">Rp {{ number_format($this->grandTotal, 0, ',', '.') }}</p>
                     </div>
@@ -315,14 +315,14 @@
                         <label class="form-label">Metode pembayaran</label>
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button" wire:click="$set('paymentMethod', 'CASH')"
-                                class="flex items-center justify-center gap-2 rounded-md border px-3 py-3 text-xs font-semibold transition
-                                {{ $paymentMethod === 'CASH' ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">
+                                class="flex items-center justify-center gap-2 rounded-lg border px-3 py-3 text-xs font-semibold transition
+                                {{ $paymentMethod === 'CASH' ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">
                                 <x-icon name="cash" class="h-4 w-4" />
                                 Tunai
                             </button>
                             <button type="button" wire:click="$set('paymentMethod', 'QRIS')"
-                                class="flex items-center justify-center gap-2 rounded-md border px-3 py-3 text-xs font-semibold transition
-                                {{ $paymentMethod === 'QRIS' ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">
+                                class="flex items-center justify-center gap-2 rounded-lg border px-3 py-3 text-xs font-semibold transition
+                                {{ $paymentMethod === 'QRIS' ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-500' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">
                                 <x-icon name="qr" class="h-4 w-4" />
                                 QRIS
                             </button>
@@ -338,15 +338,15 @@
                             </div>
 
                             <div class="grid grid-cols-4 gap-1.5">
-                                <button type="button" wire:click="setQuickCash({{ (int) $this->grandTotal }})" class="rounded border border-slate-300 bg-white px-2 py-2 text-[10px] font-medium text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700">Uang pas</button>
-                                <button type="button" wire:click="setQuickCash(20000)" class="rounded border border-slate-300 bg-white px-2 py-2 text-[10px] font-medium text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700">20rb</button>
-                                <button type="button" wire:click="setQuickCash(50000)" class="rounded border border-slate-300 bg-white px-2 py-2 text-[10px] font-medium text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700">50rb</button>
-                                <button type="button" wire:click="setQuickCash(100000)" class="rounded border border-slate-300 bg-white px-2 py-2 text-[10px] font-medium text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700">100rb</button>
+                                <button type="button" wire:click="setQuickCash({{ (int) $this->grandTotal }})" class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-[10px] font-medium text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700">Uang pas</button>
+                                <button type="button" wire:click="setQuickCash(20000)" class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-[10px] font-medium text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700">20rb</button>
+                                <button type="button" wire:click="setQuickCash(50000)" class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-[10px] font-medium text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700">50rb</button>
+                                <button type="button" wire:click="setQuickCash(100000)" class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-[10px] font-medium text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700">100rb</button>
                             </div>
                         </div>
 
                         @php $change = (float) $amountPaid - $this->grandTotal; @endphp
-                        <div class="flex items-center justify-between rounded-md border px-4 py-3
+                        <div class="flex items-center justify-between rounded-xl border px-4 py-3
                             {{ $change >= 0 ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50' }}">
                             <span class="text-[11px] font-medium {{ $change >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
                                 {{ $change >= 0 ? 'Kembalian' : 'Kurang bayar' }}
@@ -356,8 +356,8 @@
                             </span>
                         </div>
                     @else
-                        <div class="rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-                            <span class="mx-auto flex h-16 w-16 items-center justify-center rounded-md bg-white text-slate-700 ring-1 ring-slate-200">
+                        <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+                            <span class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-white text-slate-700 ring-1 ring-slate-200">
                                 <x-icon name="qr" class="h-10 w-10" />
                             </span>
                             <p class="mt-3 text-xs font-semibold text-slate-700">Tunjukkan QRIS ke pembeli</p>
@@ -389,7 +389,7 @@
                         <h3 class="text-sm font-semibold text-slate-900">Catat barang rusak</h3>
                         <p class="mt-0.5 text-[11px] text-slate-500">Bahan yang terbuang saat produksi</p>
                     </div>
-                    <button wire:click="$set('showSpoilageModal', false)" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <button type="button" wire:click="$set('showSpoilageModal', false)" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
                         <x-icon name="x" class="h-4 w-4" />
                     </button>
                 </div>
@@ -460,7 +460,7 @@
                         <h3 class="text-sm font-semibold text-slate-900">Ambil bahan dari etalase</h3>
                         <p class="mt-0.5 text-[11px] text-slate-500">Pindahkan stok ke bahan baku jasa</p>
                     </div>
-                    <button wire:click="$set('showMutationModal', false)" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <button type="button" wire:click="$set('showMutationModal', false)" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
                         <x-icon name="x" class="h-4 w-4" />
                     </button>
                 </div>
@@ -523,13 +523,13 @@
                         <h3 class="text-sm font-semibold text-slate-900">Transaksi selesai</h3>
                         <p class="mt-0.5 font-mono text-[11px] text-slate-500">{{ $completedTransaction->invoice_number }}</p>
                     </div>
-                    <button wire:click="$set('completedTransactionId', null)" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <button type="button" wire:click="$set('completedTransactionId', null)" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
                         <x-icon name="x" class="h-4 w-4" />
                     </button>
                 </div>
 
                 <div class="modal-body">
-                    <div id="thermal-receipt" class="rounded border border-dashed border-slate-300 bg-white p-4 font-mono text-[10px] leading-relaxed text-slate-900">
+                    <div id="thermal-receipt" class="rounded-xl border border-dashed border-slate-300 bg-white p-4 font-mono text-[10px] leading-relaxed text-slate-900">
                         <div class="text-center">
                             <p class="text-[13px] font-bold tracking-[0.08em]">BESTCO</p>
                             <p class="text-[9px] text-slate-500">Teaching Factory MPLB</p>
