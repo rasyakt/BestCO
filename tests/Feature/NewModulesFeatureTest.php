@@ -57,15 +57,16 @@ class NewModulesFeatureTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/dashboard');
 
         $response->assertStatus(200);
-        $response->assertSee('Executive Dashboard TeFa MPLB');
-        $response->assertSee('Total Omzet Penjualan Hari Ini');
+        $response->assertSee('Executive Overview');
+        $response->assertSee('Omzet Hari Ini');
     }
 
     public function test_authenticated_user_can_view_inventory_list_and_filters(): void
     {
         $response = $this->actingAs($this->student)->get('/inventory');
         $response->assertStatus(200);
-        $response->assertSee('Manajemen Dual-Inventory');
+        $response->assertSee('Dual-Inventory');
+        $response->assertSee('Daftar Persediaan');
 
         $responseRetail = $this->actingAs($this->student)->get('/inventory?type=RETAIL');
         $responseRetail->assertStatus(200);
@@ -229,8 +230,8 @@ class NewModulesFeatureTest extends TestCase
         $response = $this->actingAs($this->teacher)->get('/piket');
 
         $response->assertStatus(200);
-        $response->assertSee('Presensi Piket & Roster Siswa TeFa', false);
-        $response->assertSee('Tingkat Kehadiran Siswa');
+        $response->assertSee('Presensi Piket Siswa');
+        $response->assertSee('Tingkat Kehadiran');
     }
 
     public function test_user_can_view_spoilage_log(): void
@@ -238,8 +239,8 @@ class NewModulesFeatureTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/inventory/spoilage');
 
         $response->assertStatus(200);
-        $response->assertSee('Audit Barang Rusak & Gagal Produksi (Spoilage)', false);
-        $response->assertSee('Total Beban Kerugian Produksi (HPP)');
+        $response->assertSee('Barang Rusak & Gagal Produksi');
+        $response->assertSee('Beban Kerugian Produksi');
     }
 
     public function test_user_can_view_internal_stock_mutations(): void
@@ -247,7 +248,7 @@ class NewModulesFeatureTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/inventory/mutations');
 
         $response->assertStatus(200);
-        $response->assertSee('Audit Mutasi Internal Stok (Rim', false);
-        $response->assertSee('Total Nilai HPP Dipindahbukukan');
+        $response->assertSee('Mutasi Internal Stok');
+        $response->assertSee('Nilai HPP Dipindahbukukan');
     }
 }

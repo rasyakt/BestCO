@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Theme;
 
 use App\Models\SystemSetting;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 
 final class DynamicThemeService
@@ -26,7 +27,14 @@ final class DynamicThemeService
     public function getPalette(): array
     {
         return Cache::rememberForever('bestco.theme_css_vars', function (): array {
-            $setting = SystemSetting::where('setting_key', 'ui_theme_palette')->first();
+            try {
+                $setting = SystemSetting::where('setting_key', 'ui_theme_palette')->first();
+            } catch (QueryException) {
+                // The theme is cosmetic; keep the app usable before migrations
+                // have created the system_settings table (fresh installs/tests).
+                return self::DEFAULT_PALETTE;
+            }
+
             if ($setting && is_array($setting->setting_value)) {
                 return array_merge(self::DEFAULT_PALETTE, $setting->setting_value);
             }

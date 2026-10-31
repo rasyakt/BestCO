@@ -78,8 +78,8 @@ class PosTerminalAndReportTest extends TestCase
 
         $response = $this->actingAs($this->student)->get('/pos');
         $response->assertStatus(200);
-        $response->assertSee('Terminal POS');
-        $response->assertSee('Keranjang Transaksi POS');
+        $response->assertSee('POS Workspace');
+        $response->assertSee('Keranjang');
     }
 
     public function test_teacher_can_view_all_financial_report_tabs(): void

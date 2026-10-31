@@ -2,97 +2,114 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-            <div class="flex items-center gap-2 mb-1">
-                <a href="{{ route('inventory.index') }}" class="text-xs font-semibold text-brand-700 hover:underline">&larr; Kembali ke Daftar Persediaan</a>
-                <span class="text-slate-300">/</span>
-                <span class="text-xs text-slate-500 font-mono">{{ $product->sku }}</span>
+    <x-page-header
+        eyebrow="Kartu Stok"
+        :title="'Kartu Stok: ' . $product->name"
+        subtitle="Buku pembantu persediaan yang mencatat setiap pergerakan stok secara kronologis, termasuk nilai HPP dan petugas yang mencatat.">
+        <x-slot:breadcrumb>
+            <a href="{{ route('inventory.index') }}" class="inline-flex items-center gap-1.5 font-bold text-brand-700 transition hover:text-brand-800">
+                <x-icon name="arrow-left" class="h-3.5 w-3.5" />
+                Persediaan
+            </a>
+            <x-icon name="chevron-right" class="h-3 w-3 text-slate-300" />
+            <span class="font-mono text-slate-500">{{ $product->sku }}</span>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+            <div class="card flex items-center gap-4 px-4 py-3">
+                <div>
+                    <p class="text-[9px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Stok Saat Ini</p>
+                    <p class="mt-0.5 text-lg font-extrabold text-slate-900 num-tabular">
+                        {{ $product->unit?->allow_decimal ? number_format((float) $product->current_stock, 4, ',', '.') : number_format((float) $product->current_stock, 0, ',', '.') }}
+                        <span class="text-[10px] font-bold text-slate-400">{{ $product->unit?->code }}</span>
+                    </p>
+                </div>
+                <span class="h-9 w-px bg-slate-200"></span>
+                <div>
+                    <p class="text-[9px] font-extrabold uppercase tracking-[0.12em] text-slate-400">HPP Rata-rata</p>
+                    <p class="mt-0.5 text-lg font-extrabold text-brand-700 num-tabular">Rp {{ number_format((float) $product->average_cost, 0, ',', '.') }}</p>
+                </div>
             </div>
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Kartu Stok: {{ $product->name }}</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Buku pembantu persediaan barang yang mencatat setiap peristiwa pergerakan stok secara kronologis.</p>
+        </x-slot:actions>
+    </x-page-header>
+
+    <!-- Movement table -->
+    <div class="table-shell">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <div>
+                <h2 class="card-title">Riwayat Pergerakan Stok</h2>
+                <p class="card-subtitle">{{ $movements->total() }} peristiwa tercatat</p>
+            </div>
+            <span class="badge {{ $product->inventory_type->value === 'RETAIL' ? 'badge-info' : 'badge-purple' }}">
+                {{ $product->inventory_type->value === 'RETAIL' ? 'ATK Etalase' : 'Bahan Baku Jasa' }}
+            </span>
         </div>
 
-        <!-- Stat Badge -->
-        <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-xs flex items-center gap-4 text-xs">
-            <div>
-                <span class="text-slate-500 block text-[11px]">Stok Aktual Saat Ini</span>
-                <span class="font-bold text-base text-slate-900 num-tabular">
-                    {{ $product->unit?->allow_decimal ? number_format((float) $product->current_stock, 4, ',', '.') : number_format((float) $product->current_stock, 0, ',', '.') }} {{ $product->unit?->code }}
-                </span>
-            </div>
-            <div class="h-8 w-px bg-slate-200"></div>
-            <div>
-                <span class="text-slate-500 block text-[11px]">HPP Rata-rata (Avg Cost)</span>
-                <span class="font-bold text-base text-brand-700 num-tabular">
-                    Rp {{ number_format((float) $product->average_cost, 0, ',', '.') }}
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Movements Table -->
-    <div class="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-700 font-semibold border-b">
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <th class="py-2.5 px-3">Tanggal & Waktu</th>
-                        <th class="py-2.5 px-3">Tipe Peristiwa</th>
-                        <th class="py-2.5 px-3 text-right">Saldo Awal</th>
-                        <th class="py-2.5 px-3 text-right">Perubahan Qty</th>
-                        <th class="py-2.5 px-3 text-right">Saldo Akhir</th>
-                        <th class="py-2.5 px-3 text-right">Harga Pokok (HPP)</th>
-                        <th class="py-2.5 px-3 text-right">Total Nilai</th>
-                        <th class="py-2.5 px-3">Petugas</th>
+                        <th>Tanggal &amp; Waktu</th>
+                        <th>Tipe Peristiwa</th>
+                        <th class="text-right">Saldo Awal</th>
+                        <th class="text-right">Perubahan</th>
+                        <th class="text-right">Saldo Akhir</th>
+                        <th class="text-right">HPP</th>
+                        <th class="text-right">Total Nilai</th>
+                        <th>Petugas</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody>
                     @forelse($movements as $m)
-                        <tr class="hover:bg-slate-50/50">
-                            <td class="py-2.5 px-3 text-slate-600 num-tabular whitespace-nowrap">
-                                {{ $m->created_at->format('d/m/Y H:i') }}
+                        @php
+                            $badgeStyle = match ($m->reference_type) {
+                                'PURCHASE' => 'badge-success',
+                                'INTERNAL_MUTATION_IN' => 'badge-brand',
+                                'INTERNAL_MUTATION_OUT' => 'badge-warning',
+                                'POS_SALE' => 'badge-info',
+                                'SERVICE_BOM' => 'badge-purple',
+                                'SPOILAGE' => 'badge-danger',
+                                'VOID_RESTORE' => 'badge-success',
+                                default => 'badge-neutral',
+                            };
+                            $isOut = str_starts_with((string) $m->qty_change, '-');
+                        @endphp
+                        <tr>
+                            <td class="whitespace-nowrap">
+                                <span class="font-mono text-[11px] font-semibold text-slate-700">{{ $m->created_at->format('d/m/Y') }}</span>
+                                <span class="mt-0.5 block text-[10px] text-slate-400">{{ $m->created_at->format('H:i') }} WIB</span>
                             </td>
-                            <td class="py-2.5 px-3">
-                                @php
-                                    $badgeStyle = match($m->reference_type) {
-                                        'PURCHASE' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                        'INTERNAL_MUTATION_IN' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-                                        'INTERNAL_MUTATION_OUT' => 'bg-amber-50 text-amber-700 border-amber-200',
-                                        'POS_SALE' => 'bg-blue-50 text-blue-700 border-blue-200',
-                                        'SERVICE_BOM' => 'bg-purple-50 text-purple-700 border-purple-200',
-                                        'SPOILAGE' => 'bg-rose-50 text-rose-700 border-rose-200',
-                                        'VOID_RESTORE' => 'bg-teal-50 text-teal-700 border-teal-200',
-                                        default => 'bg-slate-100 text-slate-700 border-slate-200',
-                                    };
-                                @endphp
-                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold border {{ $badgeStyle }}">
-                                    {{ $m->reference_type }}
-                                </span>
+                            <td>
+                                <span class="badge {{ $badgeStyle }} font-mono">{{ $m->reference_type }}</span>
                             </td>
-                            <td class="py-2.5 px-3 text-right num-tabular text-slate-600">
+                            <td class="text-right num-tabular text-slate-500">
                                 {{ number_format((float) $m->balance_before, $product->unit?->allow_decimal ? 4 : 0, ',', '.') }}
                             </td>
-                            <td class="py-2.5 px-3 text-right font-bold num-tabular {{ str_starts_with((string)$m->qty_change, '-') ? 'text-rose-600' : 'text-emerald-700' }}">
-                                {{ (string) $m->qty_change }}
+                            <td class="text-right font-extrabold num-tabular {{ $isOut ? 'text-rose-600' : 'text-emerald-600' }}">
+                                {{ $isOut ? '' : '+' }}{{ (string) $m->qty_change }}
                             </td>
-                            <td class="py-2.5 px-3 text-right font-semibold num-tabular text-slate-900">
+                            <td class="text-right font-bold num-tabular text-slate-900">
                                 {{ number_format((float) $m->balance_after, $product->unit?->allow_decimal ? 4 : 0, ',', '.') }}
                             </td>
-                            <td class="py-2.5 px-3 text-right num-tabular text-slate-600">
-                                Rp {{ number_format((float) $m->unit_cost, 0, ',', '.') }}
-                            </td>
-                            <td class="py-2.5 px-3 text-right font-medium num-tabular text-slate-800">
-                                Rp {{ number_format((float) $m->total_value, 0, ',', '.') }}
-                            </td>
-                            <td class="py-2.5 px-3 text-slate-500 whitespace-nowrap">
-                                {{ $m->createdByUser?->name ?? 'Sistem' }}
+                            <td class="text-right num-tabular text-slate-600">Rp {{ number_format((float) $m->unit_cost, 0, ',', '.') }}</td>
+                            <td class="text-right font-bold num-tabular text-slate-800">Rp {{ number_format((float) $m->total_value, 0, ',', '.') }}</td>
+                            <td class="whitespace-nowrap">
+                                <div class="flex items-center gap-2">
+                                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[9px] font-extrabold text-slate-500">
+                                        {{ mb_strtoupper(mb_substr($m->createdBy?->name ?? 'S', 0, 1)) }}
+                                    </span>
+                                    <span class="text-[11px] text-slate-500">{{ $m->createdBy?->name ?? 'Sistem' }}</span>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-8 text-center text-slate-400">Belum ada catatan mutasi kartu stok untuk produk ini.</td>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <span class="empty-state-icon"><x-icon name="list" class="h-6 w-6" /></span>
+                                    <p class="text-sm font-bold text-slate-700">Belum ada pergerakan stok</p>
+                                    <p class="mt-1 text-xs text-slate-400">Kartu stok akan terisi setelah ada restock, penjualan, atau mutasi.</p>
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -100,7 +117,7 @@
         </div>
 
         @if($movements->hasPages())
-            <div class="p-3 border-t bg-slate-50">
+            <div class="border-t border-slate-100 bg-slate-50/50 px-4 py-3">
                 {{ $movements->links() }}
             </div>
         @endif

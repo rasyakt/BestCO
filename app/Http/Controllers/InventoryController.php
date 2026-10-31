@@ -74,7 +74,7 @@ final class InventoryController extends Controller
     {
         $product = Product::with('unit')->findOrFail($id);
 
-        $movements = StockLedgerEntry::with(['createdByUser', 'posShift', 'posTransaction'])
+        $movements = StockLedgerEntry::with(['createdBy', 'posShift'])
             ->where('product_id', $product->id)
             ->latest('id')
             ->paginate(25);
@@ -82,3 +82,4 @@ final class InventoryController extends Controller
         return view('inventory.ledger', compact('product', 'movements'));
     }
 }
+

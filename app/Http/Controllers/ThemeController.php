@@ -108,3 +108,4 @@ final class ThemeController extends Controller
         return back()->with('success', 'Tema berhasil direset ke Enterprise Blue default.');
     }
 }
+

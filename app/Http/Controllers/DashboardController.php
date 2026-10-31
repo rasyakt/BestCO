@@ -58,7 +58,8 @@ final class DashboardController extends Controller
                 ->sum('grand_total');
 
             $salesTrend[] = [
-                'day' => $date->isoFormat('ddd, D/M'),
+                'day' => $date->locale('id')->isoFormat('ddd'),
+                'date_short' => $date->format('d/m'),
                 'total' => (float) $total,
             ];
         }

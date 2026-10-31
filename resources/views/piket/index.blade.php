@@ -2,198 +2,214 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Presensi Piket & Roster Siswa TeFa</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Monitoring kedisiplinan dan pergantian shift piket siswa Kelas X, XI, dan XII MPLB.</p>
-        </div>
-
-        <div class="flex items-center gap-2">
-            <a href="{{ route('shift.index') }}" class="px-3.5 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded text-xs font-semibold shadow-xs">
-                Kelola Shift Kasir Aktif &rarr;
+    <x-page-header
+        eyebrow="SDM & Presensi"
+        title="Presensi Piket Siswa"
+        subtitle="Monitoring kedisiplinan, roster, dan pergantian petugas piket siswa Kelas X, XI, dan XII MPLB pada setiap shift operasional.">
+        <x-slot:actions>
+            <a href="{{ route('shift.index') }}" class="btn btn-primary">
+                <x-icon name="clock" class="h-4 w-4" />
+                Kelola Shift Aktif
+                <x-icon name="arrow-right" class="h-4 w-4" />
             </a>
+        </x-slot:actions>
+    </x-page-header>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Tingkat Kehadiran</p>
+                    <p class="stat-value">
+                        @if($totalAttendances > 0)
+                            {{ $attendanceRate }}<span class="text-base font-bold text-slate-400">%</span>
+                        @else
+                            <span class="text-slate-300">&mdash;</span>
+                        @endif
+                    </p>
+                </div>
+                <span class="stat-icon bg-emerald-50 text-emerald-700 ring-emerald-100"><x-icon name="check-circle" class="h-5 w-5" /></span>
+            </div>
+            <div class="mt-4 border-t border-slate-100 pt-3">
+                <div class="progress-track">
+                    <div class="progress-bar bg-emerald-500" style="width: {{ min(100, (float) $attendanceRate) }}%"></div>
+                </div>
+                <p class="mt-2 text-[11px] text-slate-500">
+                    {{ $totalAttendances > 0 ? $totalPresent . ' kehadiran tepat waktu' : 'Belum ada sesi presensi tercatat' }}
+                </p>
+            </div>
+        </div>
+
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Total Sesi Tercatat</p>
+                    <p class="stat-value">{{ number_format((float) $totalAttendances, 0, ',', '.') }}</p>
+                </div>
+                <span class="stat-icon bg-brand-50 text-brand-700 ring-brand-100"><x-icon name="list" class="h-5 w-5" /></span>
+            </div>
+            <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">Sepanjang tahun ajaran aktif</p>
+        </div>
+
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Substitusi Petugas</p>
+                    <p class="stat-value text-amber-600">{{ number_format((float) $totalSubstituted, 0, ',', '.') }}</p>
+                </div>
+                <span class="stat-icon bg-amber-50 text-amber-700 ring-amber-100"><x-icon name="swap" class="h-5 w-5" /></span>
+            </div>
+            <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">Disetujui guru supervisor</p>
+        </div>
+
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Ketidakhadiran (Alpa)</p>
+                    <p class="stat-value text-rose-600">{{ number_format((float) $totalAbsent, 0, ',', '.') }}</p>
+                </div>
+                <span class="stat-icon bg-rose-50 text-rose-600 ring-rose-100"><x-icon name="x-circle" class="h-5 w-5" /></span>
+            </div>
+            <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">Tanpa keterangan sah</p>
         </div>
     </div>
 
-    <!-- 4 Statistik Presensi Piket -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Tingkat Kehadiran Siswa</span>
-            <div class="text-2xl font-bold text-slate-900 num-tabular">
-                {{ $attendanceRate }}%
-            </div>
-            <div class="text-[11px] text-emerald-600 font-medium mt-1">
-                {{ $totalPresent }} kehadiran tepat waktu
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Total Sesi Presensi Tercatat</span>
-            <div class="text-2xl font-bold text-slate-900 num-tabular">
-                {{ $totalAttendances }}
-            </div>
-            <div class="text-[11px] text-slate-400 mt-1">
-                Sepanjang tahun ajaran aktif
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Pergantian Petugas (Substitusi)</span>
-            <div class="text-2xl font-bold text-amber-600 num-tabular">
-                {{ $totalSubstituted }}
-            </div>
-            <div class="text-[11px] text-slate-400 mt-1">
-                Disetujui Guru Supervisor
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Ketidakhadiran (Alpa)</span>
-            <div class="text-2xl font-bold text-rose-600 num-tabular">
-                {{ $totalAbsent }}
-            </div>
-            <div class="text-[11px] text-slate-400 mt-1">
-                Tanpa keterangan sah
-            </div>
-        </div>
-    </div>
-
-    <!-- Jadwal Piket Hari Ini (Roster Siswa) -->
-    <div class="bg-white rounded-lg border border-slate-200 shadow-xs p-4 space-y-3">
-        <div class="flex items-center justify-between border-b pb-2">
+    <!-- Today roster -->
+    <div class="card">
+        <div class="card-header">
             <div>
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">Jadwal Piket Terjadwal Hari Ini ({{ now()->isoFormat('dddd, D MMMM Y') }})</h2>
-                <p class="text-[11px] text-slate-400">Roster siswa piket yang dijadwalkan bertugas pada hari ini.</p>
+                <h2 class="card-title">Jadwal Piket Hari Ini</h2>
+                <p class="card-subtitle">{{ now()->locale('id')->isoFormat('dddd, D MMMM Y') }} &bull; roster petugas terjadwal</p>
             </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-brand-50 text-brand-700 border border-brand-200">
-                {{ $todaySchedules->count() }} Slot Terdaftar
-            </span>
+            <span class="badge badge-brand">{{ $todaySchedules->count() }} slot terdaftar</span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            @forelse($todaySchedules as $schedule)
-                <div class="p-3 rounded border border-slate-200 bg-slate-50/50 flex items-center justify-between text-xs">
-                    <div>
-                        <div class="font-bold text-slate-900">
-                            Slot {{ $schedule->slot_number }}: {{ $schedule->scheduledStudent?->name ?? 'Belum Ditentukan' }}
-                        </div>
-                        <div class="text-[11px] text-slate-500 mt-0.5">
-                            Kelas: {{ $schedule->schoolClass?->name ?? '-' }} &bull; NISN: {{ $schedule->scheduledStudent?->nip_nisn ?? '-' }}
+        <div class="card-body">
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                @forelse($todaySchedules as $schedule)
+                    <div class="group relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/60 p-4 transition hover:border-brand-200 hover:bg-brand-50/40">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <span class="badge badge-neutral">Slot {{ $schedule->slot_number }}</span>
+                                <p class="mt-2 truncate text-sm font-extrabold text-slate-900">{{ $schedule->scheduledStudent?->name ?? 'Belum Ditentukan' }}</p>
+                                <p class="mt-1 text-[11px] text-slate-500">{{ $schedule->schoolClass?->name ?? '-' }} &bull; NISN {{ $schedule->scheduledStudent?->nip_nisn ?? '-' }}</p>
+                            </div>
+                            <span class="avatar h-9 w-9">{{ mb_strtoupper(mb_substr($schedule->scheduledStudent?->name ?? '?', 0, 1)) }}</span>
                         </div>
                     </div>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-white border border-slate-200 text-slate-600">
-                        Slot {{ $schedule->slot_number }}
-                    </span>
-                </div>
-            @empty
-                <div class="col-span-3 py-4 text-center text-slate-400 text-xs">
-                    Tidak ada jadwal piket spesifik yang terdaftar untuk hari ini.
-                </div>
-            @endforelse
+                @empty
+                    <div class="col-span-full">
+                        <div class="empty-state py-8">
+                            <span class="empty-state-icon"><x-icon name="calendar" class="h-6 w-6" /></span>
+                            <p class="text-sm font-bold text-slate-700">Belum ada jadwal piket</p>
+                            <p class="mt-1 text-xs text-slate-400">Roster untuk hari ini belum terdaftar.</p>
+                        </div>
+                    </div>
+                @endforelse
+            </div>
         </div>
     </div>
 
-    <!-- Filter & History Table -->
-    <div class="bg-white rounded-lg border border-slate-200 shadow-xs space-y-4 p-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs border-b pb-3">
+    <!-- Attendance log -->
+    <div class="table-shell">
+        <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-                <h3 class="font-bold text-sm text-slate-900">Log Riwayat Presensi & Kehadiran Shift</h3>
-                <p class="text-[11px] text-slate-400">Rekapitulasi presensi kehadiran per shift kasir beserta status pergantian siswa.</p>
+                <h2 class="card-title">Log Riwayat Presensi</h2>
+                <p class="card-subtitle">Rekapitulasi kehadiran per shift dan status pergantian siswa</p>
             </div>
 
-            <!-- Filter Form -->
-            <form method="GET" action="{{ route('piket.index') }}" class="flex items-center gap-2">
-                <select name="status" class="px-3 py-1.5 rounded border border-slate-300 bg-white text-xs">
-                    <option value="ALL" {{ $statusFilter === 'ALL' ? 'selected' : '' }}>Semua Status</option>
-                    <option value="PRESENT" {{ $statusFilter === 'PRESENT' ? 'selected' : '' }}>Hadir (PRESENT)</option>
-                    <option value="SICK" {{ $statusFilter === 'SICK' ? 'selected' : '' }}>Sakit (SICK)</option>
-                    <option value="PERMITTED" {{ $statusFilter === 'PERMITTED' ? 'selected' : '' }}>Izin (PERMITTED)</option>
-                    <option value="DISPENSATION" {{ $statusFilter === 'DISPENSATION' ? 'selected' : '' }}>Dispensasi</option>
-                    <option value="ABSENT" {{ $statusFilter === 'ABSENT' ? 'selected' : '' }}>Alpa (ABSENT)</option>
-                </select>
-
-                <input type="date" name="date" value="{{ $dateFilter }}" class="px-3 py-1.5 rounded border border-slate-300 bg-white text-xs">
-
-                <button type="submit" class="px-3 py-1.5 bg-slate-900 text-white font-semibold rounded text-xs hover:bg-slate-800">
-                    Filter
-                </button>
-                <a href="{{ route('piket.index') }}" class="text-xs text-slate-500 hover:underline px-1">Reset</a>
+            <form method="GET" action="{{ route('piket.index') }}" class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <div>
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="select sm:w-44">
+                        <option value="ALL" {{ $statusFilter === 'ALL' ? 'selected' : '' }}>Semua Status</option>
+                        <option value="PRESENT" {{ $statusFilter === 'PRESENT' ? 'selected' : '' }}>Hadir</option>
+                        <option value="SICK" {{ $statusFilter === 'SICK' ? 'selected' : '' }}>Sakit</option>
+                        <option value="PERMITTED" {{ $statusFilter === 'PERMITTED' ? 'selected' : '' }}>Izin</option>
+                        <option value="DISPENSATION" {{ $statusFilter === 'DISPENSATION' ? 'selected' : '' }}>Dispensasi</option>
+                        <option value="ABSENT" {{ $statusFilter === 'ABSENT' ? 'selected' : '' }}>Alpa</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="date" class="form-label">Tanggal</label>
+                    <input type="date" id="date" name="date" value="{{ $dateFilter }}" class="input sm:w-40">
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button type="submit" class="btn btn-dark">Filter</button>
+                    <a href="{{ route('piket.index') }}" class="btn btn-ghost">Reset</a>
+                </div>
             </form>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-700 font-semibold border-b">
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <th class="py-2.5 px-3">Shift & Tanggal</th>
-                        <th class="py-2.5 px-3">Slot</th>
-                        <th class="py-2.5 px-3">Siswa Terjadwal</th>
-                        <th class="py-2.5 px-3">Status Kehadiran</th>
-                        <th class="py-2.5 px-3">Petugas Bertugas (Aktual)</th>
-                        <th class="py-2.5 px-3">Approval Guru</th>
-                        <th class="py-2.5 px-3">Waktu Check-In</th>
+                        <th>Shift &amp; Tanggal</th>
+                        <th>Slot</th>
+                        <th>Siswa Terjadwal</th>
+                        <th>Status</th>
+                        <th>Petugas Aktual</th>
+                        <th>Approval Guru</th>
+                        <th>Check-In</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody>
                     @forelse($attendances as $att)
-                        <tr class="hover:bg-slate-50/50">
-                            <td class="py-2.5 px-3">
-                                <span class="font-mono font-medium text-slate-800">{{ $att->posShift?->shift_code ?? '-' }}</span>
-                                <span class="block text-[11px] text-slate-400">{{ $att->posShift?->shift_date?->format('d/m/Y') }}</span>
+                        @php
+                            $statusValue = $att->scheduled_student_status->value;
+                            $statusBadge = match ($statusValue) {
+                                'PRESENT' => ['badge-success', 'Hadir'],
+                                'SICK' => ['badge-warning', 'Sakit'],
+                                'PERMITTED' => ['badge-info', 'Izin'],
+                                'DISPENSATION' => ['badge-purple', 'Dispensasi'],
+                                default => ['badge-danger', 'Alpa'],
+                            };
+                        @endphp
+                        <tr>
+                            <td class="whitespace-nowrap">
+                                <span class="font-mono text-[11px] font-bold text-slate-800">{{ $att->posShift?->shift_code ?? '-' }}</span>
+                                <span class="mt-0.5 block text-[10px] text-slate-400">{{ $att->posShift?->shift_date?->format('d/m/Y') }}</span>
                             </td>
-                            <td class="py-2.5 px-3 font-semibold text-slate-700">
-                                Slot {{ $att->slot_number }}
+                            <td><span class="badge badge-neutral">Slot {{ $att->slot_number }}</span></td>
+                            <td>
+                                <div class="flex items-center gap-2">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[9px] font-extrabold text-slate-500">
+                                        {{ mb_strtoupper(mb_substr($att->scheduledUser?->name ?? '?', 0, 1)) }}
+                                    </span>
+                                    <div>
+                                        <p class="text-[11px] font-bold text-slate-800">{{ $att->scheduledUser?->name ?? '-' }}</p>
+                                        <p class="font-mono text-[10px] text-slate-400">{{ $att->scheduledUser?->nip_nisn }}</p>
+                                    </div>
+                                </div>
                             </td>
-                            <td class="py-2.5 px-3">
-                                <div class="font-medium text-slate-900">{{ $att->scheduledUser?->name ?? '-' }}</div>
-                                <div class="text-[10px] text-slate-400 font-mono">{{ $att->scheduledUser?->nip_nisn }}</div>
-                            </td>
-                            <td class="py-2.5 px-3">
-                                @if($att->scheduled_student_status->value === 'PRESENT')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        Hadir
-                                    </span>
-                                @elseif($att->scheduled_student_status->value === 'SICK')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                        Sakit
-                                    </span>
-                                @elseif($att->scheduled_student_status->value === 'PERMITTED')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                                        Izin
-                                    </span>
-                                @elseif($att->scheduled_student_status->value === 'DISPENSATION')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                                        Dispensasi
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                                        Alpa
-                                    </span>
-                                @endif
-
+                            <td>
+                                <span class="badge {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
                                 @if($att->is_substituted)
-                                    <span class="block text-[10px] text-amber-700 font-medium mt-0.5">
-                                        (Substitusi)
-                                    </span>
+                                    <span class="mt-1 block text-[10px] font-semibold text-amber-600">Substitusi</span>
                                 @endif
                             </td>
-                            <td class="py-2.5 px-3">
-                                <div class="font-medium text-slate-900">{{ $att->activeOperator?->name ?? '-' }}</div>
+                            <td>
+                                <p class="text-[11px] font-semibold text-slate-700">{{ $att->activeOperator?->name ?? '-' }}</p>
                                 @if($att->is_substituted && $att->absence_reason)
-                                    <div class="text-[10px] text-slate-400 italic">"{{ $att->absence_reason }}"</div>
+                                    <p class="mt-0.5 max-w-[180px] text-[10px] italic text-slate-400">"{{ $att->absence_reason }}"</p>
                                 @endif
                             </td>
-                            <td class="py-2.5 px-3 text-slate-600">
-                                {{ $att->approvedByTeacher?->name ?? $att->posShift?->supervisorTeacher?->name ?? '-' }}
-                            </td>
-                            <td class="py-2.5 px-3 font-mono text-[11px] text-slate-500">
-                                {{ $att->check_in_at ? $att->check_in_at->format('H:i') : '-' }}
+                            <td class="text-[11px] text-slate-500">{{ $att->approvedByTeacher?->name ?? $att->posShift?->supervisorTeacher?->name ?? '-' }}</td>
+                            <td>
+                                <span class="chip">{{ $att->check_in_at ? $att->check_in_at->format('H:i') : '-' }}</span>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-8 text-center text-slate-400">Belum ada catatan presensi piket ditemukan.</td>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <span class="empty-state-icon"><x-icon name="users" class="h-6 w-6" /></span>
+                                    <p class="text-sm font-bold text-slate-700">Belum ada catatan presensi</p>
+                                    <p class="mt-1 text-xs text-slate-400">Ubah filter status atau tanggal untuk melihat data lain.</p>
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -201,7 +217,7 @@
         </div>
 
         @if($attendances->hasPages())
-            <div class="pt-3 border-t">
+            <div class="border-t border-slate-100 bg-slate-50/50 px-4 py-3">
                 {{ $attendances->links() }}
             </div>
         @endif

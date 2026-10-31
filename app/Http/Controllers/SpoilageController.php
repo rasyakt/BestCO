@@ -52,3 +52,4 @@ final class SpoilageController extends Controller
         ));
     }
 }
+

@@ -2,147 +2,169 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-            <div class="flex items-center gap-2 mb-1">
-                <a href="{{ route('inventory.index') }}" class="text-xs font-semibold text-brand-700 hover:underline">&larr; Persediaan</a>
-                <span class="text-slate-300">/</span>
-                <span class="text-xs text-slate-500">Log Spoilage</span>
+    <x-page-header
+        eyebrow="Audit Produksi"
+        title="Barang Rusak & Gagal Produksi"
+        subtitle="Monitoring pemotongan bahan baku akibat paper jam, tinta cacat, dan laminating kusut, beserta posting otomatis ke beban kerusakan jasa.">
+        <x-slot:breadcrumb>
+            <a href="{{ route('inventory.index') }}" class="inline-flex items-center gap-1.5 font-bold text-brand-700 transition hover:text-brand-800">
+                <x-icon name="arrow-left" class="h-3.5 w-3.5" />
+                Persediaan
+            </a>
+            <x-icon name="chevron-right" class="h-3 w-3 text-slate-300" />
+            <span class="text-slate-500">Spoilage</span>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+            <a href="{{ route('inventory.mutations') }}" class="btn btn-secondary">
+                <x-icon name="swap" class="h-4 w-4" />
+                Mutasi Internal
+            </a>
+            <a href="{{ route('pos.terminal') }}" class="btn btn-primary">
+                <x-icon name="spoilage" class="h-4 w-4" />
+                Catat Spoilage
+                <span class="kbd">F6</span>
+            </a>
+        </x-slot:actions>
+    </x-page-header>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Beban Kerugian Produksi</p>
+                    <p class="stat-value text-rose-600">Rp {{ number_format((float) $totalLossRupiah, 0, ',', '.') }}</p>
+                </div>
+                <span class="stat-icon bg-rose-50 text-rose-600 ring-rose-100"><x-icon name="trend-down" class="h-5 w-5" /></span>
             </div>
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Audit Barang Rusak & Gagal Produksi (Spoilage)</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Monitoring pemotongan bahan baku (kertas & toner) akibat paper jam, tinta cacat, dan laminating kusut beserta posting otomatis ke Beban Kerusakan Jasa.</p>
+            <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">Terjurnal ke akun Beban Kerusakan (5-2101)</p>
         </div>
 
-        <div class="flex items-center gap-2">
-            <a href="{{ route('inventory.mutations') }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold border border-slate-200">
-                Mutasi Internal (Rim &rarr; Lembar)
-            </a>
-            <a href="{{ route('pos.terminal') }}" class="px-3.5 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded text-xs font-semibold shadow-xs">
-                Catat Spoilage Baru di POS [F6] &rarr;
-            </a>
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Insiden Gagal Produksi</p>
+                    <p class="stat-value">{{ number_format((float) $totalIncidents, 0, ',', '.') }} <span class="text-sm font-bold text-slate-400">kali</span></p>
+                </div>
+                <span class="stat-icon bg-amber-50 text-amber-700 ring-amber-100"><x-icon name="spoilage" class="h-5 w-5" /></span>
+            </div>
+            <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">Kertas macet, cacat toner, plastik kusut</p>
+        </div>
+
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Output Gagal</p>
+                    <p class="stat-value text-amber-600">{{ number_format((float) $totalFailedOutput, 0, ',', '.') }} <span class="text-sm font-bold text-slate-400">lbr</span></p>
+                </div>
+                <span class="stat-icon bg-slate-100 text-slate-600 ring-slate-200"><x-icon name="list" class="h-5 w-5" /></span>
+            </div>
+            <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">Akumulasi produk rusak yang diaudit</p>
         </div>
     </div>
 
-    <!-- 3 Key Stat Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Total Beban Kerugian Produksi (HPP)</span>
-            <div class="text-2xl font-bold text-rose-600 num-tabular">
-                Rp {{ number_format((float) $totalLossRupiah, 0, ',', '.') }}
+    <!-- Filter -->
+    <div class="card p-4">
+        <form method="GET" action="{{ route('inventory.spoilage') }}" class="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div class="flex-1">
+                <label for="q" class="form-label">Pencarian</label>
+                <div class="search-field">
+                    <x-icon name="search" />
+                    <input type="text" id="q" name="q" value="{{ $search }}" placeholder="Cari nomor bukti atau alasan kerusakan..."
+                        class="input">
+                </div>
             </div>
-            <div class="text-[11px] text-slate-400 mt-1">
-                Terjurnal ke Akun Beban Kerusakan (5-2101)
-            </div>
-        </div>
 
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Total Insiden Gagal Produksi</span>
-            <div class="text-2xl font-bold text-slate-900 num-tabular">
-                {{ $totalIncidents }} Kali
+            <div class="w-full lg:w-56">
+                <label for="category" class="form-label">Kategori</label>
+                <select id="category" name="category" class="select">
+                    <option value="ALL" {{ $category === 'ALL' ? 'selected' : '' }}>Semua Kategori</option>
+                    <option value="PAPER_JAM" {{ $category === 'PAPER_JAM' ? 'selected' : '' }}>Paper Jam</option>
+                    <option value="INK_SMUDGE" {{ $category === 'INK_SMUDGE' ? 'selected' : '' }}>Tinta Bergaris</option>
+                    <option value="MACHINE_ERROR" {{ $category === 'MACHINE_ERROR' ? 'selected' : '' }}>Kerusakan Mesin</option>
+                    <option value="OPERATOR_ERROR" {{ $category === 'OPERATOR_ERROR' ? 'selected' : '' }}>Kesalahan Operator</option>
+                    <option value="OTHER" {{ $category === 'OTHER' ? 'selected' : '' }}>Lainnya</option>
+                </select>
             </div>
-            <div class="text-[11px] text-slate-400 mt-1">
-                Kertas macet, cacat toner, plastik kusut
+
+            <div class="flex items-center gap-2">
+                <button type="submit" class="btn btn-dark">Filter</button>
+                <a href="{{ route('inventory.spoilage') }}" class="btn btn-ghost">Reset</a>
             </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Total Lembar / Unit Gagal</span>
-            <div class="text-2xl font-bold text-amber-600 num-tabular">
-                {{ number_format((float) $totalFailedOutput, 0, ',', '.') }} Lembar
-            </div>
-            <div class="text-[11px] text-slate-400 mt-1">
-                Akumulasi produk rusak yang diaudit
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter Toolbar -->
-    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <form method="GET" action="{{ route('inventory.spoilage') }}" class="flex flex-wrap items-center gap-2.5 w-full">
-            <input type="text" name="q" value="{{ $search }}" placeholder="Cari No. Bukti / Alasan..."
-                class="px-3 py-1.5 rounded border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-brand-600">
-
-            <select name="category" class="px-3 py-1.5 rounded border border-slate-300 bg-white text-xs">
-                <option value="ALL" {{ $category === 'ALL' ? 'selected' : '' }}>Semua Kategori</option>
-                <option value="PAPER_JAM" {{ $category === 'PAPER_JAM' ? 'selected' : '' }}>Paper Jam / Kertas Nyangkut</option>
-                <option value="INK_SMUDGE" {{ $category === 'INK_SMUDGE' ? 'selected' : '' }}>Tinta Bergaris / Cacat</option>
-                <option value="MACHINE_ERROR" {{ $category === 'MACHINE_ERROR' ? 'selected' : '' }}>Kerusakan Mesin</option>
-                <option value="OPERATOR_ERROR" {{ $category === 'OPERATOR_ERROR' ? 'selected' : '' }}>Kesalahan Operator Siswa</option>
-                <option value="OTHER" {{ $category === 'OTHER' ? 'selected' : '' }}>Lainnya</option>
-            </select>
-
-            <button type="submit" class="px-3.5 py-1.5 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800">
-                Filter
-            </button>
-            <a href="{{ route('inventory.spoilage') }}" class="text-slate-500 hover:underline px-2">Reset</a>
         </form>
     </div>
 
-    <!-- Spoilage Table -->
-    <div class="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-700 font-semibold border-b">
+    <!-- Table -->
+    <div class="table-shell">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <div>
+                <h2 class="card-title">Log Spoilage</h2>
+                <p class="card-subtitle">{{ $logs->total() }} insiden tercatat</p>
+            </div>
+            <span class="badge badge-danger">Audit Produksi</span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <th class="py-2.5 px-3">No. Bukti & Waktu</th>
-                        <th class="py-2.5 px-3">Layanan / Sumber</th>
-                        <th class="py-2.5 px-3">Kategori & Alasan</th>
-                        <th class="py-2.5 px-3 text-right">Lembar Gagal</th>
-                        <th class="py-2.5 px-3">Bahan Terbuang (BoM)</th>
-                        <th class="py-2.5 px-3 text-right">Beban Kerugian</th>
-                        <th class="py-2.5 px-3">Pelapor / Approval</th>
-                        <th class="py-2.5 px-3">Shift</th>
+                        <th>No. Bukti &amp; Waktu</th>
+                        <th>Layanan / Sumber</th>
+                        <th>Kategori &amp; Alasan</th>
+                        <th class="text-right">Gagal</th>
+                        <th>Bahan Terbuang</th>
+                        <th class="text-right">Beban Kerugian</th>
+                        <th>Pelapor / Approval</th>
+                        <th>Shift</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody>
                     @forelse($logs as $log)
-                        <tr class="hover:bg-slate-50/50">
-                            <td class="py-2.5 px-3">
-                                <span class="font-mono font-semibold text-slate-900">{{ $log->spoilage_number }}</span>
-                                <span class="block text-[11px] text-slate-400">{{ $log->logged_at?->format('d/m/Y H:i') }}</span>
+                        <tr>
+                            <td class="whitespace-nowrap">
+                                <span class="font-mono text-[11px] font-bold text-slate-900">{{ $log->spoilage_number }}</span>
+                                <span class="mt-0.5 block text-[10px] text-slate-400">{{ $log->logged_at?->format('d/m/Y H:i') }}</span>
                             </td>
-                            <td class="py-2.5 px-3">
-                                <span class="font-medium text-slate-800">{{ $log->service?->name ?? 'Etalase / Lainnya' }}</span>
-                                <span class="block text-[10px] text-slate-400 font-mono">{{ $log->spoilage_source }}</span>
+                            <td>
+                                <p class="font-semibold text-slate-800">{{ $log->service?->name ?? 'Etalase / Lainnya' }}</p>
+                                <p class="mt-0.5 font-mono text-[10px] text-slate-400">{{ $log->spoilage_source }}</p>
                             </td>
-                            <td class="py-2.5 px-3">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                                    {{ $log->reason_category }}
-                                </span>
+                            <td>
+                                <span class="badge badge-danger font-mono">{{ $log->reason_category }}</span>
                                 @if($log->reason_description)
-                                    <div class="text-[11px] text-slate-600 mt-0.5">{{ $log->reason_description }}</div>
+                                    <p class="mt-1 max-w-[220px] text-[11px] leading-relaxed text-slate-500">{{ $log->reason_description }}</p>
                                 @endif
                             </td>
-                            <td class="py-2.5 px-3 text-right font-bold num-tabular text-slate-800">
-                                {{ number_format((float) $log->failed_output_qty, 0, ',', '.') }}
-                            </td>
-                            <td class="py-2.5 px-3">
-                                <div class="space-y-0.5">
+                            <td class="text-right font-extrabold text-slate-800 num-tabular">{{ number_format((float) $log->failed_output_qty, 0, ',', '.') }}</td>
+                            <td>
+                                <div class="space-y-1">
                                     @foreach($log->items as $item)
-                                        <div class="text-[11px] text-slate-700 flex items-center gap-1.5">
-                                            <span class="font-semibold text-rose-600 num-tabular">
-                                                -{{ $item->product?->unit?->allow_decimal ? number_format((float) $item->qty_wasted, 4, ',', '.') : number_format((float) $item->qty_wasted, 0, ',', '.') }} {{ $item->product?->unit?->code }}
+                                        <div class="flex items-center gap-1.5 text-[11px]">
+                                            <span class="font-bold text-rose-600 num-tabular">
+                                                -{{ $item->product?->unit?->allow_decimal ? number_format((float) $item->qty_wasted, 4, ',', '.') : number_format((float) $item->qty_wasted, 0, ',', '.') }}
+                                                {{ $item->product?->unit?->code }}
                                             </span>
-                                            <span class="text-slate-500">({{ $item->product?->name }})</span>
+                                            <span class="text-slate-400">{{ $item->product?->name }}</span>
                                         </div>
                                     @endforeach
                                 </div>
                             </td>
-                            <td class="py-2.5 px-3 text-right font-bold text-rose-600 num-tabular">
-                                Rp {{ number_format((float) $log->total_spoilage_cost, 0, ',', '.') }}
+                            <td class="text-right font-extrabold text-rose-600 num-tabular">Rp {{ number_format((float) $log->total_spoilage_cost, 0, ',', '.') }}</td>
+                            <td>
+                                <p class="text-[11px] font-semibold text-slate-700">{{ $log->reportedBy?->name ?? '-' }}</p>
+                                <p class="mt-0.5 text-[10px] text-slate-400">Verif: {{ $log->verifiedBy?->name ?? 'Guru Piket' }}</p>
                             </td>
-                            <td class="py-2.5 px-3 text-slate-600">
-                                <div>{{ $log->reportedBy?->name ?? '-' }}</div>
-                                <div class="text-[10px] text-slate-400">Verif: {{ $log->verifiedBy?->name ?? 'Guru Piket' }}</div>
-                            </td>
-                            <td class="py-2.5 px-3 font-mono text-[11px] text-slate-500">
-                                {{ $log->posShift?->shift_code ?? '-' }}
-                            </td>
+                            <td><span class="chip">{{ $log->posShift?->shift_code ?? '-' }}</span></td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-8 text-center text-slate-400">Belum ada catatan kerusakan atau kegagalan produksi (spoilage).</td>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <span class="empty-state-icon"><x-icon name="spoilage" class="h-6 w-6" /></span>
+                                    <p class="text-sm font-bold text-slate-700">Belum ada catatan spoilage</p>
+                                    <p class="mt-1 text-xs text-slate-400">Catat kegagalan produksi dari terminal POS dengan pintasan F6.</p>
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -150,7 +172,7 @@
         </div>
 
         @if($logs->hasPages())
-            <div class="p-3 border-t bg-slate-50">
+            <div class="border-t border-slate-100 bg-slate-50/50 px-4 py-3">
                 {{ $logs->links() }}
             </div>
         @endif

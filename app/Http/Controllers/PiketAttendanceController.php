@@ -22,7 +22,7 @@ final class PiketAttendanceController extends Controller
         $totalPresent = ShiftAttendance::where('scheduled_student_status', AbsenceStatus::PRESENT)->count();
         $totalSubstituted = ShiftAttendance::where('is_substituted', true)->count();
         $totalAbsent = ShiftAttendance::where('scheduled_student_status', AbsenceStatus::ABSENT)->count();
-        $attendanceRate = $totalAttendances > 0 ? round(($totalPresent / $totalAttendances) * 100, 1) : 100.0;
+        $attendanceRate = $totalAttendances > 0 ? round(($totalPresent / $totalAttendances) * 100, 1) : 0.0;
 
         // 2. Jadwal Piket Hari Ini (day_of_week: 1=Senin ... 7=Minggu)
         $dayOfWeek = (int) now()->dayOfWeekIso;
@@ -65,3 +65,4 @@ final class PiketAttendanceController extends Controller
         ));
     }
 }
+

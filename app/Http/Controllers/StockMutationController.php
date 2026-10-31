@@ -47,3 +47,4 @@ final class StockMutationController extends Controller
         ));
     }
 }
+

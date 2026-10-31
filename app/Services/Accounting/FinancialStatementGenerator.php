@@ -20,7 +20,7 @@ final class FinancialStatementGenerator
      */
     public function getCashBook(?string $startDate = null, ?string $endDate = null): Collection
     {
-        $query = CashBookEntry::with(['journalEntry', 'cashAccount', 'recordedByUser', 'posShift'])
+        $query = CashBookEntry::with(['journalEntry', 'cashAccount', 'recordedBy', 'posShift'])
             ->orderBy('transaction_date', 'asc')
             ->orderBy('id', 'asc');
 
@@ -39,7 +39,7 @@ final class FinancialStatementGenerator
      */
     public function getGeneralJournal(?string $startDate = null, ?string $endDate = null): Collection
     {
-        $query = JournalEntry::with(['items.chartOfAccount', 'createdByUser', 'posShift'])
+        $query = JournalEntry::with(['items.chartOfAccount', 'createdBy', 'posShift'])
             ->orderBy('entry_date', 'asc')
             ->orderBy('id', 'asc');
 

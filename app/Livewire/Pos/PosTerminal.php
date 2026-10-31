@@ -169,6 +169,11 @@ final class PosTerminal extends Component
     {
         $this->cart = [];
         $this->recalculateCart();
+
+        // Livewire memoizes legacy computed properties per request. Clear them so
+        // the cart summary resets immediately after checkout instead of showing
+        // the previous transaction's totals until the next render.
+        unset($this->subtotalRetail, $this->subtotalService, $this->totalTierDiscount, $this->grandTotal);
     }
 
     public function recalculateCart(): void
@@ -413,12 +418,18 @@ final class PosTerminal extends Component
             ? PosTransaction::with(['items.product', 'items.service', 'cashier'])->find($this->completedTransactionId)
             : null;
 
+        $activeShift = PosShift::with('supervisorTeacher')
+            ->where('status', ShiftStatus::OPEN->value)
+            ->latest('opened_at')
+            ->first();
+
         return view('livewire.pos.pos-terminal', compact(
             'retailProducts',
             'services',
             'unitConversions',
             'allServices',
-            'completedTransaction'
+            'completedTransaction',
+            'activeShift'
         ))->layout('layouts.app', ['title' => 'Terminal POS Kasir — BESTCO']);
     }
 }

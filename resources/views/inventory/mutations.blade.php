@@ -2,131 +2,155 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-            <div class="flex items-center gap-2 mb-1">
-                <a href="{{ route('inventory.index') }}" class="text-xs font-semibold text-brand-700 hover:underline">&larr; Persediaan</a>
-                <span class="text-slate-300">/</span>
-                <span class="text-xs text-slate-500">Mutasi Internal</span>
+    <x-page-header
+        eyebrow="Audit Persediaan"
+        title="Mutasi Internal Stok"
+        subtitle="Riwayat konversi barang etalase menjadi bahan baku jasa — 1 rim kertas HVS menjadi 500 lembar — beserta pemindahbukuan nilai HPP antar akun persediaan.">
+        <x-slot:breadcrumb>
+            <a href="{{ route('inventory.index') }}" class="inline-flex items-center gap-1.5 font-bold text-brand-700 transition hover:text-brand-800">
+                <x-icon name="arrow-left" class="h-3.5 w-3.5" />
+                Persediaan
+            </a>
+            <x-icon name="chevron-right" class="h-3 w-3 text-slate-300" />
+            <span class="text-slate-500">Mutasi Internal</span>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+            <a href="{{ route('inventory.spoilage') }}" class="btn btn-secondary">
+                <x-icon name="spoilage" class="h-4 w-4" />
+                Log Spoilage
+            </a>
+            <a href="{{ route('pos.terminal') }}" class="btn btn-primary">
+                <x-icon name="swap" class="h-4 w-4" />
+                Mutasi Baru di POS
+                <span class="kbd">F7</span>
+            </a>
+        </x-slot:actions>
+    </x-page-header>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Nilai HPP Dipindahbukukan</p>
+                    <p class="stat-value">Rp {{ number_format((float) $totalMutationValue, 0, ',', '.') }}</p>
+                </div>
+                <span class="stat-icon bg-brand-50 text-brand-700 ring-brand-100"><x-icon name="bank" class="h-5 w-5" /></span>
             </div>
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Audit Mutasi Internal Stok (Rim &rarr; Lembar)</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Riwayat konversi otomatis barang etalase ritel menjadi bahan baku jasa (1 Rim Kertas HVS &rarr; 500 Lembar) beserta pemindahbukuan nilai HPP antar akun persediaan.</p>
+            <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">Dr. Persediaan Bahan Jasa / Cr. Persediaan Ritel</p>
         </div>
 
-        <div class="flex items-center gap-2">
-            <a href="{{ route('inventory.spoilage') }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold border border-slate-200">
-                Log Kerusakan (Spoilage)
-            </a>
-            <a href="{{ route('pos.terminal') }}" class="px-3.5 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded text-xs font-semibold shadow-xs">
-                Mutasi Baru di POS [F7] &rarr;
-            </a>
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Insiden Mutasi</p>
+                    <p class="stat-value">{{ number_format((float) $totalMutations, 0, ',', '.') }} <span class="text-sm font-bold text-slate-400">kali</span></p>
+                </div>
+                <span class="stat-icon bg-indigo-50 text-indigo-700 ring-indigo-100"><x-icon name="swap" class="h-5 w-5" /></span>
+            </div>
+            <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">Disetujui oleh guru supervisor</p>
+        </div>
+
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="stat-label">Lembar Hasil Konversi</p>
+                    <p class="stat-value text-violet-700">{{ number_format((float) $totalSheetsConverted, 0, ',', '.') }} <span class="text-sm font-bold text-slate-400">lbr</span></p>
+                </div>
+                <span class="stat-icon bg-violet-50 text-violet-700 ring-violet-100"><x-icon name="package" class="h-5 w-5" /></span>
+            </div>
+            <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">Stok bahan baku kertas untuk layanan jasa</p>
         </div>
     </div>
 
-    <!-- 3 Stat Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Total Nilai HPP Dipindahbukukan</span>
-            <div class="text-2xl font-bold text-slate-900 num-tabular">
-                Rp {{ number_format((float) $totalMutationValue, 0, ',', '.') }}
+    <!-- Filter -->
+    <div class="card p-4">
+        <form method="GET" action="{{ route('inventory.mutations') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div class="flex-1">
+                <label for="q" class="form-label">Pencarian</label>
+                <div class="search-field">
+                    <x-icon name="search" />
+                    <input type="text" id="q" name="q" value="{{ $search }}" placeholder="Cari nomor bukti atau catatan mutasi..."
+                        class="input">
+                </div>
             </div>
-            <div class="text-[11px] text-emerald-600 font-medium mt-1">
-                Dr. Persediaan Bahan Jasa / Cr. Persediaan Ritel
+            <div class="flex items-center gap-2">
+                <button type="submit" class="btn btn-dark">Cari</button>
+                <a href="{{ route('inventory.mutations') }}" class="btn btn-ghost">Reset</a>
             </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Total Insiden Mutasi Internal</span>
-            <div class="text-2xl font-bold text-brand-700 num-tabular">
-                {{ $totalMutations }} Kali
-            </div>
-            <div class="text-[11px] text-slate-400 mt-1">
-                Disetujui Guru Supervisor
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
-            <span class="text-xs font-medium text-slate-500 block mb-1">Total Lembar Hasil Konversi</span>
-            <div class="text-2xl font-bold text-purple-700 num-tabular">
-                {{ number_format((float) $totalSheetsConverted, 0, ',', '.') }} Lembar
-            </div>
-            <div class="text-[11px] text-slate-400 mt-1">
-                Stok bahan baku kertas yang dialirkan ke jasa
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter Toolbar -->
-    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <form method="GET" action="{{ route('inventory.mutations') }}" class="flex items-center gap-2.5 w-full sm:w-auto">
-            <input type="text" name="q" value="{{ $search }}" placeholder="Cari No. Bukti / Catatan..."
-                class="px-3 py-1.5 rounded border border-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-brand-600 w-64">
-            <button type="submit" class="px-3.5 py-1.5 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800">
-                Cari
-            </button>
-            <a href="{{ route('inventory.mutations') }}" class="text-slate-500 hover:underline px-2">Reset</a>
         </form>
     </div>
 
-    <!-- Mutations Table -->
-    <div class="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-700 font-semibold border-b">
+    <!-- Table -->
+    <div class="table-shell">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <div>
+                <h2 class="card-title">Riwayat Mutasi</h2>
+                <p class="card-subtitle">Pemindahbukuan stok dan nilai antar domain persediaan</p>
+            </div>
+            <span class="badge badge-neutral">{{ $mutations->total() }} catatan</span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <th class="py-2.5 px-3">No. Bukti Mutasi</th>
-                        <th class="py-2.5 px-3">Produk Etalase (Asal)</th>
-                        <th class="py-2.5 px-3">Bahan Baku Jasa (Tujuan)</th>
-                        <th class="py-2.5 px-3 text-right">Rasio Konversi</th>
-                        <th class="py-2.5 px-3 text-right">Nilai Mutasi (HPP)</th>
-                        <th class="py-2.5 px-3">Pemohon / Disetujui</th>
-                        <th class="py-2.5 px-3">Shift & Jurnal</th>
+                        <th>No. Bukti</th>
+                        <th>Produk Asal</th>
+                        <th>Bahan Baku Tujuan</th>
+                        <th class="text-right">Konversi</th>
+                        <th class="text-right">Nilai Mutasi</th>
+                        <th>Pemohon / Verifikator</th>
+                        <th>Shift &amp; Jurnal</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody>
                     @forelse($mutations as $m)
-                        <tr class="hover:bg-slate-50/50">
-                            <td class="py-2.5 px-3">
-                                <span class="font-mono font-semibold text-slate-900">{{ $m->mutation_number }}</span>
-                                <span class="block text-[11px] text-slate-400">{{ $m->mutated_at?->format('d/m/Y H:i') }}</span>
+                        <tr>
+                            <td class="whitespace-nowrap">
+                                <span class="font-mono text-[11px] font-bold text-slate-900">{{ $m->mutation_number }}</span>
+                                <span class="mt-0.5 block text-[10px] text-slate-400">{{ $m->mutated_at?->format('d/m/Y H:i') }}</span>
                             </td>
-                            <td class="py-2.5 px-3">
-                                <div class="font-medium text-slate-900">{{ $m->sourceProduct?->name }}</div>
-                                <div class="text-[11px] text-rose-600 num-tabular font-semibold">
+                            <td>
+                                <p class="font-semibold text-slate-800">{{ $m->sourceProduct?->name }}</p>
+                                <p class="mt-0.5 text-[11px] font-bold text-rose-600 num-tabular">
                                     -{{ number_format((float) $m->source_qty_deducted, 0, ',', '.') }} {{ $m->sourceProduct?->unit?->code }}
-                                    <span class="text-slate-400 font-normal">(@ Rp {{ number_format((float) $m->source_unit_cost, 0, ',', '.') }})</span>
-                                </div>
+                                    <span class="font-normal text-slate-400">(@ Rp {{ number_format((float) $m->source_unit_cost, 0, ',', '.') }})</span>
+                                </p>
                             </td>
-                            <td class="py-2.5 px-3">
-                                <div class="font-medium text-slate-900">{{ $m->targetProduct?->name }}</div>
-                                <div class="text-[11px] text-emerald-600 num-tabular font-semibold">
+                            <td>
+                                <p class="font-semibold text-slate-800">{{ $m->targetProduct?->name }}</p>
+                                <p class="mt-0.5 text-[11px] font-bold text-emerald-600 num-tabular">
                                     +{{ number_format((float) $m->target_qty_added, 0, ',', '.') }} {{ $m->targetProduct?->unit?->code }}
-                                    <span class="text-slate-400 font-normal">(@ Rp {{ number_format((float) $m->target_unit_cost, 0, ',', '.') }})</span>
-                                </div>
+                                    <span class="font-normal text-slate-400">(@ Rp {{ number_format((float) $m->target_unit_cost, 0, ',', '.') }})</span>
+                                </p>
                             </td>
-                            <td class="py-2.5 px-3 text-right font-mono font-medium text-slate-700">
-                                1 : {{ number_format((float) $m->conversion_factor, 0, ',', '.') }}
+                            <td class="text-right">
+                                <span class="badge badge-brand font-mono">1 : {{ number_format((float) $m->conversion_factor, 0, ',', '.') }}</span>
                             </td>
-                            <td class="py-2.5 px-3 text-right font-bold text-slate-900 num-tabular">
+                            <td class="text-right font-extrabold text-slate-900 num-tabular">
                                 Rp {{ number_format((float) $m->total_mutation_value, 0, ',', '.') }}
                             </td>
-                            <td class="py-2.5 px-3 text-slate-600">
-                                <div>{{ $m->requestedBy?->name ?? '-' }}</div>
-                                <div class="text-[10px] text-slate-400">Verif: {{ $m->approvedBy?->name ?? 'Guru Supervisor' }}</div>
+                            <td>
+                                <p class="text-[11px] font-semibold text-slate-700">{{ $m->requestedBy?->name ?? '-' }}</p>
+                                <p class="mt-0.5 text-[10px] text-slate-400">Verif: {{ $m->approvedBy?->name ?? 'Guru Supervisor' }}</p>
                             </td>
-                            <td class="py-2.5 px-3">
-                                <span class="font-mono text-[11px] text-slate-600 block">{{ $m->posShift?->shift_code ?? '-' }}</span>
+                            <td>
+                                <span class="chip">{{ $m->posShift?->shift_code ?? '-' }}</span>
                                 @if($m->journal_entry_id)
-                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] bg-slate-100 text-slate-600 border border-slate-200 font-mono">
-                                        Jurnal #{{ $m->journal_entry_id }}
-                                    </span>
+                                    <span class="mt-1 block text-[10px] font-semibold text-brand-600">Jurnal #{{ $m->journal_entry_id }}</span>
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-8 text-center text-slate-400">Belum ada catatan mutasi internal persediaan.</td>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <span class="empty-state-icon"><x-icon name="swap" class="h-6 w-6" /></span>
+                                    <p class="text-sm font-bold text-slate-700">Belum ada mutasi internal</p>
+                                    <p class="mt-1 text-xs text-slate-400">Lakukan konversi stok dari terminal POS dengan pintasan F7.</p>
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -134,7 +158,7 @@
         </div>
 
         @if($mutations->hasPages())
-            <div class="p-3 border-t bg-slate-50">
+            <div class="border-t border-slate-100 bg-slate-50/50 px-4 py-3">
                 {{ $mutations->links() }}
             </div>
         @endif
