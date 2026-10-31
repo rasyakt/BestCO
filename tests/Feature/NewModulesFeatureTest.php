@@ -57,16 +57,16 @@ class NewModulesFeatureTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/dashboard');
 
         $response->assertStatus(200);
-        $response->assertSee('Executive Overview');
-        $response->assertSee('Omzet Hari Ini');
+        $response->assertSee('Ringkasan kasir, kas, dan stok hari ini.');
+        $response->assertSee('Penjualan hari ini');
     }
 
     public function test_authenticated_user_can_view_inventory_list_and_filters(): void
     {
         $response = $this->actingAs($this->student)->get('/inventory');
         $response->assertStatus(200);
-        $response->assertSee('Dual-Inventory');
-        $response->assertSee('Daftar Persediaan');
+        $response->assertSee('Stok barang etalase dan bahan baku jasa.');
+        $response->assertSee('Daftar stok');
 
         $responseRetail = $this->actingAs($this->student)->get('/inventory?type=RETAIL');
         $responseRetail->assertStatus(200);
@@ -104,7 +104,7 @@ class NewModulesFeatureTest extends TestCase
 
         $response = $this->actingAs($this->admin)->get("/inventory/{$product->id}/ledger");
         $response->assertStatus(200);
-        $response->assertSee('Kartu Stok:');
+        $response->assertSee('Kartu stok:');
         $response->assertSee($product->name);
     }
 
@@ -230,8 +230,8 @@ class NewModulesFeatureTest extends TestCase
         $response = $this->actingAs($this->teacher)->get('/piket');
 
         $response->assertStatus(200);
-        $response->assertSee('Presensi Piket Siswa');
-        $response->assertSee('Tingkat Kehadiran');
+        $response->assertSee('Presensi Piket');
+        $response->assertSee('Kehadiran');
     }
 
     public function test_user_can_view_spoilage_log(): void
@@ -239,8 +239,8 @@ class NewModulesFeatureTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/inventory/spoilage');
 
         $response->assertStatus(200);
-        $response->assertSee('Barang Rusak & Gagal Produksi');
-        $response->assertSee('Beban Kerugian Produksi');
+        $response->assertSee('Barang Rusak');
+        $response->assertSee('Nilai kerugian');
     }
 
     public function test_user_can_view_internal_stock_mutations(): void
@@ -248,7 +248,7 @@ class NewModulesFeatureTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/inventory/mutations');
 
         $response->assertStatus(200);
-        $response->assertSee('Mutasi Internal Stok');
-        $response->assertSee('Nilai HPP Dipindahbukukan');
+        $response->assertSee('Pindah Stok');
+        $response->assertSee('Nilai stok dipindah');
     }
 }

@@ -3,29 +3,27 @@
 @section('content')
 <div class="mx-auto max-w-5xl space-y-6">
     <x-page-header
-        eyebrow="System Settings"
-        title="Kustomisasi Tema"
-        subtitle="Pilih palet warna enterprise untuk seluruh antarmuka. Perubahan diterapkan langsung melalui token CSS Tailwind v4 yang tersimpan di basis data.">
+        title="Tema"
+        subtitle="Atur warna tampilan aplikasi.">
         <x-slot:actions>
             <form method="POST" action="{{ route('theme.reset') }}">
                 @csrf
-                <button type="submit" onclick="return confirm('Kembalikan tema ke Enterprise Blue default?')"
+                <button type="submit" onclick="return confirm('Kembalikan ke tema biru default?')"
                     class="btn btn-secondary">
                     <x-icon name="refresh" class="h-4 w-4" />
-                    Reset ke Default
+                    Kembalikan default
                 </button>
             </form>
         </x-slot:actions>
     </x-page-header>
 
-    <!-- Live preview -->
+    <!-- Pratinjau -->
     <div class="card overflow-hidden">
         <div class="card-header">
             <div>
-                <h2 class="card-title">Pratinjau Komponen</h2>
-                <p class="card-subtitle">Tampilan komponen utama dengan tema yang sedang aktif</p>
+                <h2 class="card-title">Pratinjau</h2>
+                <p class="card-subtitle">Contoh tampilan dengan tema aktif</p>
             </div>
-            <span class="badge badge-brand">Live Preview</span>
         </div>
 
         <div class="grid grid-cols-1 gap-6 p-5 lg:grid-cols-5">
@@ -33,26 +31,26 @@
                 <div class="flex flex-wrap items-center gap-2.5">
                     <button type="button" class="btn btn-primary">
                         <x-icon name="plus" class="h-4 w-4" />
-                        Tombol Primer
+                        Tombol utama
                     </button>
-                    <button type="button" class="btn btn-secondary">Tombol Sekunder</button>
-                    <span class="badge badge-brand">Badge Aktif</span>
+                    <button type="button" class="btn btn-secondary">Tombol kedua</button>
+                    <span class="badge badge-brand">Aktif</span>
                     <span class="badge badge-success">Selesai</span>
-                    <span class="badge badge-danger">VOID</span>
+                    <span class="badge badge-danger">Dibatalkan</span>
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-                        <p class="stat-label">Omzet Hari Ini</p>
-                        <p class="mt-2 text-xl font-extrabold text-slate-900 num-tabular">Rp 1.250.000</p>
-                        <span class="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                    <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
+                        <p class="stat-label">Penjualan hari ini</p>
+                        <p class="mt-1.5 text-xl font-semibold text-slate-900 num-tabular">Rp 1.250.000</p>
+                        <span class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600">
                             <x-icon name="trend-up" class="h-3 w-3" />
-                            +12,5% dari kemarin
+                            Naik 12,5% dari kemarin
                         </span>
                     </div>
-                    <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-                        <p class="stat-label">Saldo Kas</p>
-                        <p class="mt-2 text-xl font-extrabold text-brand-700 num-tabular">Rp 3.480.000</p>
+                    <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
+                        <p class="stat-label">Saldo kas</p>
+                        <p class="mt-1.5 text-xl font-semibold text-brand-700 num-tabular">Rp 3.480.000</p>
                         <div class="mt-2.5 progress-track">
                             <div class="progress-bar bg-brand-500" style="width: 72%"></div>
                         </div>
@@ -61,60 +59,80 @@
 
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="chip">INV-2026-0001</span>
-                    <span class="chip">CASH</span>
+                    <span class="chip">Tunai</span>
                     <span class="chip">QRIS</span>
+                </div>
+
+                <div class="overflow-hidden rounded-md border border-slate-200">
+                    <table class="w-full text-left text-[10px]">
+                        <thead class="bg-slate-50 text-slate-500">
+                            <tr>
+                                <th class="px-3 py-2 font-medium">Barang</th>
+                                <th class="px-3 py-2 text-right font-medium">Total</th>
+                                <th class="px-3 py-2 text-right font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="px-3 py-2 text-slate-700">Print Hitam Putih</td>
+                                <td class="px-3 py-2 text-right text-slate-800 num-tabular">Rp 500</td>
+                                <td class="px-3 py-2 text-right"><span class="badge badge-success">Selesai</span></td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 text-slate-700">Kertas HVS A4</td>
+                                <td class="px-3 py-2 text-right text-slate-800 num-tabular">Rp 55.000</td>
+                                <td class="px-3 py-2 text-right"><span class="badge badge-danger">Dibatalkan</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <div class="lg:col-span-2">
-                <div class="relative h-full overflow-hidden rounded-2xl p-5 text-white"
-                    style="background:
-                        radial-gradient(90% 70% at 10% 0%, color-mix(in srgb, var(--color-primary-500) 35%, transparent) 0%, transparent 65%),
-                        linear-gradient(160deg, var(--color-primary-950) 0%, #080f1f 100%);">
-                    <div class="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full border border-white/10"></div>
+                <div class="h-full rounded-md bg-slate-900 p-5 text-white">
                     <div class="flex items-center gap-2.5">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[10px] font-extrabold text-brand-900">BC</span>
+                        <span class="flex h-9 w-9 items-center justify-center rounded-md bg-white text-[10px] font-bold text-slate-900">BC</span>
                         <div>
-                            <p class="text-[11px] font-extrabold tracking-[0.08em]">BESTCO</p>
-                            <p class="text-[8px] font-bold uppercase tracking-[0.18em] text-white/40">Teaching Factory</p>
+                            <p class="text-[11px] font-semibold">BESTCO</p>
+                            <p class="text-[10px] text-slate-400">Teaching Factory MPLB</p>
                         </div>
                     </div>
 
-                    <div class="mt-5 space-y-1.5">
-                        <div class="flex items-center gap-2 rounded-lg bg-white/10 px-2.5 py-2 text-[10px] font-bold">
-                            <x-icon name="dashboard" class="h-3.5 w-3.5 text-brand-300" />
+                    <div class="mt-5 space-y-1">
+                        <div class="flex items-center gap-2 rounded bg-white/10 px-2.5 py-2 text-[10px] font-medium">
+                            <x-icon name="dashboard" class="h-3.5 w-3.5 text-slate-300" />
                             Dashboard
                         </div>
-                        <div class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[10px] font-semibold text-white/50">
+                        <div class="flex items-center gap-2 rounded px-2.5 py-2 text-[10px] text-slate-400">
                             <x-icon name="pos" class="h-3.5 w-3.5" />
-                            Kasir POS
+                            Kasir
                         </div>
-                        <div class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[10px] font-semibold text-white/50">
+                        <div class="flex items-center gap-2 rounded px-2.5 py-2 text-[10px] text-slate-400">
                             <x-icon name="package" class="h-3.5 w-3.5" />
                             Persediaan
                         </div>
                     </div>
 
-                    <div class="mt-5 rounded-xl border border-white/10 bg-white/[0.06] p-3">
+                    <div class="mt-5 rounded border border-white/10 bg-white/5 p-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-[8px] font-extrabold uppercase tracking-[0.14em] text-white/35">Status Shift</span>
+                            <span class="text-[10px] text-slate-400">Shift kasir</span>
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
                         </div>
-                        <p class="mt-1.5 font-mono text-[11px] font-bold">SHIFT-A-2026</p>
+                        <p class="mt-1.5 font-mono text-[11px] font-medium">SHIFT-A-2026</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Presets -->
+    <!-- Pilihan tema -->
     <div>
         <div class="mb-4 flex items-end justify-between gap-3">
             <div>
-                <h2 class="text-base font-extrabold tracking-tight text-slate-900">Palet Tersedia</h2>
-                <p class="mt-0.5 text-xs text-slate-500">Empat preset enterprise yang telah dikurasi untuk konsistensi visual.</p>
+                <h2 class="text-base font-semibold text-slate-900">Pilihan tema</h2>
+                <p class="mt-0.5 text-xs text-slate-500">Empat warna siap pakai.</p>
             </div>
-            <span class="badge badge-neutral shrink-0 whitespace-nowrap">{{ count($presets) }} preset</span>
+            <span class="text-[11px] text-slate-500">{{ count($presets) }} tema</span>
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -122,29 +140,26 @@
                 @php
                     $isActive = collect($preset['palette'])->every(fn ($value, $token) => ($currentPalette[$token] ?? null) === $value);
                 @endphp
-                <div class="card p-5 {{ $isActive ? 'ring-2 ring-brand-500 ring-offset-2' : '' }}">
+                <div class="card p-5 {{ $isActive ? 'border-brand-500 ring-1 ring-brand-500' : '' }}">
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex items-center gap-3">
-                            <span class="flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm"
-                                style="background-color: {{ $preset['palette']['--color-primary-700'] }};">
-                                <x-icon name="palette" class="h-5 w-5" />
-                            </span>
+                            <span class="h-9 w-9 rounded-md" style="background-color: {{ $preset['palette']['--color-primary-700'] }};"></span>
                             <div>
-                                <h3 class="text-sm font-extrabold text-slate-900">{{ $preset['name'] }}</h3>
-                                <p class="mt-0.5 text-[10px] font-semibold text-slate-400">{{ $isActive ? 'Sedang digunakan' : 'Siap diterapkan' }}</p>
+                                <h3 class="text-sm font-semibold text-slate-900">{{ $preset['name'] }}</h3>
+                                <p class="mt-0.5 text-[10px] text-slate-400">{{ $isActive ? 'Sedang dipakai' : 'Siap dipakai' }}</p>
                             </div>
                         </div>
                         @if($isActive)
-                            <span class="badge badge-success"><x-icon name="check" class="h-3 w-3" /> Aktif</span>
+                            <span class="badge badge-success">Aktif</span>
                         @endif
                     </div>
 
                     <div class="mt-4 grid grid-cols-6 gap-1.5">
                         @foreach(['--color-primary-50', '--color-primary-200', '--color-primary-400', '--color-primary-600', '--color-primary-800', '--color-primary-950'] as $shade)
-                            <div class="group relative h-11 overflow-hidden rounded-lg border border-slate-200/60"
+                            <div class="group relative h-11 overflow-hidden rounded border border-slate-200"
                                 style="background-color: {{ $preset['palette'][$shade] }};"
                                 title="{{ str_replace('--color-primary-', '', $shade) }}">
-                                <span class="absolute bottom-1 left-1.5 text-[8px] font-extrabold {{ in_array($shade, ['--color-primary-600', '--color-primary-800', '--color-primary-950'], true) ? 'text-white/70' : 'text-slate-500/70' }}">
+                                <span class="absolute bottom-1 left-1.5 text-[8px] font-medium {{ in_array($shade, ['--color-primary-600', '--color-primary-800', '--color-primary-950'], true) ? 'text-white/70' : 'text-slate-500/70' }}">
                                     {{ str_replace('--color-primary-', '', $shade) }}
                                 </span>
                             </div>
@@ -157,10 +172,7 @@
                             @csrf
                             <input type="hidden" name="preset_key" value="{{ $key }}">
                             <button type="submit" class="btn btn-sm {{ $isActive ? 'btn-secondary' : 'btn-primary' }}" {{ $isActive ? 'disabled' : '' }}>
-                                {{ $isActive ? 'Tema Aktif' : 'Terapkan Tema' }}
-                                @if(! $isActive)
-                                    <x-icon name="arrow-right" class="h-3.5 w-3.5" />
-                                @endif
+                                {{ $isActive ? 'Sedang dipakai' : 'Pakai tema' }}
                             </button>
                         </form>
                     </div>
@@ -171,7 +183,7 @@
 
     <div class="alert alert-info">
         <x-icon name="info" class="mt-0.5 h-4 w-4 shrink-0" />
-        <span class="leading-relaxed">Tema memengaruhi seluruh token <span class="font-mono text-[10px]">--color-primary-*</span>, termasuk sidebar, tombol, badge, grafik, dan fokus input. Perubahan tidak memerlukan rebuild aset.</span>
+        <span class="leading-relaxed">Warna berlaku di seluruh aplikasi, termasuk tombol, menu, dan tabel. Tidak perlu build ulang.</span>
     </div>
 </div>
 @endsection

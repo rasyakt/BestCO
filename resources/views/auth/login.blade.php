@@ -3,12 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f172a">
-    <title>Masuk — BESTCO Teaching Factory MPLB</title>
+    <meta name="theme-color" content="#111827">
+    <title>Masuk — BESTCO</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <style>
         {!! app(\App\Services\Theme\DynamicThemeService::class)->getCssVariables() !!}
@@ -17,88 +17,70 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-full bg-slate-50 font-sans text-slate-800 antialiased">
-    <div class="grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
+    <div class="grid min-h-screen lg:grid-cols-[1fr_0.9fr]">
 
-        <!-- Brand panel -->
-        <section class="relative hidden flex-col justify-between overflow-hidden p-10 text-white lg:flex xl:p-14"
-            style="background:
-                radial-gradient(90% 60% at 15% 0%, color-mix(in srgb, var(--color-primary-500) 30%, transparent) 0%, transparent 60%),
-                radial-gradient(70% 50% at 90% 100%, color-mix(in srgb, var(--color-primary-400) 18%, transparent) 0%, transparent 60%),
-                linear-gradient(150deg, var(--color-primary-950) 0%, #060d1c 100%);">
-
-            <!-- Decorative grid -->
-            <div class="pointer-events-none absolute inset-0 opacity-[0.12]"
-                style="background-image: linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse at 30% 30%, black 0%, transparent 75%);"></div>
-
-            <div class="relative flex items-center gap-3">
-                <span class="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-sm font-extrabold tracking-wider text-brand-900 shadow-xl shadow-black/30">
+        <!-- Panel kiri -->
+        <section class="hidden flex-col justify-between bg-slate-900 p-10 text-white lg:flex xl:p-14">
+            <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-md bg-white text-xs font-bold text-slate-900">
                     BC
-                    <span class="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-950 bg-emerald-400"></span>
                 </span>
                 <div class="leading-tight">
-                    <span class="block text-base font-extrabold tracking-[0.1em]">BESTCO</span>
-                    <span class="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.22em] text-white/45">Teaching Factory MPLB</span>
+                    <span class="block text-sm font-semibold tracking-wide">BESTCO</span>
+                    <span class="mt-0.5 block text-[11px] text-slate-400">Teaching Factory MPLB</span>
                 </div>
             </div>
 
-            <div class="relative max-w-xl">
-                <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-white/70 backdrop-blur">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-                    Sistem Operasional Terpadu
-                </div>
-
-                <h1 class="text-4xl font-extrabold leading-[1.12] tracking-tight xl:text-[2.9rem]">
-                    Operasional bisnis sekolah,
-                    <span class="bg-gradient-to-r from-white via-brand-200 to-brand-400 bg-clip-text text-transparent">dalam satu kendali.</span>
+            <div class="max-w-lg">
+                <h1 class="text-3xl font-semibold leading-tight tracking-tight xl:text-4xl">
+                    Kasir, stok, dan laporan dalam satu tempat.
                 </h1>
 
-                <p class="mt-5 max-w-lg text-sm leading-relaxed text-white/55">
-                    Kasir POS, persediaan ganda, presensi piket, hingga laporan keuangan double-entry —
-                    dirancang untuk praktik nyata siswa MPLB.
+                <p class="mt-4 max-w-md text-sm leading-relaxed text-slate-400">
+                    Aplikasi praktik untuk siswa MPLB. Mulai dari transaksi, stok, sampai laporan keuangan.
                 </p>
 
-                <div class="mt-9 space-y-3.5">
+                <div class="mt-8 space-y-4">
                     @foreach([
-                        ['icon' => 'pos', 'title' => 'Kasir POS & Struk Thermal', 'desc' => 'Transaksi cepat dengan tiered pricing dan approval guru.'],
-                        ['icon' => 'package', 'title' => 'Dual-Inventory Terkontrol', 'desc' => 'Stok etalase dan bahan baku jasa terpisah, HPP akurat.'],
-                        ['icon' => 'shield', 'title' => 'Akuntansi Double-Entry', 'desc' => 'Setiap transaksi otomatis terjurnal dan dapat diaudit.'],
+                        ['icon' => 'pos', 'title' => 'Kasir dan struk', 'desc' => 'Transaksi cepat dengan persetujuan guru.'],
+                        ['icon' => 'package', 'title' => 'Stok etalase dan bahan', 'desc' => 'Stok terpisah, HPP tetap akurat.'],
+                        ['icon' => 'shield', 'title' => 'Laporan keuangan', 'desc' => 'Setiap transaksi tercatat otomatis.'],
                     ] as $feature)
-                        <div class="flex items-start gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5 backdrop-blur-sm">
-                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-brand-300">
-                                <x-icon :name="$feature['icon']" class="h-[18px] w-[18px]" />
+                        <div class="flex items-start gap-3">
+                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/10 text-slate-300">
+                                <x-icon :name="$feature['icon']" class="h-4 w-4" />
                             </span>
                             <div>
-                                <p class="text-xs font-bold text-white">{{ $feature['title'] }}</p>
-                                <p class="mt-0.5 text-[11px] leading-relaxed text-white/40">{{ $feature['desc'] }}</p>
+                                <p class="text-xs font-semibold text-white">{{ $feature['title'] }}</p>
+                                <p class="mt-0.5 text-[11px] leading-relaxed text-slate-400">{{ $feature['desc'] }}</p>
                             </div>
                         </div>
                     @endforeach
                 </div>
             </div>
 
-            <div class="relative flex items-center justify-between border-t border-white/10 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
+            <div class="flex items-center justify-between border-t border-white/10 pt-4 text-[11px] text-slate-500">
                 <span>SMK Teaching Factory</span>
                 <span>Laboratorium MPLB</span>
             </div>
         </section>
 
-        <!-- Form panel -->
+        <!-- Panel form -->
         <section class="flex items-center justify-center px-5 py-10 sm:px-8">
             <div class="w-full max-w-[420px]">
 
-                <!-- Mobile brand -->
+                <!-- Brand mobile -->
                 <div class="mb-8 flex items-center gap-3 lg:hidden">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-900 text-sm font-extrabold tracking-wider text-white shadow-lg shadow-brand-900/20">BC</span>
+                    <span class="flex h-10 w-10 items-center justify-center rounded-md bg-slate-900 text-xs font-bold text-white">BC</span>
                     <div class="leading-tight">
-                        <span class="block text-base font-extrabold tracking-[0.1em] text-slate-900">BESTCO</span>
-                        <span class="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">Teaching Factory MPLB</span>
+                        <span class="block text-sm font-semibold tracking-wide text-slate-900">BESTCO</span>
+                        <span class="mt-0.5 block text-[11px] text-slate-400">Teaching Factory MPLB</span>
                     </div>
                 </div>
 
-                <div class="mb-7">
-                    <p class="mb-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-brand-700">Portal Login</p>
-                    <h2 class="text-[1.75rem] font-extrabold leading-tight tracking-tight text-slate-900">Selamat datang kembali</h2>
-                    <p class="mt-2 text-[13px] leading-relaxed text-slate-500">Masuk untuk melanjutkan operasional Teaching Factory hari ini.</p>
+                <div class="mb-6">
+                    <h2 class="text-2xl font-semibold leading-tight tracking-tight text-slate-900">Masuk</h2>
+                    <p class="mt-1.5 text-[13px] leading-relaxed text-slate-500">Gunakan akun sekolah untuk melanjutkan.</p>
                 </div>
 
                 <div class="card p-6 sm:p-7">
@@ -114,73 +96,59 @@
 
                         <div>
                             <label for="login" class="form-label">Username, NIP, atau NISN</label>
-                            <div class="relative">
-                                <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                                    <x-icon name="user" class="h-4 w-4" />
-                                </span>
-                                <input type="text" id="login" name="login" value="{{ old('login') }}" required autofocus autocomplete="username"
-                                    placeholder="Contoh: siswa.x1 atau guru.dewi"
-                                    class="input pl-10">
-                            </div>
+                            <input type="text" id="login" name="login" value="{{ old('login') }}" required autofocus autocomplete="username"
+                                placeholder="Contoh: siswa.x1"
+                                class="input">
                         </div>
 
                         <div>
                             <label for="password" class="form-label">Password</label>
                             <div class="relative">
-                                <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                                    <x-icon name="lock" class="h-4 w-4" />
-                                </span>
                                 <input type="password" id="password" name="password" required autocomplete="current-password"
                                     placeholder="Masukkan password"
-                                    class="input px-10">
+                                    class="input pr-10">
                                 <button type="button" onclick="togglePassword()" aria-label="Tampilkan password"
-                                    class="absolute right-2.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+                                    class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
                                     <x-icon name="eye" id="eye-open" class="h-4 w-4" />
                                     <x-icon name="eye-off" id="eye-closed" class="hidden h-4 w-4" />
                                 </button>
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between pt-0.5">
-                            <label class="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
-                                <input type="checkbox" name="remember" class="checkbox">
-                                Ingat saya di perangkat ini
-                            </label>
-                        </div>
+                        <label class="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
+                            <input type="checkbox" name="remember" class="checkbox">
+                            Ingat saya
+                        </label>
 
-                        <button type="submit" class="btn btn-primary btn-lg mt-2 w-full">
-                            Masuk ke Workspace
-                            <x-icon name="arrow-right" class="h-4 w-4" />
+                        <button type="submit" class="btn btn-primary btn-lg mt-1 w-full">
+                            Masuk
                         </button>
                     </form>
                 </div>
 
-                <details class="group mt-4 rounded-2xl border border-slate-200/80 bg-white/60 px-4 py-3 backdrop-blur-sm">
-                    <summary class="flex cursor-pointer list-none items-center justify-between text-[11px] font-bold text-slate-500 transition hover:text-slate-700">
-                        <span class="inline-flex items-center gap-2">
-                            <x-icon name="help" class="h-3.5 w-3.5" />
-                            Akun demo untuk pengujian
-                        </span>
+                <details class="group mt-4 rounded-md border border-slate-200 bg-white px-4 py-3">
+                    <summary class="flex cursor-pointer list-none items-center justify-between text-[11px] font-medium text-slate-500 transition hover:text-slate-700">
+                        <span>Akun demo</span>
                         <x-icon name="chevron-down" class="h-3.5 w-3.5 transition group-open:rotate-180" />
                     </summary>
                     <div class="mt-3 space-y-2 border-t border-slate-100 pt-3 text-[11px] text-slate-500">
                         <div class="flex items-center justify-between gap-3">
-                            <span class="font-medium">Siswa Operator</span>
+                            <span>Siswa operator</span>
                             <span class="chip">siswa.x1 / password</span>
                         </div>
                         <div class="flex items-center justify-between gap-3">
-                            <span class="font-medium">Guru Supervisor</span>
+                            <span>Guru supervisor</span>
                             <span class="chip">guru.dewi / password</span>
                         </div>
                         <div class="flex items-center justify-between gap-3">
-                            <span class="font-medium">Superadmin</span>
+                            <span>Superadmin</span>
                             <span class="chip">superadmin / password</span>
                         </div>
-                        <p class="pt-1 text-[10px] leading-relaxed text-slate-400">PIN approval guru supervisor default: <span class="font-mono font-semibold text-slate-500">123456</span></p>
+                        <p class="pt-1 text-[10px] leading-relaxed text-slate-400">PIN guru default: <span class="font-mono font-medium text-slate-500">123456</span></p>
                     </div>
                 </details>
 
-                <p class="mt-6 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                <p class="mt-6 text-center text-[10px] text-slate-400">
                     BESTCO &copy; {{ now()->year }} &bull; Teaching Factory MPLB
                 </p>
             </div>
