@@ -41,18 +41,18 @@
             <span class="text-[11px] text-slate-500">{{ $product->inventory_type->value === 'RETAIL' ? 'Barang etalase' : 'Bahan baku' }}</span>
         </div>
 
-        <div class="table-wrap">
-            <table class="data-table">
+        <div class="w-full">
+            <table class="data-table w-full border-collapse">
                 <thead>
                     <tr>
-                        <th class="text-left">Waktu</th>
-                        <th class="text-left">Jenis Transaksi</th>
-                        <th class="text-right">Saldo Awal</th>
-                        <th class="text-right">Perubahan</th>
-                        <th class="text-right">Saldo Akhir</th>
-                        <th class="text-right">HPP</th>
-                        <th class="text-right">Total Nilai</th>
-                        <th class="text-left">Petugas</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Waktu</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Jenis Transaksi</th>
+                        <th class="text-right whitespace-nowrap px-3 py-2.5">Saldo Awal</th>
+                        <th class="text-right whitespace-nowrap px-3 py-2.5">Perubahan</th>
+                        <th class="text-right whitespace-nowrap px-3 py-2.5">Saldo Akhir</th>
+                        <th class="text-right whitespace-nowrap px-3 py-2.5">HPP Rata-rata</th>
+                        <th class="text-right whitespace-nowrap px-3 py-2.5">Total Nilai</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Petugas</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -71,25 +71,25 @@
                             $isOut = str_starts_with((string) $m->qty_change, '-');
                         @endphp
                         <tr>
-                            <td>
-                                <span class="font-mono text-xs font-semibold text-slate-800">{{ $m->created_at->format('d/m/Y') }}</span>
-                                <span class="mt-0.5 block font-mono text-[10px] text-slate-400">{{ $m->created_at->format('H:i') }} WIB</span>
+                            <td class="whitespace-nowrap px-3 py-2.5">
+                                <span class="font-mono text-xs font-semibold text-slate-800 whitespace-nowrap block">{{ $m->created_at->format('d/m/Y') }}</span>
+                                <span class="mt-0.5 block font-mono text-[10px] text-slate-400 whitespace-nowrap">{{ $m->created_at->format('H:i') }} WIB</span>
                             </td>
-                            <td>
+                            <td class="whitespace-nowrap px-3 py-2.5">
                                 <span class="badge {{ $badgeStyle }} whitespace-nowrap text-[11px]">{{ $typeLabel }}</span>
                             </td>
-                            <td class="text-right num-tabular text-slate-600 text-xs font-mono">
+                            <td class="text-right num-tabular text-slate-600 text-xs font-mono whitespace-nowrap px-3 py-2.5">
                                 {{ number_format((float) $m->balance_before, $product->unit?->allow_decimal ? 4 : 0, ',', '.') }}
                             </td>
-                            <td class="text-right font-semibold num-tabular text-xs font-mono {{ $isOut ? 'text-rose-600' : 'text-emerald-600' }}">
+                            <td class="text-right font-semibold num-tabular text-xs font-mono whitespace-nowrap px-3 py-2.5 {{ $isOut ? 'text-rose-600' : 'text-emerald-600' }}">
                                 {{ $isOut ? '' : '+' }}{{ (string) $m->qty_change }}
                             </td>
-                            <td class="text-right font-semibold num-tabular text-slate-900 text-xs font-mono">
+                            <td class="text-right font-semibold num-tabular text-slate-900 text-xs font-mono whitespace-nowrap px-3 py-2.5">
                                 {{ number_format((float) $m->balance_after, $product->unit?->allow_decimal ? 4 : 0, ',', '.') }}
                             </td>
-                            <td class="text-right num-tabular text-slate-600 text-xs font-mono">Rp {{ number_format((float) $m->unit_cost, 0, ',', '.') }}</td>
-                            <td class="text-right font-semibold num-tabular text-slate-800 text-xs font-mono">Rp {{ number_format((float) $m->total_value, 0, ',', '.') }}</td>
-                            <td class="text-xs text-slate-600 whitespace-nowrap">{{ $m->createdBy?->name ?? 'Sistem' }}</td>
+                            <td class="text-right num-tabular text-slate-600 text-xs font-mono whitespace-nowrap px-3 py-2.5">Rp {{ number_format((float) $m->unit_cost, 0, ',', '.') }}</td>
+                            <td class="text-right font-semibold num-tabular text-slate-800 text-xs font-mono whitespace-nowrap px-3 py-2.5">Rp {{ number_format((float) $m->total_value, 0, ',', '.') }}</td>
+                            <td class="text-xs text-slate-600 whitespace-nowrap px-3 py-2.5">{{ $m->createdBy?->name ?? 'Sistem' }}</td>
                         </tr>
                     @empty
                         <tr>

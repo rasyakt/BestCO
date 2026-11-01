@@ -43,7 +43,14 @@ final class AuthController extends Controller
             $request->session()->regenerate();
             $user->update(['last_login_at' => now()]);
 
-            return redirect()->intended(route('pos.terminal'));
+            // Siswa piket selalu diarahkan ke terminal kasir (tidak boleh ke dashboard staf)
+            if ($user->hasRole('piket_siswa')) {
+                $request->session()->forget('url.intended');
+
+                return redirect()->route('pos.terminal');
+            }
+
+            return redirect()->intended(route('dashboard'));
         }
 
         return back()->withErrors([

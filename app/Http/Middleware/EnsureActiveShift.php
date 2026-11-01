@@ -30,9 +30,8 @@ final class EnsureActiveShift
             return $next($request);
         }
 
-        // Cari shift yang sedang OPEN hari ini
+        // Cari shift yang sedang OPEN
         $activeShift = PosShift::where('status', ShiftStatus::OPEN->value)
-            ->whereDate('shift_date', today())
             ->latest('opened_at')
             ->first();
 

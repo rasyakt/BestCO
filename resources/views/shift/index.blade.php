@@ -17,6 +17,18 @@
         </x-slot:actions>
     </x-page-header>
 
+    @if($activeShift && $activeShift->shift_date->lt(today()))
+        <div class="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/90 p-4 text-amber-900 shadow-xs">
+            <x-icon name="alert-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <div class="flex-1 text-xs">
+                <p class="font-semibold">Shift Sebelumnya Belum Ditutup (Dibuka {{ $activeShift->shift_date->translatedFormat('d F Y') }})</p>
+                <p class="mt-1 text-amber-800">
+                    Shift <strong>{{ $activeShift->shift_code }}</strong> masih berstatus aktif. Anda dapat langsung melanjutkan dengan klik <strong>Buka kasir</strong> di atas, atau lakukan <strong>Tutup shift</strong> pada panel kanan untuk merekonsiliasi kas fisik sebelum membuka shift baru hari ini.
+                </p>
+            </div>
+        </div>
+    @endif
+
     @if($activeShift)
         <div class="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
             <!-- Kiri -->

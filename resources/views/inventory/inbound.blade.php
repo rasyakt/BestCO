@@ -252,16 +252,16 @@
             <span class="badge badge-info">{{ $recentPurchases->total() }} Transaksi Tercatat</span>
         </div>
 
-        <div class="table-wrap">
-            <table class="data-table">
+        <div class="w-full">
+            <table class="data-table w-full border-collapse">
                 <thead>
                     <tr>
-                        <th class="text-left">No. Jurnal</th>
-                        <th class="text-left">Keterangan / Faktur</th>
-                        <th class="text-left">Sumber Dana</th>
-                        <th class="text-right w-px">Total Nilai</th>
-                        <th class="text-left">Dicatat Oleh</th>
-                        <th class="text-center w-px">Status</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">No. Jurnal</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Keterangan / Faktur</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Sumber Dana</th>
+                        <th class="text-right whitespace-nowrap px-3 py-2.5 w-px">Total Nilai</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Dicatat Oleh</th>
+                        <th class="text-center whitespace-nowrap px-3 py-2.5 w-px">Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -271,15 +271,15 @@
                             $fundingCoa = $creditItem?->chartOfAccount;
                         @endphp
                         <tr>
-                            <td>
-                                <span class="font-mono text-xs font-semibold text-slate-900">{{ $purchase->journal_number }}</span>
-                                <span class="mt-0.5 block font-mono text-[11px] text-slate-400">{{ $purchase->entry_date->format('d/m/Y') }}</span>
+                            <td class="whitespace-nowrap px-3 py-2.5">
+                                <span class="font-mono text-xs font-semibold text-slate-900 whitespace-nowrap block">{{ $purchase->journal_number }}</span>
+                                <span class="mt-0.5 block font-mono text-[10px] text-slate-400 whitespace-nowrap">{{ $purchase->entry_date->format('d/m/Y') }}</span>
                             </td>
-                            <td class="max-w-xs">
-                                <span class="font-medium text-xs text-slate-800 line-clamp-1" title="{{ $purchase->description }}">{{ $purchase->description }}</span>
-                                <span class="mt-0.5 block text-[11px] text-slate-400">Ref: {{ $purchase->reference_type ?? 'PURCHASE' }}</span>
+                            <td class="max-w-xs whitespace-nowrap px-3 py-2.5">
+                                <span class="font-medium text-xs text-slate-800 line-clamp-1 block whitespace-nowrap" title="{{ $purchase->description }}">{{ $purchase->description }}</span>
+                                <span class="mt-0.5 block text-[10px] text-slate-400 whitespace-nowrap">Ref: {{ $purchase->reference_type ?? 'PURCHASE' }}</span>
                             </td>
-                            <td>
+                            <td class="whitespace-nowrap px-3 py-2.5">
                                 @if($fundingCoa)
                                     <span class="badge whitespace-nowrap text-[11px] {{ str_starts_with($fundingCoa->account_code, '1-') ? 'badge-success' : 'badge-warning' }}">
                                         {{ $fundingCoa->account_name }}
@@ -288,13 +288,13 @@
                                     <span class="text-slate-400 text-xs">-</span>
                                 @endif
                             </td>
-                            <td class="text-right font-mono font-bold text-xs text-slate-900 num-tabular whitespace-nowrap">
+                            <td class="text-right font-mono font-bold text-xs text-slate-900 num-tabular whitespace-nowrap px-3 py-2.5">
                                 Rp {{ number_format((float) $purchase->total_debit, 0, ',', '.') }}
                             </td>
-                            <td class="text-xs text-slate-600 whitespace-nowrap">
+                            <td class="text-xs text-slate-600 whitespace-nowrap px-3 py-2.5">
                                 {{ $purchase->createdBy?->name ?? 'Sistem' }}
                             </td>
-                            <td class="text-center">
+                            <td class="text-center whitespace-nowrap px-3 py-2.5">
                                 <span class="badge badge-success whitespace-nowrap text-[10px]">Selesai</span>
                             </td>
                         </tr>

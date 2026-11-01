@@ -35,9 +35,13 @@ Route::middleware('auth')->group(function (): void {
     });
 
     // Executive Dashboard (Superadmin, Admin, Piket Guru)
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->middleware('role:superadmin,admin,piket_guru')
-        ->name('dashboard');
+    Route::get('/dashboard', function () {
+        if (auth()->user()?->hasRole('piket_siswa')) {
+            return redirect()->route('pos.terminal');
+        }
+
+        return app(\App\Http\Controllers\DashboardController::class)->index();
+    })->middleware('role:superadmin,admin,piket_guru,piket_siswa')->name('dashboard');
 
     // Manajemen Shift Kasir & Presensi Piket
     Route::get('/shift', [ShiftController::class, 'index'])->name('shift.index');

@@ -75,53 +75,52 @@
             <span class="text-[11px] text-slate-500">{{ $mutations->total() }} catatan</span>
         </div>
 
-        <div class="table-wrap">
-            <table class="data-table">
+        <div class="w-full">
+            <table class="data-table w-full border-collapse">
                 <thead>
                     <tr>
-                        <th class="text-left">No. Bukti</th>
-                        <th class="text-left">Barang Asal</th>
-                        <th class="text-left">Bahan Tujuan</th>
-                        <th class="text-center w-px">Rasio</th>
-                        <th class="text-right w-px">Nilai Mutasi</th>
-                        <th class="text-left">Pemohon</th>
-                        <th class="text-center w-px">Shift</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">No. Bukti & Waktu</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Barang Asal</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Bahan Tujuan</th>
+                        <th class="text-center whitespace-nowrap px-3 py-2.5 w-px">Rasio</th>
+                        <th class="text-right whitespace-nowrap px-3 py-2.5 w-px">Nilai Mutasi</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Pemohon & Shift</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($mutations as $m)
                         <tr>
-                            <td>
-                                <span class="font-mono text-xs font-semibold text-slate-900">{{ $m->mutation_number }}</span>
-                                <span class="mt-0.5 block font-mono text-[11px] text-slate-400">{{ $m->mutated_at?->format('d/m/Y H:i') }}</span>
+                            <td class="whitespace-nowrap px-3 py-2.5">
+                                <span class="font-mono text-xs font-semibold text-slate-900 whitespace-nowrap block">{{ $m->mutation_number }}</span>
+                                <span class="font-mono text-[10px] text-slate-400 whitespace-nowrap block mt-0.5">{{ $m->mutated_at?->format('d/m/Y H:i') }}</span>
                             </td>
-                            <td>
-                                <span class="font-semibold text-xs text-slate-800 whitespace-nowrap">{{ $m->sourceProduct?->name }}</span>
-                                <span class="mt-0.5 block font-mono text-[11px] font-semibold text-rose-600 num-tabular">
+                            <td class="whitespace-nowrap px-3 py-2.5">
+                                <span class="font-semibold text-xs text-slate-800 whitespace-nowrap block">{{ $m->sourceProduct?->name }}</span>
+                                <span class="font-mono text-[11px] font-semibold text-rose-600 num-tabular whitespace-nowrap block mt-0.5">
                                     -{{ number_format((float) $m->source_qty_deducted, 0, ',', '.') }} {{ $m->sourceProduct?->unit?->code }}
                                 </span>
                             </td>
-                            <td>
-                                <span class="font-semibold text-xs text-slate-800 whitespace-nowrap">{{ $m->targetProduct?->name }}</span>
-                                <span class="mt-0.5 block font-mono text-[11px] font-semibold text-emerald-600 num-tabular">
+                            <td class="whitespace-nowrap px-3 py-2.5">
+                                <span class="font-semibold text-xs text-slate-800 whitespace-nowrap block">{{ $m->targetProduct?->name }}</span>
+                                <span class="font-mono text-[11px] font-semibold text-emerald-600 num-tabular whitespace-nowrap block mt-0.5">
                                     +{{ number_format((float) $m->target_qty_added, 0, ',', '.') }} {{ $m->targetProduct?->unit?->code }}
                                 </span>
                             </td>
-                            <td class="text-center">
+                            <td class="text-center whitespace-nowrap px-3 py-2.5">
                                 <span class="chip text-[10px] whitespace-nowrap font-mono">1 : {{ number_format((float) $m->conversion_factor, 0, ',', '.') }}</span>
                             </td>
-                            <td class="text-right font-semibold font-mono text-xs text-slate-900 num-tabular whitespace-nowrap">
+                            <td class="text-right font-semibold font-mono text-xs text-slate-900 num-tabular whitespace-nowrap px-3 py-2.5">
                                 Rp {{ number_format((float) $m->total_mutation_value, 0, ',', '.') }}
                             </td>
-                            <td>
-                                <span class="font-medium text-xs text-slate-800 whitespace-nowrap">{{ $m->requestedBy?->name ?? '-' }}</span>
-                                @if($m->approvedBy)
-                                    <span class="mt-0.5 block text-[11px] text-slate-400 whitespace-nowrap">Guru: {{ $m->approvedBy->name }}</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                <div class="flex flex-col items-center gap-1">
-                                    <span class="chip text-[10px] whitespace-nowrap font-mono">{{ $m->posShift?->shift_code ?? '-' }}</span>
+                            <td class="whitespace-nowrap px-3 py-2.5">
+                                <div class="flex items-center gap-1.5 whitespace-nowrap">
+                                    <span class="font-medium text-xs text-slate-800 whitespace-nowrap">{{ $m->requestedBy?->name ?? '-' }}</span>
+                                    @if($m->approvedBy)
+                                        <span class="text-[10px] text-slate-400 font-normal whitespace-nowrap">(Guru: {{ $m->approvedBy->name }})</span>
+                                    @endif
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-0.5">
+                                    <span class="chip text-[9px] font-mono whitespace-nowrap">{{ $m->posShift?->shift_code ?? '-' }}</span>
                                     @if($m->journal_entry_id)
                                         <span class="badge badge-success text-[9px] py-0 px-1 whitespace-nowrap">Dijurnal</span>
                                     @endif
@@ -130,7 +129,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7">
+                            <td colspan="6">
                                 <div class="empty-state">
                                     <span class="empty-state-icon"><x-icon name="swap" class="h-5 w-5" /></span>
                                     <p class="text-sm font-semibold text-slate-700">Belum ada pemindahan stok</p>
