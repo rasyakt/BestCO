@@ -92,14 +92,14 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>No. bukti</th>
-                        <th>Layanan</th>
-                        <th>Penyebab</th>
-                        <th class="text-right">Gagal</th>
-                        <th>Bahan terbuang</th>
-                        <th class="text-right">Kerugian</th>
-                        <th>Pelapor</th>
-                        <th>Shift</th>
+                        <th class="text-left">No. Bukti</th>
+                        <th class="text-left">Layanan</th>
+                        <th class="text-left">Penyebab</th>
+                        <th class="text-right w-px">Gagal</th>
+                        <th class="text-left">Bahan Terbuang</th>
+                        <th class="text-right w-px">Kerugian</th>
+                        <th class="text-left">Pelapor</th>
+                        <th class="text-center w-px">Shift</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -114,39 +114,59 @@
                                 'OPERATOR_ERROR' => 'Salah operator',
                                 default => 'Lainnya',
                             };
+
+                            $cleanDesc = trim($log->reason_description ?? '');
+                            if ($cleanDesc && stripos($cleanDesc, $reasonLabel) === 0) {
+                                $cleanDesc = trim(preg_replace('/^' . preg_quote($reasonLabel, '/') . '\s*[\/\-:]?\s*/i', '', $cleanDesc));
+                            }
                         @endphp
                         <tr>
-                            <td class="whitespace-nowrap">
-                                <span class="font-mono text-[11px] font-medium text-slate-900">{{ $log->spoilage_number }}</span>
-                                <span class="mt-0.5 block text-[10px] text-slate-400">{{ $log->logged_at?->format('d/m/Y H:i') }}</span>
-                            </td>
-                            <td class="font-medium text-slate-800">{{ $log->service?->name ?? 'Etalase / lainnya' }}</td>
                             <td>
-                                <span class="text-[11px] font-medium text-rose-600">{{ $reasonLabel }}</span>
-                                @if($log->reason_description)
-                                    <p class="mt-1 max-w-[220px] text-[11px] leading-relaxed text-slate-500">{{ $log->reason_description }}</p>
+                                <span class="font-mono text-xs font-semibold text-slate-900">{{ $log->spoilage_number }}</span>
+                                <span class="mt-0.5 block font-mono text-[11px] text-slate-400">{{ $log->logged_at?->format('d/m/Y H:i') }}</span>
+                            </td>
+                            <td>
+                                <span class="font-semibold text-xs text-slate-800 whitespace-nowrap">{{ $log->service?->name ?? 'Etalase / lainnya' }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-danger text-[10px]">{{ $reasonLabel }}</span>
+                                @if($cleanDesc)
+                                    <span class="mt-1 block text-[11px] text-slate-500 max-w-[200px] leading-tight" title="{{ $log->reason_description }}">
+                                        {{ $cleanDesc }}
+                                    </span>
                                 @endif
                             </td>
-                            <td class="text-right font-semibold text-slate-800 num-tabular">{{ number_format((float) $log->failed_output_qty, 0, ',', '.') }}</td>
+                            <td class="text-right num-tabular">
+                                <span class="font-semibold text-xs text-slate-800">{{ number_format((float) $log->failed_output_qty, 0, ',', '.') }}</span>
+                                <span class="block text-[10px] text-slate-400">lbr</span>
+                            </td>
                             <td>
                                 <div class="space-y-1">
                                     @foreach($log->items as $item)
-                                        <div class="flex items-center gap-1.5 text-[11px]">
-                                            <span class="font-medium text-rose-600 num-tabular">
-                                                -{{ $item->product?->unit?->allow_decimal ? number_format((float) $item->qty_wasted, 4, ',', '.') : number_format((float) $item->qty_wasted, 0, ',', '.') }}
-                                                {{ $item->product?->unit?->code }}
-                                            </span>
-                                            <span class="text-slate-400">{{ $item->product?->name }}</span>
+                                        @php
+                                            $q = rtrim(rtrim((string) $item->qty_wasted, '0'), '.');
+                                            $u = $item->product?->unit?->code ?? '';
+                                            $name = trim(preg_replace('/\[.*?\]/', '', $item->product?->name ?? ''));
+                                        @endphp
+                                        <div class="flex items-center gap-1.5 text-xs whitespace-nowrap">
+                                            <span class="font-mono text-[11px] font-semibold text-rose-600">-{{ $q }} {{ $u }}</span>
+                                            <span class="text-[11px] text-slate-600">{{ $name }}</span>
                                         </div>
                                     @endforeach
                                 </div>
                             </td>
-                            <td class="text-right font-semibold text-rose-600 num-tabular">Rp {{ number_format((float) $log->total_spoilage_cost, 0, ',', '.') }}</td>
-                            <td>
-                                <p class="text-[11px] font-medium text-slate-700">{{ $log->reportedBy?->name ?? '-' }}</p>
-                                <p class="mt-0.5 text-[10px] text-slate-400">Guru: {{ $log->verifiedBy?->name ?? '-' }}</p>
+                            <td class="text-right font-semibold font-mono text-xs text-rose-600 num-tabular whitespace-nowrap">
+                                Rp {{ number_format((float) $log->total_spoilage_cost, 0, ',', '.') }}
                             </td>
-                            <td><span class="chip">{{ $log->posShift?->shift_code ?? '-' }}</span></td>
+                            <td>
+                                <span class="font-medium text-xs text-slate-800 whitespace-nowrap">{{ $log->reportedBy?->name ?? '-' }}</span>
+                                @if($log->verifiedBy)
+                                    <span class="mt-0.5 block text-[11px] text-slate-400 whitespace-nowrap">Guru: {{ $log->verifiedBy->name }}</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <span class="chip text-[10px] whitespace-nowrap font-mono">{{ $log->posShift?->shift_code ?? '-' }}</span>
+                            </td>
                         </tr>
                     @empty
                         <tr>

@@ -130,6 +130,7 @@ final class InventoryController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:180'],
+            'unit_id' => ['sometimes', 'exists:units,id'],
             'selling_price' => ['required', new StrictCurrency(min: 0)],
             'average_cost' => ['required', new StrictCurrency(min: 0)],
             'min_stock_alert' => ['required', new StrictNumeric(allowDecimal: true, min: 0)],

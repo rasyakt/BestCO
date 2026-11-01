@@ -45,14 +45,14 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Waktu</th>
-                        <th>Jenis</th>
-                        <th class="text-right">Saldo awal</th>
+                        <th class="text-left">Waktu</th>
+                        <th class="text-left">Jenis Transaksi</th>
+                        <th class="text-right">Saldo Awal</th>
                         <th class="text-right">Perubahan</th>
-                        <th class="text-right">Saldo akhir</th>
+                        <th class="text-right">Saldo Akhir</th>
                         <th class="text-right">HPP</th>
-                        <th class="text-right">Nilai</th>
-                        <th>Petugas</th>
+                        <th class="text-right">Total Nilai</th>
+                        <th class="text-left">Petugas</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -71,25 +71,25 @@
                             $isOut = str_starts_with((string) $m->qty_change, '-');
                         @endphp
                         <tr>
-                            <td class="whitespace-nowrap">
-                                <span class="font-mono text-[11px] font-medium text-slate-700">{{ $m->created_at->format('d/m/Y') }}</span>
-                                <span class="mt-0.5 block text-[10px] text-slate-400">{{ $m->created_at->format('H:i') }} WIB</span>
+                            <td>
+                                <span class="font-mono text-xs font-semibold text-slate-800">{{ $m->created_at->format('d/m/Y') }}</span>
+                                <span class="mt-0.5 block font-mono text-[10px] text-slate-400">{{ $m->created_at->format('H:i') }} WIB</span>
                             </td>
                             <td>
-                                <span class="badge {{ $badgeStyle }}">{{ $typeLabel }}</span>
+                                <span class="badge {{ $badgeStyle }} whitespace-nowrap text-[11px]">{{ $typeLabel }}</span>
                             </td>
-                            <td class="text-right num-tabular text-slate-500">
+                            <td class="text-right num-tabular text-slate-600 text-xs font-mono">
                                 {{ number_format((float) $m->balance_before, $product->unit?->allow_decimal ? 4 : 0, ',', '.') }}
                             </td>
-                            <td class="text-right font-semibold num-tabular {{ $isOut ? 'text-rose-600' : 'text-emerald-600' }}">
+                            <td class="text-right font-semibold num-tabular text-xs font-mono {{ $isOut ? 'text-rose-600' : 'text-emerald-600' }}">
                                 {{ $isOut ? '' : '+' }}{{ (string) $m->qty_change }}
                             </td>
-                            <td class="text-right font-semibold num-tabular text-slate-900">
+                            <td class="text-right font-semibold num-tabular text-slate-900 text-xs font-mono">
                                 {{ number_format((float) $m->balance_after, $product->unit?->allow_decimal ? 4 : 0, ',', '.') }}
                             </td>
-                            <td class="text-right num-tabular text-slate-600">Rp {{ number_format((float) $m->unit_cost, 0, ',', '.') }}</td>
-                            <td class="text-right font-semibold num-tabular text-slate-800">Rp {{ number_format((float) $m->total_value, 0, ',', '.') }}</td>
-                            <td class="whitespace-nowrap text-[11px] text-slate-500">{{ $m->createdBy?->name ?? 'Sistem' }}</td>
+                            <td class="text-right num-tabular text-slate-600 text-xs font-mono">Rp {{ number_format((float) $m->unit_cost, 0, ',', '.') }}</td>
+                            <td class="text-right font-semibold num-tabular text-slate-800 text-xs font-mono">Rp {{ number_format((float) $m->total_value, 0, ',', '.') }}</td>
+                            <td class="text-xs text-slate-600 whitespace-nowrap">{{ $m->createdBy?->name ?? 'Sistem' }}</td>
                         </tr>
                     @empty
                         <tr>

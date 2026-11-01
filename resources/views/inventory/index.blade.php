@@ -866,9 +866,19 @@
                 @csrf
                 @method('PUT')
                 <div class="modal-body space-y-4">
-                    <div>
-                        <label class="form-label">Nama Produk</label>
-                        <input type="text" name="name" x-model="editProd.name" required class="input w-full">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <div class="sm:col-span-2">
+                            <label class="form-label">Nama Produk</label>
+                            <input type="text" name="name" x-model="editProd.name" required class="input w-full">
+                        </div>
+                        <div>
+                            <label class="form-label">Satuan</label>
+                            <select name="unit_id" x-model="editProd.unit_id" class="select input w-full" required>
+                                @foreach($units as $u)
+                                    <option value="{{ $u->id }}">{{ $u->code }} ({{ $u->name }})</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -1133,6 +1143,7 @@ function inventoryManager() {
         editProd: {
             id: null,
             name: '',
+            unit_id: null,
             selling_price: 0,
             average_cost: 0,
             min_stock_alert: 5,
@@ -1185,6 +1196,7 @@ function inventoryManager() {
             this.editProd = {
                 id: p.id,
                 name: p.name,
+                unit_id: p.unit_id,
                 selling_price: parseFloat(p.selling_price) || 0,
                 average_cost: parseFloat(p.average_cost) || 0,
                 min_stock_alert: parseFloat(p.min_stock_alert) || 5,

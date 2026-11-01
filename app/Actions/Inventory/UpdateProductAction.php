@@ -11,10 +11,11 @@ use InvalidArgumentException;
 final class UpdateProductAction
 {
     /**
-     * Perbarui data master produk (nama, harga jual, HPP, min alert, barcode, status aktif).
+     * Perbarui data master produk (nama, satuan, harga jual, HPP, min alert, barcode, status aktif).
      *
      * @param array{
      *     name?: string,
+     *     unit_id?: int|string,
      *     selling_price?: int|float|string,
      *     average_cost?: int|float|string,
      *     min_stock_alert?: int|float|string,
@@ -29,6 +30,10 @@ final class UpdateProductAction
 
             if (isset($data['name'])) {
                 $updates['name'] = trim((string) $data['name']);
+            }
+
+            if (isset($data['unit_id'])) {
+                $updates['unit_id'] = (int) $data['unit_id'];
             }
 
             if (isset($data['selling_price'])) {

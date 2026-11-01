@@ -252,50 +252,50 @@
             <span class="badge badge-info">{{ $recentPurchases->total() }} Transaksi Tercatat</span>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-                <thead class="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <th class="px-5 py-3">No. Jurnal & Tanggal</th>
-                        <th class="px-5 py-3">Keterangan / Faktur</th>
-                        <th class="px-5 py-3">Sumber Dana</th>
-                        <th class="px-5 py-3 text-right">Total Nilai (Rp)</th>
-                        <th class="px-5 py-3">Dicatat Oleh</th>
-                        <th class="px-5 py-3 text-center">Status</th>
+                        <th class="text-left">No. Jurnal</th>
+                        <th class="text-left">Keterangan / Faktur</th>
+                        <th class="text-left">Sumber Dana</th>
+                        <th class="text-right w-px">Total Nilai</th>
+                        <th class="text-left">Dicatat Oleh</th>
+                        <th class="text-center w-px">Status</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
+                <tbody>
                     @forelse($recentPurchases as $purchase)
                         @php
                             $creditItem = $purchase->items->where('credit', '>', 0)->first();
                             $fundingCoa = $creditItem?->chartOfAccount;
                         @endphp
-                        <tr class="hover:bg-slate-50/50">
-                            <td class="px-5 py-3.5">
-                                <span class="font-mono font-semibold text-slate-900">{{ $purchase->journal_number }}</span>
-                                <span class="block text-[11px] text-slate-400">{{ $purchase->entry_date->format('d M Y') }}</span>
+                        <tr>
+                            <td>
+                                <span class="font-mono text-xs font-semibold text-slate-900">{{ $purchase->journal_number }}</span>
+                                <span class="mt-0.5 block font-mono text-[11px] text-slate-400">{{ $purchase->entry_date->format('d/m/Y') }}</span>
                             </td>
-                            <td class="px-5 py-3.5 max-w-xs">
-                                <p class="truncate font-medium text-slate-800" title="{{ $purchase->description }}">{{ $purchase->description }}</p>
-                                <span class="text-[11px] text-slate-400">Ref: {{ $purchase->reference_type ?? 'PURCHASE' }}</span>
+                            <td class="max-w-xs">
+                                <span class="font-medium text-xs text-slate-800 line-clamp-1" title="{{ $purchase->description }}">{{ $purchase->description }}</span>
+                                <span class="mt-0.5 block text-[11px] text-slate-400">Ref: {{ $purchase->reference_type ?? 'PURCHASE' }}</span>
                             </td>
-                            <td class="px-5 py-3.5">
+                            <td>
                                 @if($fundingCoa)
-                                    <span class="badge {{ str_starts_with($fundingCoa->account_code, '1-') ? 'badge-success' : 'badge-warning' }}">
+                                    <span class="badge whitespace-nowrap text-[11px] {{ str_starts_with($fundingCoa->account_code, '1-') ? 'badge-success' : 'badge-warning' }}">
                                         {{ $fundingCoa->account_name }}
                                     </span>
                                 @else
-                                    <span class="text-slate-400">-</span>
+                                    <span class="text-slate-400 text-xs">-</span>
                                 @endif
                             </td>
-                            <td class="px-5 py-3.5 text-right font-mono font-bold text-slate-900">
+                            <td class="text-right font-mono font-bold text-xs text-slate-900 num-tabular whitespace-nowrap">
                                 Rp {{ number_format((float) $purchase->total_debit, 0, ',', '.') }}
                             </td>
-                            <td class="px-5 py-3.5 text-slate-600">
+                            <td class="text-xs text-slate-600 whitespace-nowrap">
                                 {{ $purchase->createdBy?->name ?? 'Sistem' }}
                             </td>
-                            <td class="px-5 py-3.5 text-center">
-                                <span class="badge badge-success">Selesai</span>
+                            <td class="text-center">
+                                <span class="badge badge-success whitespace-nowrap text-[10px]">Selesai</span>
                             </td>
                         </tr>
                     @empty

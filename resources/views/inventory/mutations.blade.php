@@ -79,51 +79,53 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>No. bukti</th>
-                        <th>Barang asal</th>
-                        <th>Bahan tujuan</th>
-                        <th class="text-right">Konversi</th>
-                        <th class="text-right">Nilai</th>
-                        <th>Pemohon</th>
-                        <th>Shift</th>
+                        <th class="text-left">No. Bukti</th>
+                        <th class="text-left">Barang Asal</th>
+                        <th class="text-left">Bahan Tujuan</th>
+                        <th class="text-center w-px">Rasio</th>
+                        <th class="text-right w-px">Nilai Mutasi</th>
+                        <th class="text-left">Pemohon</th>
+                        <th class="text-center w-px">Shift</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($mutations as $m)
                         <tr>
-                            <td class="whitespace-nowrap">
-                                <span class="font-mono text-[11px] font-medium text-slate-900">{{ $m->mutation_number }}</span>
-                                <span class="mt-0.5 block text-[10px] text-slate-400">{{ $m->mutated_at?->format('d/m/Y H:i') }}</span>
+                            <td>
+                                <span class="font-mono text-xs font-semibold text-slate-900">{{ $m->mutation_number }}</span>
+                                <span class="mt-0.5 block font-mono text-[11px] text-slate-400">{{ $m->mutated_at?->format('d/m/Y H:i') }}</span>
                             </td>
                             <td>
-                                <p class="font-medium text-slate-800">{{ $m->sourceProduct?->name }}</p>
-                                <p class="mt-0.5 text-[11px] font-medium text-rose-600 num-tabular">
+                                <span class="font-semibold text-xs text-slate-800 whitespace-nowrap">{{ $m->sourceProduct?->name }}</span>
+                                <span class="mt-0.5 block font-mono text-[11px] font-semibold text-rose-600 num-tabular">
                                     -{{ number_format((float) $m->source_qty_deducted, 0, ',', '.') }} {{ $m->sourceProduct?->unit?->code }}
-                                    <span class="font-normal text-slate-400">(@ Rp {{ number_format((float) $m->source_unit_cost, 0, ',', '.') }})</span>
-                                </p>
+                                </span>
                             </td>
                             <td>
-                                <p class="font-medium text-slate-800">{{ $m->targetProduct?->name }}</p>
-                                <p class="mt-0.5 text-[11px] font-medium text-emerald-600 num-tabular">
+                                <span class="font-semibold text-xs text-slate-800 whitespace-nowrap">{{ $m->targetProduct?->name }}</span>
+                                <span class="mt-0.5 block font-mono text-[11px] font-semibold text-emerald-600 num-tabular">
                                     +{{ number_format((float) $m->target_qty_added, 0, ',', '.') }} {{ $m->targetProduct?->unit?->code }}
-                                    <span class="font-normal text-slate-400">(@ Rp {{ number_format((float) $m->target_unit_cost, 0, ',', '.') }})</span>
-                                </p>
+                                </span>
                             </td>
-                            <td class="text-right">
-                                <span class="chip">1 : {{ number_format((float) $m->conversion_factor, 0, ',', '.') }}</span>
+                            <td class="text-center">
+                                <span class="chip text-[10px] whitespace-nowrap font-mono">1 : {{ number_format((float) $m->conversion_factor, 0, ',', '.') }}</span>
                             </td>
-                            <td class="text-right font-semibold text-slate-900 num-tabular">
+                            <td class="text-right font-semibold font-mono text-xs text-slate-900 num-tabular whitespace-nowrap">
                                 Rp {{ number_format((float) $m->total_mutation_value, 0, ',', '.') }}
                             </td>
                             <td>
-                                <p class="text-[11px] font-medium text-slate-700">{{ $m->requestedBy?->name ?? '-' }}</p>
-                                <p class="mt-0.5 text-[10px] text-slate-400">Guru: {{ $m->approvedBy?->name ?? '-' }}</p>
-                            </td>
-                            <td>
-                                <span class="chip">{{ $m->posShift?->shift_code ?? '-' }}</span>
-                                @if($m->journal_entry_id)
-                                    <span class="mt-1 block text-[10px] text-slate-400">Sudah dijurnal</span>
+                                <span class="font-medium text-xs text-slate-800 whitespace-nowrap">{{ $m->requestedBy?->name ?? '-' }}</span>
+                                @if($m->approvedBy)
+                                    <span class="mt-0.5 block text-[11px] text-slate-400 whitespace-nowrap">Guru: {{ $m->approvedBy->name }}</span>
                                 @endif
+                            </td>
+                            <td class="text-center">
+                                <div class="flex flex-col items-center gap-1">
+                                    <span class="chip text-[10px] whitespace-nowrap font-mono">{{ $m->posShift?->shift_code ?? '-' }}</span>
+                                    @if($m->journal_entry_id)
+                                        <span class="badge badge-success text-[9px] py-0 px-1 whitespace-nowrap">Dijurnal</span>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
