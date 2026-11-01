@@ -185,13 +185,13 @@ final class ShiftController extends Controller
                 openedByUserId: (string) auth()->id(),
                 openingCashBalance: number_format((float) $validated['opening_cash_balance'], 4, '.', ''),
                 slots: $slotDataList,
-                notes: 'Dibuka oleh ' . auth()->user()->name,
+                notes: 'Dibuka oleh '.auth()->user()->name,
             ));
         } catch (\DomainException $exception) {
             return back()->withInput()->withErrors(['shift' => $exception->getMessage()]);
         }
 
-        return redirect()->route('pos.terminal')->with('success', 'Shift ' . $shift->shift_code . ' berhasil dibuka!');
+        return redirect()->route('pos.terminal')->with('success', 'Shift '.$shift->shift_code.' berhasil dibuka!');
     }
 
     public function close(Request $request, ClosePosShiftAction $action): RedirectResponse
@@ -213,14 +213,14 @@ final class ShiftController extends Controller
 
         if ($teacher === null) {
             return back()->withInput()->withErrors([
-                'close_pin' => 'Guru supervisor shift tidak ditemukan.',
+                'supervisor_pin' => 'Guru supervisor shift tidak ditemukan.',
             ]);
         }
 
         // Verifikasi PIN guru supervisor
         if (! Hash::check($validated['supervisor_pin'], (string) $teacher->pin_code)) {
             return back()->withInput()->withErrors([
-                'close_pin' => 'PIN Approval Guru Piket supervisor salah.',
+                'supervisor_pin' => 'PIN Approval Guru Piket supervisor salah.',
             ]);
         }
 
@@ -232,15 +232,14 @@ final class ShiftController extends Controller
                 closingNotes: $validated['closing_notes'] ?? null
             );
         } catch (\DomainException $exception) {
-            return back()->withInput()->withErrors(['close_pin' => $exception->getMessage()]);
+            return back()->withInput()->withErrors(['supervisor_pin' => $exception->getMessage()]);
         }
 
-        $msg = 'Shift ' . $closedShift->shift_code . ' berhasil ditutup.';
+        $msg = 'Shift '.$closedShift->shift_code.' berhasil ditutup.';
         if (bccomp((string) $closedShift->cash_discrepancy, '0.0000', 4) !== 0) {
-            $msg .= ' Terjadi selisih kas fisik Rp ' . number_format((float) $closedShift->cash_discrepancy, 0, ',', '.') . ' dan jurnal penyesuaian otomatis telah diposting.';
+            $msg .= ' Terjadi selisih kas fisik Rp '.number_format((float) $closedShift->cash_discrepancy, 0, ',', '.').' dan jurnal penyesuaian otomatis telah diposting.';
         }
 
         return redirect()->route('shift.index')->with('success', $msg);
     }
 }
-

@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PiketAttendanceController;
+use App\Http\Controllers\QrisSettingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SpoilageController;
@@ -119,6 +120,13 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/settings/theme/preview', [ThemeController::class, 'preview'])->name('theme.preview');
         Route::post('/settings/theme/custom', [ThemeController::class, 'applyCustom'])->name('theme.custom');
         Route::post('/settings/theme/reset', [ThemeController::class, 'reset'])->name('theme.reset');
+    });
+
+    // Pengaturan QRIS (Khusus Superadmin & Admin)
+    Route::middleware('role:superadmin,admin')->group(function (): void {
+        Route::get('/settings/qris', [QrisSettingController::class, 'index'])->name('settings.qris');
+        Route::post('/settings/qris/upload', [QrisSettingController::class, 'upload'])->name('settings.qris.upload');
+        Route::delete('/settings/qris', [QrisSettingController::class, 'delete'])->name('settings.qris.delete');
     });
 });
 

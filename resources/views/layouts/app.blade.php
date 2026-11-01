@@ -48,6 +48,7 @@
             request()->routeIs('shift.*') => 'Shift Kasir',
             request()->routeIs('piket.*') => 'Presensi Piket',
             request()->routeIs('reports.*') => 'Laporan',
+            request()->routeIs('settings.qris*') => 'Pengaturan QRIS',
             request()->routeIs('theme.*') => 'Tema',
             request()->routeIs('users.*') => 'Kelola Pengguna',
             default => 'BESTCO',
@@ -88,6 +89,7 @@
                 'label' => 'Sistem',
                 'items' => [
                     ['label' => 'Kelola Pengguna', 'route' => 'users.index', 'icon' => 'users', 'active' => 'users.*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
+                    ['label' => 'Pengaturan QRIS', 'route' => 'settings.qris', 'icon' => 'qr', 'active' => 'settings.qris*', 'roles' => ['superadmin', 'admin']],
                     ['label' => 'Tema', 'route' => 'theme.index', 'icon' => 'palette', 'active' => 'theme.*', 'roles' => ['superadmin']],
                 ],
             ],

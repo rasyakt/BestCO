@@ -153,10 +153,10 @@
                     <input type="hidden" name="pos_shift_id" value="{{ $activeShift->id }}">
 
                     <div class="card-body space-y-4">
-                        @if($errors->has('close_pin'))
+                        @if($errors->has('supervisor_pin'))
                             <div class="alert alert-danger">
                                 <x-icon name="x-circle" class="mt-0.5 h-4 w-4 shrink-0" />
-                                <span>{{ $errors->first('close_pin') }}</span>
+                                <span>{{ $errors->first('supervisor_pin') }}</span>
                             </div>
                         @endif
 

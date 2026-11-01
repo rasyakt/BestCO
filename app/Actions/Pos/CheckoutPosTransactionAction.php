@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Pos;
 
+use App\Actions\Accounting\PostDoubleEntryJournalAction;
 use App\DTOs\Accounting\JournalEntryData;
 use App\DTOs\Accounting\JournalLineData;
 use App\DTOs\Pos\CartItemData;
@@ -119,6 +120,10 @@ final class CheckoutPosTransactionAction
             );
             $baseForGlobalDiscount = bcadd($retailNetBeforeGlobal, $serviceNetBeforeGlobal, 4);
 
+            // Resolusi akun potongan agar tidak bergantung pada kode hardcoded.
+            $coaDiscRetail = ChartOfAccount::where('account_code', '4-1102')->lockForUpdate()->firstOrFail();
+            $coaDiscService = ChartOfAccount::where('account_code', '4-2109')->lockForUpdate()->firstOrFail();
+
             if (bccomp($globalManualDiscount, '0.0000', 4) === 1) {
                 if (bccomp($baseForGlobalDiscount, '0.0000', 4) !== 1) {
                     throw new \DomainException('Diskon manual tidak dapat diterapkan pada keranjang bernilai nol.');
@@ -135,7 +140,7 @@ final class CheckoutPosTransactionAction
 
                 if (bccomp($retailShare, '0.0000', 4) === 1) {
                     $journalLines[] = new JournalLineData(
-                        chartOfAccountCode: '4-1102',
+                        chartOfAccountCode: $coaDiscRetail->account_code,
                         debit: $retailShare,
                         credit: '0.0000',
                         lineDescription: 'Diskon manual keranjang (etalase)',
@@ -144,7 +149,7 @@ final class CheckoutPosTransactionAction
 
                 if (bccomp($serviceShare, '0.0000', 4) === 1) {
                     $journalLines[] = new JournalLineData(
-                        chartOfAccountCode: '4-2109',
+                        chartOfAccountCode: $coaDiscService->account_code,
                         debit: $serviceShare,
                         credit: '0.0000',
                         lineDescription: 'Diskon manual keranjang (jasa)',
@@ -180,8 +185,8 @@ final class CheckoutPosTransactionAction
             $invoiceSequence = PosTransaction::whereDate('transaction_date', today())->count() + 1;
 
             do {
-                $invoiceNumber = 'INV-' . Carbon::now()->format('Ymd') . '-'
-                    . str_pad((string) $invoiceSequence, 4, '0', STR_PAD_LEFT);
+                $invoiceNumber = 'INV-'.Carbon::now()->format('Ymd').'-'
+                    .str_pad((string) $invoiceSequence, 4, '0', STR_PAD_LEFT);
                 $invoiceSequence++;
             } while (PosTransaction::where('invoice_number', $invoiceNumber)->exists());
 
@@ -246,10 +251,12 @@ final class CheckoutPosTransactionAction
             $coaCash = ChartOfAccount::where('account_code', '1-1101')->lockForUpdate()->firstOrFail();
             $coaQris = ChartOfAccount::where('account_code', '1-1103')->lockForUpdate()->firstOrFail();
 
+            $paymentMethodCode = $data->paymentMethod === PaymentMethod::CASH ? $coaCash->account_code : $coaQris->account_code;
+
             $allJournalLines = array_merge([
                 // Debit Kas / QRIS.
                 new JournalLineData(
-                    chartOfAccountCode: $data->paymentMethod === PaymentMethod::CASH ? $coaCash->account_code : $coaQris->account_code,
+                    chartOfAccountCode: $paymentMethodCode,
                     debit: $grandTotal,
                     credit: '0.0000',
                     lineDescription: 'Debit Kas / QRIS (Penerimaan POS)',
@@ -257,7 +264,7 @@ final class CheckoutPosTransactionAction
             ], $journalLines);
 
             $journalData = new JournalEntryData(
-                journalNumber: 'JRN-' . Carbon::now()->format('Ymd') . '-' .
+                journalNumber: 'JRN-'.Carbon::now()->format('Ymd').'-'.
                     str_pad((string) (JournalEntry::count() + 1), 4, '0', STR_PAD_LEFT),
                 accountingPeriodId: (string) $period->getKey(),
                 posShiftId: (string) $shift->id,
@@ -265,12 +272,12 @@ final class CheckoutPosTransactionAction
                 journalType: JournalType::SALES_POS,
                 referenceType: 'App\Models\PosTransaction',
                 referenceId: $transaction->id,
-                description: 'Transaksi POS ' . $invoiceNumber . ' (' . $data->paymentMethod->label() . ')',
+                description: 'Transaksi POS '.$invoiceNumber.' ('.$data->paymentMethod->label().')',
                 lines: $allJournalLines,
                 createdByUserId: (string) $cashier->id,
             );
 
-            $journalEntry = app(\App\Actions\Accounting\PostDoubleEntryJournalAction::class)
+            $journalEntry = app(PostDoubleEntryJournalAction::class)
                 ->execute($journalData);
 
             $transaction->update(['journal_entry_id' => $journalEntry->id]);
@@ -356,6 +363,7 @@ final class CheckoutPosTransactionAction
 
         $inventoryCode = $product->inventoryAccount?->account_code ?? '1-1301';
         $cogsCode = $product->cogsAccount?->account_code ?? '5-1101';
+        $revenueCode = $product->inventoryAccount?->account_code ?? '1-1301';
 
         $qty = $this->normalizeQuantity($item->qty);
         $manualDiscount = $this->normalizeAmount($item->manualDiscountAmount, 'diskon item');
@@ -365,11 +373,11 @@ final class CheckoutPosTransactionAction
         $subtotalGross = bcmul($qty, $unitPrice, 4);
 
         if (bccomp($manualDiscount, $subtotalGross, 4) === 1) {
-            throw new \DomainException('Diskon item melebihi nilai barang ' . $product->name . '.');
+            throw new \DomainException('Diskon item melebihi nilai barang '.$product->name.'.');
         }
 
         if (bccomp((string) $product->current_stock, $qty, 4) === -1) {
-            throw new \DomainException('Stok tidak mencukupi untuk ' . $product->name);
+            throw new \DomainException('Stok tidak mencukupi untuk '.$product->name);
         }
 
         $subtotalNet = bcsub($subtotalGross, $manualDiscount, 4);
@@ -382,10 +390,10 @@ final class CheckoutPosTransactionAction
         $journalLines = [];
         if (bccomp($subtotalGross, '0.0000', 4) === 1) {
             $journalLines[] = new JournalLineData(
-                chartOfAccountCode: '4-1101',
+                chartOfAccountCode: $revenueCode,
                 debit: '0.0000',
                 credit: $subtotalGross,
-                lineDescription: 'Pendapatan penjualan ' . $product->name,
+                lineDescription: 'Pendapatan penjualan '.$product->name,
             );
         }
         if (bccomp($manualDiscount, '0.0000', 4) === 1) {
@@ -393,7 +401,7 @@ final class CheckoutPosTransactionAction
                 chartOfAccountCode: '4-1102',
                 debit: $manualDiscount,
                 credit: '0.0000',
-                lineDescription: 'Potongan penjualan ' . $product->name,
+                lineDescription: 'Potongan penjualan '.$product->name,
             );
         }
         if (bccomp($cogsTotal, '0.0000', 4) === 1) {
@@ -401,20 +409,20 @@ final class CheckoutPosTransactionAction
                 chartOfAccountCode: $cogsCode,
                 debit: $cogsTotal,
                 credit: '0.0000',
-                lineDescription: 'HPP ' . $product->name,
+                lineDescription: 'HPP '.$product->name,
             );
             $journalLines[] = new JournalLineData(
                 chartOfAccountCode: $inventoryCode,
                 debit: '0.0000',
                 credit: $cogsTotal,
-                lineDescription: 'Kredit Persediaan Etalase ' . $product->name,
+                lineDescription: 'Kredit Persediaan Etalase '.$product->name,
             );
         }
 
         $stockLedgerEntries = [[
             'product_id' => $product->id,
             '_product' => $product,
-            'qty_change' => '-' . $qty,
+            'qty_change' => '-'.$qty,
             'balance_before' => $balanceBefore,
             'balance_after' => bcsub($balanceBefore, $qty, 4),
             'unit_cost' => $avgCost,
@@ -479,7 +487,7 @@ final class CheckoutPosTransactionAction
         $grossSubtotal = $pricing['line_subtotal_gross'];
 
         if (bccomp($manualDiscount, $subtotalNet, 4) === 1) {
-            throw new \DomainException('Diskon item melebihi nilai layanan ' . $service->name . '.');
+            throw new \DomainException('Diskon item melebihi nilai layanan '.$service->name.'.');
         }
 
         $lineNetTotal = bcsub($subtotalNet, $manualDiscount, 4);
@@ -492,7 +500,8 @@ final class CheckoutPosTransactionAction
 
         $boms = $service->boms()->get();
         foreach ($boms as $bom) {
-            $rawMaterial = Product::where('id', $bom->raw_material_product_id)
+            $rawMaterial = Product::with(['inventoryAccount', 'cogsAccount'])
+                ->where('id', $bom->raw_material_product_id)
                 ->where('is_active', true)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -500,7 +509,7 @@ final class CheckoutPosTransactionAction
             $consumptionQty = (string) $bom->consumption_qty;
 
             if (bccomp($consumptionQty, '0.0000', 4) !== 1) {
-                throw new \DomainException('Konfigurasi BoM layanan ' . $service->name . ' tidak valid.');
+                throw new \DomainException('Konfigurasi BoM layanan '.$service->name.' tidak valid.');
             }
 
             $qtyConsumed = bcmul($qty, $consumptionQty, 4);
@@ -508,7 +517,7 @@ final class CheckoutPosTransactionAction
             $bomCost = bcmul($qtyConsumed, $unitCost, 4);
 
             if (bccomp((string) $rawMaterial->current_stock, $qtyConsumed, 4) === -1) {
-                throw new \DomainException('Stok bahan baku tidak mencukupi untuk ' . $rawMaterial->name);
+                throw new \DomainException('Stok bahan baku tidak mencukupi untuk '.$rawMaterial->name);
             }
 
             $balanceBefore = (string) $rawMaterial->current_stock;
@@ -526,7 +535,7 @@ final class CheckoutPosTransactionAction
             $stockLedgerEntries[] = [
                 'product_id' => $rawMaterial->id,
                 '_product' => $rawMaterial,
-                'qty_change' => '-' . $qtyConsumed,
+                'qty_change' => '-'.$qtyConsumed,
                 'balance_before' => $balanceBefore,
                 'balance_after' => bcsub($balanceBefore, $qtyConsumed, 4),
                 'unit_cost' => $unitCost,
@@ -542,14 +551,14 @@ final class CheckoutPosTransactionAction
             chartOfAccountCode: $revenueCode,
             debit: '0.0000',
             credit: $grossSubtotal,
-            lineDescription: 'Pendapatan jasa ' . $service->name . ' (bruto)',
+            lineDescription: 'Pendapatan jasa '.$service->name.' (bruto)',
         );
         if (bccomp($tierDiscount, '0.0000', 4) === 1) {
             $journalLines[] = new JournalLineData(
                 chartOfAccountCode: $discountCode,
                 debit: $tierDiscount,
                 credit: '0.0000',
-                lineDescription: 'Potongan grosir jasa ' . $service->name,
+                lineDescription: 'Potongan grosir jasa '.$service->name,
             );
         }
         if (bccomp($manualDiscount, '0.0000', 4) === 1) {
@@ -557,18 +566,20 @@ final class CheckoutPosTransactionAction
                 chartOfAccountCode: $discountCode,
                 debit: $manualDiscount,
                 credit: '0.0000',
-                lineDescription: 'Diskon manual jasa ' . $service->name,
+                lineDescription: 'Diskon manual jasa '.$service->name,
             );
         }
         if (bccomp($cogsService, '0.0000', 4) === 1) {
+            $cogsCode = $rawMaterial->cogsAccount?->account_code ?? '5-2101';
+            $invCode = $rawMaterial->inventoryAccount?->account_code ?? '1-1302';
             $journalLines[] = new JournalLineData(
-                chartOfAccountCode: '5-2101',
+                chartOfAccountCode: $cogsCode,
                 debit: $cogsService,
                 credit: '0.0000',
-                lineDescription: 'HPP bahan baku jasa ' . $service->name,
+                lineDescription: 'HPP bahan baku jasa '.$service->name,
             );
             $journalLines[] = new JournalLineData(
-                chartOfAccountCode: '1-1302',
+                chartOfAccountCode: $invCode,
                 debit: '0.0000',
                 credit: $cogsService,
                 lineDescription: 'Kredit Persediaan Bahan Baku Jasa',

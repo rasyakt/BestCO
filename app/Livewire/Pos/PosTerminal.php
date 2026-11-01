@@ -21,9 +21,7 @@ use App\Models\Product;
 use App\Models\Service;
 use App\Models\ShiftAttendance;
 use App\Models\UnitConversion;
-use App\Models\User;
 use App\Rules\StrictCurrency;
-use App\Rules\StrictQuantity;
 use App\Services\Pos\TieredPricingResolver;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
@@ -32,31 +30,45 @@ final class PosTerminal extends Component
 {
     // Search & Filter
     public string $searchQuery = '';
+
     public string $selectedCategory = 'ALL';
 
     // Customer & Cart
     public string $customerName = 'Pelanggan Umum';
+
     public array $cart = []; // list of items
+
     public string $manualDiscountTotal = '0';
 
     // Payment Modal State
     public bool $showPaymentModal = false;
+
     public string $paymentMethod = 'CASH';
+
     public string $amountPaid = '0';
 
     // Spoilage Modal State (F6)
     public bool $showSpoilageModal = false;
+
     public ?int $spoilageServiceId = null;
+
     public string $spoilageFailedQty = '1';
+
     public string $spoilageReason = 'PAPER_JAM';
+
     public string $spoilageDescription = '';
+
     public string $spoilageTeacherPin = '';
 
     // Internal Mutation Modal State (F7 - Ambil dari Etalase)
     public bool $showMutationModal = false;
+
     public ?int $selectedConversionId = null;
+
     public string $mutationSourceQty = '1';
+
     public string $mutationNotes = '';
+
     public string $mutationTeacherPin = '';
 
     // Receipt Modal State
@@ -64,6 +76,7 @@ final class PosTerminal extends Component
 
     // Toast/Alert
     public ?string $feedbackMessage = null;
+
     public ?string $feedbackType = null; // 'success' or 'error'
 
     /**
@@ -73,17 +86,17 @@ final class PosTerminal extends Component
     {
         // Hapus semua karakter selain angka dan titik
         $cleaned = preg_replace('/[^\d.]/', '', $value);
-        
-        if (!$allowDecimal) {
+
+        if (! $allowDecimal) {
             $cleaned = preg_replace('/\./', '', $cleaned);
         } else {
             // Pastikan hanya 1 titik desimal
             $parts = explode('.', $cleaned);
             if (count($parts) > 2) {
-                $cleaned = $parts[0] . '.' . implode('', array_slice($parts, 1));
+                $cleaned = $parts[0].'.'.implode('', array_slice($parts, 1));
             }
         }
-        
+
         return $cleaned;
     }
 
@@ -161,8 +174,9 @@ final class PosTerminal extends Component
         if ($type === 'RETAIL') {
             $product = Product::findOrFail($id);
             if (bccomp((string) $product->current_stock, '1.0000', 4) === -1) {
-                $this->feedbackMessage = 'Stok barang ' . $product->name . ' habis!';
+                $this->feedbackMessage = 'Stok barang '.$product->name.' habis!';
                 $this->feedbackType = 'error';
+
                 return;
             }
 
@@ -173,10 +187,12 @@ final class PosTerminal extends Component
                     if (bccomp((string) $product->current_stock, $newQty, 4) === -1) {
                         $this->feedbackMessage = 'Stok tidak mencukupi untuk menambah kuantitas.';
                         $this->feedbackType = 'error';
+
                         return;
                     }
                     $this->cart[$key]['qty'] = (float) $newQty;
                     $this->recalculateCart();
+
                     return;
                 }
             }
@@ -203,6 +219,7 @@ final class PosTerminal extends Component
                 if ($item['type'] === 'SERVICE' && $item['id'] === $id) {
                     $this->cart[$key]['qty'] = (float) bcadd((string) $item['qty'], '1.0000', 4);
                     $this->recalculateCart();
+
                     return;
                 }
             }
@@ -211,7 +228,7 @@ final class PosTerminal extends Component
                 'type' => 'SERVICE',
                 'id' => $service->id,
                 'name' => $service->name,
-                'unit' => $service->unit_name ?? 'LBR',
+                'unit' => $service->base_unit_name ?? 'LBR',
                 'base_price' => (float) $service->base_price,
                 'final_unit_price' => (float) $service->base_price,
                 'qty' => 1.0,
@@ -231,9 +248,10 @@ final class PosTerminal extends Component
         // Sanitasi input: hanya angka positif
         $sanitized = preg_replace('/[^\d.]/', '', (string) $newQty);
         $newQty = (float) $sanitized;
-        
+
         if ($newQty <= 0) {
             $this->removeItem($index);
+
             return;
         }
 
@@ -268,7 +286,7 @@ final class PosTerminal extends Component
             $manualDiscount = number_format((float) ($item['manual_discount'] ?? 0), 4, '.', '');
 
             if ($item['type'] === 'SERVICE') {
-                $service = Service::find($item['id']);
+                $service = Service::where('id', $item['id'])->where('is_active', true)->first();
                 if ($service) {
                     $pricing = $resolver->resolve($service, $qty);
                     $this->cart[$key]['base_price'] = (float) $pricing['base_unit_price'];
@@ -277,6 +295,11 @@ final class PosTerminal extends Component
                     $this->cart[$key]['tier_discount_total'] = (float) $pricing['line_tier_discount_total'];
                     $this->cart[$key]['subtotal_gross'] = (float) $pricing['line_subtotal_gross'];
                     $this->cart[$key]['subtotal_net'] = (float) bcsub($pricing['line_net_before_manual'], $manualDiscount, 4);
+                } else {
+                    unset($this->cart[$key]);
+                    $this->cart = array_values($this->cart);
+
+                    continue;
                 }
             } else {
                 $gross = bcmul($qty, (string) $item['base_price'], 4);
@@ -321,6 +344,7 @@ final class PosTerminal extends Component
         if (empty($this->cart)) {
             $this->feedbackMessage = 'Keranjang belanja masih kosong.';
             $this->feedbackType = 'error';
+
             return;
         }
 
@@ -333,6 +357,13 @@ final class PosTerminal extends Component
         $this->amountPaid = (string) $amount;
     }
 
+    public function getQrisImagePath(): ?string
+    {
+        $setting = \App\Models\SystemSetting::where('setting_key', 'pos_qris_image_path')->first();
+        
+        return $setting?->setting_value['path'] ?? null;
+    }
+
     public function executeCheckout(CheckoutPosTransactionAction $action): void
     {
         // Validasi input
@@ -340,15 +371,16 @@ final class PosTerminal extends Component
             'amountPaid' => ['required', new StrictCurrency(min: 0)],
             'manualDiscountTotal' => ['nullable', new StrictCurrency(min: 0, required: false)],
         ]);
-        
+
         $activeShift = PosShift::where('status', ShiftStatus::OPEN->value)
             ->latest('opened_at')
             ->first();
 
-        if (!$activeShift) {
+        if (! $activeShift) {
             $this->feedbackMessage = 'Shift kasir belum aktif.';
             $this->feedbackType = 'error';
             $this->showPaymentModal = false;
+
             return;
         }
 
@@ -358,6 +390,7 @@ final class PosTerminal extends Component
         if ($this->paymentMethod === 'CASH' && bccomp($paid, $grand, 4) === -1) {
             $this->feedbackMessage = 'Uang pembayaran tunai kurang dari Grand Total!';
             $this->feedbackType = 'error';
+
             return;
         }
 
@@ -387,10 +420,10 @@ final class PosTerminal extends Component
             $this->showPaymentModal = false;
             $this->clearCart();
             $this->customerName = 'Pelanggan Umum';
-            $this->feedbackMessage = 'Transaksi ' . $transaction->invoice_number . ' sukses diselesaikan!';
+            $this->feedbackMessage = 'Transaksi '.$transaction->invoice_number.' sukses diselesaikan!';
             $this->feedbackType = 'success';
         } catch (\Throwable $e) {
-            $this->feedbackMessage = 'Gagal memproses transaksi: ' . $e->getMessage();
+            $this->feedbackMessage = 'Gagal memproses transaksi: '.$e->getMessage();
             $this->feedbackType = 'error';
         }
     }
@@ -398,16 +431,18 @@ final class PosTerminal extends Component
     public function executeSpoilage(RecordSpoilageAction $action): void
     {
         $activeShift = PosShift::where('status', 'OPEN')->latest('opened_at')->first();
-        if (!$activeShift) {
+        if (! $activeShift) {
             $this->feedbackMessage = 'Shift belum dibuka.';
             $this->feedbackType = 'error';
+
             return;
         }
 
         $teacher = $activeShift->supervisorTeacher;
-        if (!Hash::check($this->spoilageTeacherPin, $teacher->pin_code)) {
+        if (! Hash::check($this->spoilageTeacherPin, $teacher->pin_code)) {
             $this->feedbackMessage = 'PIN Guru Supervisor salah.';
             $this->feedbackType = 'error';
+
             return;
         }
 
@@ -426,10 +461,10 @@ final class PosTerminal extends Component
 
             $this->showSpoilageModal = false;
             $this->spoilageTeacherPin = '';
-            $this->feedbackMessage = 'Barang rusak ' . $log->spoilage_number . ' berhasil dicatat (HPP terbebankan: Rp ' . number_format((float) $log->total_spoilage_cost, 0, ',', '.') . ')';
+            $this->feedbackMessage = 'Barang rusak '.$log->spoilage_number.' berhasil dicatat (HPP terbebankan: Rp '.number_format((float) $log->total_spoilage_cost, 0, ',', '.').')';
             $this->feedbackType = 'success';
         } catch (\Throwable $e) {
-            $this->feedbackMessage = 'Gagal mencatat barang rusak: ' . $e->getMessage();
+            $this->feedbackMessage = 'Gagal mencatat barang rusak: '.$e->getMessage();
             $this->feedbackType = 'error';
         }
     }
@@ -437,16 +472,18 @@ final class PosTerminal extends Component
     public function executeInternalMutation(MutateRetailToRawMaterialAction $action): void
     {
         $activeShift = PosShift::where('status', 'OPEN')->latest('opened_at')->first();
-        if (!$activeShift) {
+        if (! $activeShift) {
             $this->feedbackMessage = 'Shift belum dibuka.';
             $this->feedbackType = 'error';
+
             return;
         }
 
         $teacher = $activeShift->supervisorTeacher;
-        if (!Hash::check($this->mutationTeacherPin, $teacher->pin_code)) {
+        if (! Hash::check($this->mutationTeacherPin, $teacher->pin_code)) {
             $this->feedbackMessage = 'PIN Guru Supervisor salah.';
             $this->feedbackType = 'error';
+
             return;
         }
 
@@ -462,10 +499,10 @@ final class PosTerminal extends Component
 
             $this->showMutationModal = false;
             $this->mutationTeacherPin = '';
-            $this->feedbackMessage = 'Mutasi ' . $mutation->mutation_number . ' sukses (+500 Lembar kertas bahan baku ditambahkan)!';
+            $this->feedbackMessage = 'Mutasi '.$mutation->mutation_number.' sukses (+500 Lembar kertas bahan baku ditambahkan)!';
             $this->feedbackType = 'success';
         } catch (\Throwable $e) {
-            $this->feedbackMessage = 'Gagal mutasi internal: ' . $e->getMessage();
+            $this->feedbackMessage = 'Gagal mutasi internal: '.$e->getMessage();
             $this->feedbackType = 'error';
         }
     }
@@ -477,8 +514,8 @@ final class PosTerminal extends Component
 
         if ($this->searchQuery !== '') {
             $productsQuery->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->searchQuery . '%')
-                    ->orWhere('sku', 'like', '%' . $this->searchQuery . '%');
+                $q->where('name', 'like', '%'.$this->searchQuery.'%')
+                    ->orWhere('sku', 'like', '%'.$this->searchQuery.'%');
             });
         }
 
@@ -487,8 +524,8 @@ final class PosTerminal extends Component
 
         if ($this->searchQuery !== '') {
             $servicesQuery->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->searchQuery . '%')
-                    ->orWhere('code', 'like', '%' . $this->searchQuery . '%');
+                $q->where('name', 'like', '%'.$this->searchQuery.'%')
+                    ->orWhere('code', 'like', '%'.$this->searchQuery.'%');
             });
         }
 
@@ -521,4 +558,3 @@ final class PosTerminal extends Component
         ))->layout('layouts.app', ['title' => 'Terminal POS Kasir — BESTCO']);
     }
 }
-
