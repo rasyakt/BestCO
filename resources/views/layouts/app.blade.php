@@ -49,6 +49,7 @@
             request()->routeIs('piket.*') => 'Presensi Piket',
             request()->routeIs('reports.*') => 'Laporan',
             request()->routeIs('theme.*') => 'Tema',
+            request()->routeIs('users.*') => 'Kelola Pengguna',
             default => 'BESTCO',
         };
 
@@ -86,6 +87,7 @@
             [
                 'label' => 'Sistem',
                 'items' => [
+                    ['label' => 'Kelola Pengguna', 'route' => 'users.index', 'icon' => 'users', 'active' => 'users.*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
                     ['label' => 'Tema', 'route' => 'theme.index', 'icon' => 'palette', 'active' => 'theme.*', 'roles' => ['superadmin']],
                 ],
             ],
@@ -291,6 +293,12 @@
                                                 Dashboard
                                             </a>
                                         @endif
+                                        @if($user->canManageUsers())
+                                            <a href="{{ route('users.index') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                                                <x-icon name="users" class="h-4 w-4 text-slate-400" />
+                                                Kelola Pengguna
+                                            </a>
+                                        @endif
                                         @if($user->hasRole('superadmin'))
                                             <a href="{{ route('theme.index') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                                                 <x-icon name="palette" class="h-4 w-4 text-slate-400" />
@@ -323,22 +331,32 @@
                 {{ $isPosLayout ? 'lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:py-4' : '' }}"
                 :class="(posFocus && {{ $isPosLayout ? 'true' : 'false' }}) ? 'lg:px-4 lg:py-3.5' : ''">
                 @if(session('success'))
-                    <div x-data="{ show: true }" x-show="show" x-transition
-                        class="alert alert-success mb-5 shrink-0">
-                        <x-icon name="check-circle" class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                        <span class="flex-1 leading-relaxed">{{ session('success') }}</span>
-                        <button type="button" @click="show = false" class="rounded p-0.5 text-emerald-600/70 transition hover:bg-emerald-100 hover:text-emerald-800">
+                    <div x-data="{ show: true }" x-show="show" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                        class="mb-5 flex items-start gap-3.5 rounded-xl border border-emerald-200/80 bg-emerald-50/90 p-4 text-xs shadow-xs text-emerald-900">
+                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 shadow-2xs">
+                            <x-icon name="check-circle" class="h-4 w-4" />
+                        </div>
+                        <div class="flex-1 pt-0.5">
+                            <p class="font-semibold text-emerald-950">Berhasil</p>
+                            <p class="mt-0.5 leading-relaxed text-emerald-800">{{ session('success') }}</p>
+                        </div>
+                        <button type="button" @click="show = false" class="rounded-md p-1 text-emerald-700/60 transition hover:bg-emerald-100 hover:text-emerald-900" aria-label="Tutup">
                             <x-icon name="x" class="h-4 w-4" />
                         </button>
                     </div>
                 @endif
 
                 @if(session('error') || $errors->has('error'))
-                    <div x-data="{ show: true }" x-show="show" x-transition
-                        class="alert alert-danger mb-5 shrink-0">
-                        <x-icon name="x-circle" class="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
-                        <span class="flex-1 leading-relaxed">{{ session('error') ?? $errors->first('error') }}</span>
-                        <button type="button" @click="show = false" class="rounded p-0.5 text-rose-600/70 transition hover:bg-rose-100 hover:text-rose-800">
+                    <div x-data="{ show: true }" x-show="show" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                        class="mb-5 flex items-start gap-3.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-4 text-xs shadow-xs text-rose-900">
+                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-600 shadow-2xs">
+                            <x-icon name="x-circle" class="h-4 w-4" />
+                        </div>
+                        <div class="flex-1 pt-0.5">
+                            <p class="font-semibold text-rose-950">Perhatian</p>
+                            <p class="mt-0.5 leading-relaxed text-rose-800">{{ session('error') ?? $errors->first('error') }}</p>
+                        </div>
+                        <button type="button" @click="show = false" class="rounded-md p-1 text-rose-700/60 transition hover:bg-rose-100 hover:text-rose-900" aria-label="Tutup">
                             <x-icon name="x" class="h-4 w-4" />
                         </button>
                     </div>
@@ -362,8 +380,8 @@
     </div>
 
     @livewireScripts
-    
-    <!-- Currency & Quantity Input Security Guard -->
-    <script src="{{ asset('js/currency-input-guard.js') }}"></script>
+
+    <!-- Global Custom Confirmation & Alert Dialog -->
+    <x-global-dialog />
 </body>
 </html>

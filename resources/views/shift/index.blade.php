@@ -178,8 +178,17 @@
                     </div>
 
                     <div class="border-t border-slate-100 bg-slate-50 px-5 py-4">
-                        <button type="submit" onclick="return confirm('Tutup shift ini? Kas akan dikunci dan selisih dicatat otomatis.')"
-                            class="btn btn-dark w-full">
+                        <button type="button"
+                            @click="window.bestcoDialog.confirm({
+                                title: 'Konfirmasi Tutup Shift',
+                                message: 'Apakah Anda yakin ingin menutup shift kasir saat ini?',
+                                detail: 'Kas akan dikunci dan selisih kas fisik dengan sistem akan dicatat otomatis ke jurnal akuntansi.',
+                                type: 'danger',
+                                confirmText: 'Ya, Tutup Shift',
+                                cancelText: 'Batal',
+                                onConfirm: () => $el.closest('form').submit()
+                            })"
+                            class="btn btn-dark w-full justify-center">
                             <x-icon name="lock" class="h-4 w-4" />
                             Tutup shift
                         </button>

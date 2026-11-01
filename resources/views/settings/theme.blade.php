@@ -6,9 +6,18 @@
         title="Tema"
         subtitle="Atur warna tampilan aplikasi.">
         <x-slot:actions>
-            <form method="POST" action="{{ route('theme.reset') }}">
+            <form method="POST" action="{{ route('theme.reset') }}" x-data>
                 @csrf
-                <button type="submit" onclick="return confirm('Kembalikan ke tema biru default?')"
+                <button type="button"
+                    @click="window.bestcoDialog.confirm({
+                        title: 'Reset Tema Default',
+                        message: 'Kembalikan warna tampilan aplikasi ke tema biru default?',
+                        detail: 'Kustomisasi warna yang telah disimpan akan dikembalikan ke setelan awal sistem.',
+                        type: 'warning',
+                        confirmText: 'Ya, Reset Tema',
+                        cancelText: 'Batal',
+                        onConfirm: () => $el.closest('form').submit()
+                    })"
                     class="btn btn-secondary">
                     <x-icon name="refresh" class="h-4 w-4" />
                     Kembalikan default

@@ -13,6 +13,7 @@ use App\Http\Controllers\StockInboundController;
 use App\Http\Controllers\StockMutationController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\UserController;
 use App\Livewire\Pos\PosTerminal;
 use Illuminate\Support\Facades\Route;
 
@@ -91,6 +92,16 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/reports', [ReportController::class, 'index'])
         ->middleware('role:superadmin,admin,piket_guru')
         ->name('reports.index');
+
+    // Kelola Pengguna (dibatasi lagi oleh hierarki role di controller)
+    Route::middleware('role:superadmin,admin,piket_guru')->group(function (): void {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::patch('/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
+    });
 
     // Kustomisasi Tema Dinamis (Khusus Superadmin)
     Route::middleware('role:superadmin')->group(function (): void {

@@ -383,18 +383,30 @@ function inboundManager() {
         handleSubmit(event) {
             if (this.rows.length === 0) {
                 event.preventDefault();
-                alert('Silakan tambahkan minimal satu produk.');
+                window.bestcoDialog.alert({
+                    title: 'Daftar Barang Kosong',
+                    message: 'Silakan tambahkan minimal satu produk untuk dicatat pada pengadaan barang masuk.',
+                    type: 'warning'
+                });
                 return;
             }
             for (let i = 0; i < this.rows.length; i++) {
                 if (!this.rows[i].product_id) {
                     event.preventDefault();
-                    alert('Pastikan semua produk telah dipilih pada baris ke-' + (i + 1));
+                    window.bestcoDialog.alert({
+                        title: 'Produk Belum Dipilih',
+                        message: 'Pastikan semua produk telah dipilih pada baris ke-' + (i + 1) + '.',
+                        type: 'warning'
+                    });
                     return;
                 }
                 if (parseFloat(this.rows[i].qty) <= 0) {
                     event.preventDefault();
-                    alert('Kuantitas pada baris ke-' + (i + 1) + ' harus lebih besar dari 0.');
+                    window.bestcoDialog.alert({
+                        title: 'Kuantitas Tidak Valid',
+                        message: 'Kuantitas pada baris ke-' + (i + 1) + ' harus lebih besar dari 0.',
+                        type: 'warning'
+                    });
                     return;
                 }
             }

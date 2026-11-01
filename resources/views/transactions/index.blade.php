@@ -183,7 +183,16 @@
 
                 <div class="modal-footer">
                     <button type="button" @click="showVoidModal = false" class="btn btn-secondary">Batal</button>
-                    <button type="submit" onclick="return confirm('Batalkan transaksi ini secara permanen?')"
+                    <button type="button"
+                        @click="window.bestcoDialog.confirm({
+                            title: 'Batalkan Transaksi (Void)',
+                            message: 'Batalkan transaksi ini secara permanen?',
+                            detail: 'Stok barang akan dikembalikan ke persediaan dan jurnal pembalik akan dicatat otomatis.',
+                            type: 'danger',
+                            confirmText: 'Ya, Batalkan Transaksi',
+                            cancelText: 'Batal',
+                            onConfirm: () => $el.closest('form').submit()
+                        })"
                         class="btn btn-danger">
                         Batalkan transaksi
                     </button>

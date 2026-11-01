@@ -14,6 +14,7 @@ use App\Enums\UserRole;
 use App\Models\PiketSchedule;
 use App\Models\PosShift;
 use App\Models\User;
+use App\Rules\StrictCurrency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -76,7 +77,7 @@ final class ShiftController extends Controller
         $validated = $request->validate([
             'supervisor_teacher_id' => ['required', 'exists:users,id'],
             'supervisor_pin' => ['required', 'string'],
-            'opening_cash_balance' => ['required', 'numeric', 'min:0'],
+            'opening_cash_balance' => ['required', new StrictCurrency(min: 0)],
             'slots' => ['required', 'array', 'size:3'],
             'slots.*.scheduled_user_id' => ['required', 'exists:users,id'],
             'slots.*.status' => ['required', 'in:PRESENT,SICK,PERMITTED,ABSENT,DISPENSATION'],
@@ -129,7 +130,7 @@ final class ShiftController extends Controller
         $validated = $request->validate([
             'pos_shift_id' => ['required', 'exists:pos_shifts,id'],
             'supervisor_pin' => ['required', 'string'],
-            'actual_closing_cash' => ['required', 'numeric', 'min:0'],
+            'actual_closing_cash' => ['required', new StrictCurrency(min: 0)],
             'closing_notes' => ['nullable', 'string'],
         ]);
 

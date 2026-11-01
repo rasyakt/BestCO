@@ -78,6 +78,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Apakah user ini boleh membuka modul kelola pengguna.
+     */
+    public function canManageUsers(): bool
+    {
+        return $this->role_type->manageableRoles() !== [];
+    }
+
+    /**
+     * Apakah user ini boleh mengelola akun target sesuai hierarki role.
+     */
+    public function canManageUser(self $target): bool
+    {
+        return $this->role_type->canManage($target->role_type);
+    }
+
+    /**
      * Get the student profile associated with the user.
      */
     public function studentProfile(): HasOne
