@@ -166,7 +166,7 @@ final class FinancialStatementGenerator
 
             $rows[] = [
                 'account_code' => $account->account_code,
-                'account_name' => $account->name,
+                'account_name' => $account->account_name,
                 'account_type' => $account->account_type->value,
                 'debit' => $debitBalance,
                 'credit' => $creditBalance,
@@ -206,7 +206,12 @@ final class FinancialStatementGenerator
         $otherRevenue = '0.0000';
 
         foreach ($revenueAccounts as $acct) {
-            $bal = $this->getAccountNetCreditBalance($acct->id, $startDate, $endDate);
+            // Akun potongan penjualan bersaldo normal debit, sehingga nilainya
+            // harus dibaca sebagai saldo debit agar tidak menambah pendapatan.
+            $bal = $acct->normal_balance === NormalBalance::DEBIT
+                ? $this->getAccountNetDebitBalance($acct->id, $startDate, $endDate)
+                : $this->getAccountNetCreditBalance($acct->id, $startDate, $endDate);
+
             if ($acct->account_code === '4-1101') {
                 $retailRevenue = bcadd($retailRevenue, $bal, 4);
             } elseif ($acct->account_code === '4-1102') {
@@ -250,7 +255,7 @@ final class FinancialStatementGenerator
             if (bccomp($bal, '0.0000', 4) !== 0) {
                 $expenses[] = [
                     'account_code' => $acct->account_code,
-                    'account_name' => $acct->name,
+                    'account_name' => $acct->account_name,
                     'amount' => $bal,
                 ];
                 $totalExpenses = bcadd($totalExpenses, $bal, 4);
@@ -297,7 +302,7 @@ final class FinancialStatementGenerator
         foreach ($assets as $acct) {
             $bal = $this->getAccountNetDebitBalance($acct->id, null, $asOfDate);
             if (bccomp($bal, '0.0000', 4) !== 0) {
-                $assetRows[] = ['code' => $acct->account_code, 'name' => $acct->name, 'amount' => $bal];
+                $assetRows[] = ['code' => $acct->account_code, 'name' => $acct->account_name, 'amount' => $bal];
                 $totalAssets = bcadd($totalAssets, $bal, 4);
             }
         }
@@ -307,7 +312,7 @@ final class FinancialStatementGenerator
         foreach ($liabilities as $acct) {
             $bal = $this->getAccountNetCreditBalance($acct->id, null, $asOfDate);
             if (bccomp($bal, '0.0000', 4) !== 0) {
-                $liabilityRows[] = ['code' => $acct->account_code, 'name' => $acct->name, 'amount' => $bal];
+                $liabilityRows[] = ['code' => $acct->account_code, 'name' => $acct->account_name, 'amount' => $bal];
                 $totalLiabilities = bcadd($totalLiabilities, $bal, 4);
             }
         }
@@ -317,7 +322,7 @@ final class FinancialStatementGenerator
         foreach ($equity as $acct) {
             $bal = $this->getAccountNetCreditBalance($acct->id, null, $asOfDate);
             if (bccomp($bal, '0.0000', 4) !== 0) {
-                $equityRows[] = ['code' => $acct->account_code, 'name' => $acct->name, 'amount' => $bal];
+                $equityRows[] = ['code' => $acct->account_code, 'name' => $acct->account_name, 'amount' => $bal];
                 $totalEquity = bcadd($totalEquity, $bal, 4);
             }
         }

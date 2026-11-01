@@ -7,6 +7,7 @@ namespace App\Actions\Piket;
 use App\DTOs\Accounting\JournalEntryData;
 use App\DTOs\Accounting\JournalLineData;
 use App\Enums\JournalType;
+use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\CashBookEntry;
 use App\Models\ChartOfAccount;
@@ -30,16 +31,30 @@ final class ClosePosShiftAction
     ): PosShift {
         return DB::transaction(function () use ($posShiftId, $actualClosingCash, $closedByUserId, $closingNotes): PosShift {
             $shift = PosShift::where('id', $posShiftId)->where('status', 'OPEN')->lockForUpdate()->firstOrFail();
-            $closedBy = User::findOrFail($closedByUserId);
+            $closedBy = User::where('id', $closedByUserId)->where('is_active', true)->firstOrFail();
+
+            if (! $closedBy->hasAnyRole([UserRole::SUPERADMIN, UserRole::ADMIN, UserRole::PIKET_GURU])) {
+                throw new \DomainException('Hanya staf yang dapat menutup shift kasir.');
+            }
+
+            if (! is_numeric($actualClosingCash) || bccomp((string) $actualClosingCash, '0.0000', 4) === -1) {
+                throw new \DomainException('Kas fisik penutupan tidak boleh negatif.');
+            }
 
             $actualClosingCash = number_format((float) $actualClosingCash, 4, '.', '');
             $openingCash = (string) $shift->opening_cash_balance;
 
-            // Hitung total kas masuk dan keluar dari cash_book_entries shift ini.
+            // Kas fisik shift hanya berasal dari akun Kas Laci Kasir (1-1101).
+            // QRIS/transfer masuk ke rekening bank dan tidak boleh menambah
+            // ekspektasi uang tunai di laci.
+            $cashAccount = ChartOfAccount::where('account_code', '1-1101')->firstOrFail();
+
             $cashIn = CashBookEntry::where('pos_shift_id', $shift->id)
+                ->where('cash_account_id', $cashAccount->id)
                 ->where('mutation_direction', 'IN')
                 ->sum('debit_in');
             $cashOut = CashBookEntry::where('pos_shift_id', $shift->id)
+                ->where('cash_account_id', $cashAccount->id)
                 ->where('mutation_direction', 'OUT')
                 ->sum('credit_out');
 
@@ -50,23 +65,32 @@ final class ClosePosShiftAction
 
             $discrepancy = bcsub($actualClosingCash, $systemExpectedCash, 4);
 
+            $period = null;
+
+            if (bccomp($discrepancy, '0.0000', 4) !== 0) {
+                $period = AccountingPeriod::where('is_closed', false)
+                    ->orderBy('start_date', 'desc')
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($period === null) {
+                    throw new \DomainException('Tidak ada periode akuntansi terbuka untuk mencatat selisih kas.');
+                }
+            }
+
             $shift->update([
                 'closed_by_user_id' => $closedBy->id,
                 'closed_at' => Carbon::now(),
                 'actual_closing_cash' => $actualClosingCash,
                 'system_expected_cash' => $systemExpectedCash,
                 'cash_discrepancy' => $discrepancy,
-                'status' => $discrepancy === '0.0000' ? 'CLOSED' : 'CLOSED',
+                'status' => 'CLOSED',
                 'closing_notes' => $closingNotes,
             ]);
 
             // Posting jurnal selisih kas jika ada.
             if (bccomp($discrepancy, '0.0000', 4) !== 0) {
-                $period = AccountingPeriod::where('is_closed', false)
-                    ->orderBy('start_date', 'desc')
-                    ->first();
-
-                $coaCash = ChartOfAccount::where('account_code', '1-1101')->lockForUpdate()->firstOrFail();
+                $coaCash = $cashAccount;
 
                 if (bccomp($discrepancy, '0.0000', 4) === 1) {
                     // Kas lebih: Dr Kas, Cr Pendapatan Selisih Kas Lebih.

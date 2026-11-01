@@ -14,10 +14,12 @@ use App\DTOs\Pos\CheckoutPayloadData;
 use App\Enums\PaymentMethod;
 use App\Enums\ShiftStatus;
 use App\Enums\SpoilageReason;
+use App\Enums\UserRole;
 use App\Models\PosShift;
 use App\Models\PosTransaction;
 use App\Models\Product;
 use App\Models\Service;
+use App\Models\ShiftAttendance;
 use App\Models\UnitConversion;
 use App\Models\User;
 use App\Rules\StrictCurrency;
@@ -118,6 +120,37 @@ final class PosTerminal extends Component
         $firstService = Service::first();
         if ($firstService) {
             $this->spoilageServiceId = $firstService->id;
+        }
+    }
+
+    /**
+     * Otorisasi ulang pada setiap request Livewire, karena endpoint update
+     * tidak melewati middleware route POS.
+     */
+    public function boot(): void
+    {
+        $user = auth()->user();
+
+        abort_if($user === null, 403, 'Sesi Anda telah berakhir.');
+
+        if ($user->hasAnyRole([UserRole::SUPERADMIN, UserRole::ADMIN])) {
+            return;
+        }
+
+        abort_unless($user->is_active, 403, 'Akun Anda dinonaktifkan.');
+
+        $activeShift = PosShift::where('status', ShiftStatus::OPEN->value)
+            ->latest('opened_at')
+            ->first();
+
+        abort_if($activeShift === null, 403, 'Shift kasir belum dibuka.');
+
+        if ($user->role_type === UserRole::PIKET_SISWA) {
+            $isAuthorizedOperator = ShiftAttendance::where('pos_shift_id', $activeShift->id)
+                ->where('active_operator_user_id', $user->id)
+                ->exists();
+
+            abort_unless($isAuthorizedOperator, 403, 'Anda bukan operator aktif pada shift ini.');
         }
     }
 

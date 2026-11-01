@@ -50,22 +50,39 @@ final class UpdateServiceAction
             // Sinkronisasi BoM jika disediakan
             if (array_key_exists('boms', $data)) {
                 $service->boms()->delete();
+                $usedRawMaterialIds = [];
+
                 if (is_array($data['boms'])) {
                     foreach ($data['boms'] as $bomItem) {
                         $rawMaterialId = (int) ($bomItem['raw_material_product_id'] ?? 0);
                         $consumptionQty = number_format((float) ($bomItem['consumption_qty'] ?? 0), 4, '.', '');
 
-                        if ($rawMaterialId > 0 && bccomp($consumptionQty, '0.0000', 4) > 0) {
-                            $rawProd = Product::findOrFail($rawMaterialId);
-
-                            ServiceBom::create([
-                                'service_id' => $service->id,
-                                'raw_material_product_id' => $rawProd->id,
-                                'consumption_qty' => $consumptionQty,
-                                'is_required' => true,
-                                'notes' => "BoM untuk layanan {$service->name}",
-                            ]);
+                        if ($rawMaterialId <= 0 || bccomp($consumptionQty, '0.0000', 4) !== 1) {
+                            throw new \DomainException('Data BoM layanan tidak valid.');
                         }
+
+                        if (isset($usedRawMaterialIds[$rawMaterialId])) {
+                            throw new \DomainException('Bahan baku yang sama tidak boleh muncul lebih dari satu kali pada BoM.');
+                        }
+
+                        $rawProd = Product::where('id', $rawMaterialId)
+                            ->where('inventory_type', 'RAW_MATERIAL')
+                            ->where('is_active', true)
+                            ->first();
+
+                        if ($rawProd === null) {
+                            throw new \DomainException('Bahan baku yang dipilih harus produk bahan baku yang aktif.');
+                        }
+
+                        $usedRawMaterialIds[$rawMaterialId] = true;
+
+                        ServiceBom::create([
+                            'service_id' => $service->id,
+                            'raw_material_product_id' => $rawProd->id,
+                            'consumption_qty' => $consumptionQty,
+                            'is_required' => true,
+                            'notes' => "BoM untuk layanan {$service->name}",
+                        ]);
                     }
                 }
             }

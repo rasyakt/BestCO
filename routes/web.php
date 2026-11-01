@@ -45,9 +45,14 @@ Route::middleware('auth')->group(function (): void {
     })->middleware('role:superadmin,admin,piket_guru,piket_siswa')->name('dashboard');
 
     // Manajemen Shift Kasir & Presensi Piket
+    // GET tetap terbuka untuk siswa agar dapat melihat status shift secara read-only.
     Route::get('/shift', [ShiftController::class, 'index'])->name('shift.index');
-    Route::post('/shift/open', [ShiftController::class, 'open'])->name('shift.open');
-    Route::post('/shift/close', [ShiftController::class, 'close'])->name('shift.close');
+    Route::post('/shift/open', [ShiftController::class, 'open'])
+        ->middleware('role:superadmin,admin,piket_guru')
+        ->name('shift.open');
+    Route::post('/shift/close', [ShiftController::class, 'close'])
+        ->middleware('role:superadmin,admin,piket_guru')
+        ->name('shift.close');
     Route::get('/piket', [PiketAttendanceController::class, 'index'])
         ->middleware('role:superadmin,admin,piket_guru')
         ->name('piket.index');
@@ -57,9 +62,13 @@ Route::middleware('auth')->group(function (): void {
         ->middleware('shift.active')
         ->name('pos.terminal');
 
-    // Riwayat Transaksi Kasir POS & Void
-    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
-    Route::post('/transactions/{id}/void', [TransactionController::class, 'void'])->name('transactions.void');
+    // Riwayat Transaksi Kasir POS & Void (khusus staf)
+    Route::get('/transactions', [TransactionController::class, 'index'])
+        ->middleware('role:superadmin,admin,piket_guru')
+        ->name('transactions.index');
+    Route::post('/transactions/{id}/void', [TransactionController::class, 'void'])
+        ->middleware('role:superadmin,admin,piket_guru')
+        ->name('transactions.void');
 
     // Manajemen Dual-Inventory, Restock Pembelian, Mutasi Internal, & Spoilage
     Route::middleware('role:superadmin,admin,piket_guru')->group(function (): void {

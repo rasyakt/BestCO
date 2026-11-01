@@ -22,13 +22,17 @@ class PosTerminalAndReportTest extends TestCase
     private User $student;
     private User $admin;
 
+    /** @var array<int, User> */
+    private array $students;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed();
 
         $this->teacher = User::where('role_type', 'piket_guru')->firstOrFail();
-        $this->student = User::where('role_type', 'piket_siswa')->firstOrFail();
+        $this->students = User::where('role_type', 'piket_siswa')->get()->all();
+        $this->student = $this->students[0];
         $this->admin = User::where('role_type', 'admin')->firstOrFail();
 
         AccountingPeriod::firstOrCreate(
@@ -56,25 +60,7 @@ class PosTerminalAndReportTest extends TestCase
 
     public function test_student_with_active_shift_can_access_pos_terminal(): void
     {
-        // Buka shift terlebih dahulu
-        $action = app(OpenPosShiftAction::class);
-        $action->execute(new ShiftOpeningData(
-            supervisorTeacherId: (string) $this->teacher->id,
-            openedByUserId: (string) $this->student->id,
-            openingCashBalance: '200000.0000',
-            slots: [
-                new StudentAttendanceSlotData(
-                    piketScheduleId: null,
-                    slotNumber: 1,
-                    scheduledUserId: (string) $this->student->id,
-                    scheduledStudentStatus: AbsenceStatus::PRESENT,
-                    absenceReason: null,
-                    isSubstituted: false,
-                    substitutedUserId: null,
-                    activeOperatorUserId: (string) $this->student->id,
-                ),
-            ],
-        ));
+        $this->openShift();
 
         $response = $this->actingAs($this->student)->get('/pos');
         $response->assertStatus(200);
@@ -94,6 +80,8 @@ class PosTerminalAndReportTest extends TestCase
 
     public function test_can_add_retail_and_service_to_pos_cart(): void
     {
+        $this->openShift();
+
         $retailProduct = \App\Models\Product::where('inventory_type', 'RETAIL')->firstOrFail();
         $service = \App\Models\Service::firstOrFail();
 
@@ -102,6 +90,47 @@ class PosTerminalAndReportTest extends TestCase
             ->call('addToCart', 'RETAIL', $retailProduct->id)
             ->call('addToCart', 'SERVICE', $service->id)
             ->assertCount('cart', 2);
+    }
+
+    private function openShift(): PosShift
+    {
+        return app(OpenPosShiftAction::class)->execute(new ShiftOpeningData(
+            supervisorTeacherId: (string) $this->teacher->id,
+            openedByUserId: (string) $this->teacher->id,
+            openingCashBalance: '200000.0000',
+            slots: [
+                new StudentAttendanceSlotData(
+                    piketScheduleId: null,
+                    slotNumber: 1,
+                    scheduledUserId: (string) $this->students[0]->id,
+                    scheduledStudentStatus: AbsenceStatus::PRESENT,
+                    absenceReason: null,
+                    isSubstituted: false,
+                    substitutedUserId: null,
+                    activeOperatorUserId: (string) $this->students[0]->id,
+                ),
+                new StudentAttendanceSlotData(
+                    piketScheduleId: null,
+                    slotNumber: 2,
+                    scheduledUserId: (string) $this->students[1]->id,
+                    scheduledStudentStatus: AbsenceStatus::PRESENT,
+                    absenceReason: null,
+                    isSubstituted: false,
+                    substitutedUserId: null,
+                    activeOperatorUserId: (string) $this->students[1]->id,
+                ),
+                new StudentAttendanceSlotData(
+                    piketScheduleId: null,
+                    slotNumber: 3,
+                    scheduledUserId: (string) $this->students[2]->id,
+                    scheduledStudentStatus: AbsenceStatus::PRESENT,
+                    absenceReason: null,
+                    isSubstituted: false,
+                    substitutedUserId: null,
+                    activeOperatorUserId: (string) $this->students[2]->id,
+                ),
+            ],
+        ));
     }
 }
 

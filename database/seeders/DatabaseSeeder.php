@@ -264,7 +264,7 @@ class DatabaseSeeder extends Seeder
                     'slot_number' => $slotNumber,
                 ],
                 [
-                    'day_of_week' => today()->dayOfWeek,
+                    'day_of_week' => today()->dayOfWeekIso,
                     'school_class_id' => $schoolClass->id,
                     'scheduled_student_id' => $student->id,
                     'notes' => 'Jadwal piket harian MPLB',

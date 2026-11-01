@@ -20,6 +20,7 @@ use App\Rules\StrictNumeric;
 use App\Rules\StrictQuantity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 final class InventoryController extends Controller
@@ -99,15 +100,25 @@ final class InventoryController extends Controller
             'unit_id' => ['required', 'exists:units,id'],
             'inventory_type' => ['required', 'in:RETAIL,RAW_MATERIAL'],
             'average_cost' => ['required', new StrictCurrency(min: 0)],
-            'selling_price' => ['nullable', new StrictCurrency(min: 0)],
+            'selling_price' => [
+                Rule::requiredIf($request->input('inventory_type') === 'RETAIL'),
+                'nullable',
+                new StrictCurrency(min: 0),
+            ],
             'min_stock_alert' => ['nullable', new StrictNumeric(allowDecimal: true, min: 0)],
             'initial_stock' => ['nullable', new StrictNumeric(allowDecimal: true, min: 0)],
-            'funding_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
+            'funding_account_id' => [
+                'nullable',
+                Rule::exists('chart_of_accounts', 'id')
+                    ->whereIn('account_code', ['1-1102', '2-1101', '3-1101']),
+            ],
         ], [
             'name.required' => 'Nama produk wajib diisi.',
             'average_cost.required' => 'HPP awal produk wajib diisi.',
+            'selling_price.required' => 'Harga jual ritel wajib diisi untuk barang etalase.',
             'category_id.required' => 'Pilih kategori produk.',
             'unit_id.required' => 'Pilih satuan produk.',
+            'funding_account_id.exists' => 'Akun sumber dana tidak valid. Gunakan Kas Besar, Utang Usaha, atau Modal Awal.',
         ]);
 
         $product = $action->execute(array_merge($validated, [
@@ -159,7 +170,13 @@ final class InventoryController extends Controller
             'base_price' => ['required', new StrictCurrency(min: 0)],
             'category_id' => ['nullable', 'exists:categories,id'],
             'boms' => ['nullable', 'array'],
-            'boms.*.raw_material_product_id' => ['required_with:boms', 'exists:products,id'],
+            'boms.*.raw_material_product_id' => [
+                'required_with:boms',
+                'distinct',
+                Rule::exists('products', 'id')
+                    ->where('inventory_type', 'RAW_MATERIAL')
+                    ->where('is_active', true),
+            ],
             'boms.*.consumption_qty' => ['required_with:boms', new StrictQuantity(allowDecimal: true, min: 0.0001)],
             'price_tiers' => ['nullable', 'array'],
             'price_tiers.*.tier_name' => ['nullable', 'string', 'max:100'],
@@ -171,6 +188,7 @@ final class InventoryController extends Controller
             'base_price.required' => 'Harga jual / tarif layanan wajib diisi.',
             'service_group.required' => 'Pilih kelompok jasa.',
             'base_unit_name.required' => 'Satuan basis layanan wajib diisi.',
+            'boms.*.raw_material_product_id.exists' => 'Bahan baku yang dipilih harus produk bahan baku yang aktif.',
         ]);
 
         $service = $action->execute($validated);
@@ -194,8 +212,16 @@ final class InventoryController extends Controller
             'base_unit_name' => ['required', 'string', 'max:30'],
             'is_active' => ['nullable', 'boolean'],
             'boms' => ['nullable', 'array'],
-            'boms.*.raw_material_product_id' => ['nullable', 'integer', 'exists:products,id'],
-            'boms.*.consumption_qty' => ['nullable', 'numeric', 'min:0'],
+            'boms.*.raw_material_product_id' => [
+                'required_with:boms',
+                'distinct',
+                Rule::exists('products', 'id')
+                    ->where('inventory_type', 'RAW_MATERIAL')
+                    ->where('is_active', true),
+            ],
+            'boms.*.consumption_qty' => ['required_with:boms', new StrictQuantity(allowDecimal: true, min: 0.0001)],
+        ], [
+            'boms.*.raw_material_product_id.exists' => 'Bahan baku yang dipilih harus produk bahan baku yang aktif.',
         ]);
 
         $action->execute($service, $validated);
@@ -211,8 +237,13 @@ final class InventoryController extends Controller
         $validated = $request->validate([
             'product_id' => ['required', 'exists:products,id'],
             'qty_purchased' => ['required', new StrictQuantity(allowDecimal: true, min: 0.0001)],
-            'purchase_unit_price' => ['required', new StrictCurrency(min: 0)],
-            'account_id' => ['required', 'exists:chart_of_accounts,id'],
+            'purchase_unit_price' => ['required', new StrictCurrency(min: 0.0001)],
+            'account_id' => [
+                'required',
+                Rule::exists('chart_of_accounts', 'id')->whereIn('account_code', ['1-1102', '2-1101']),
+            ],
+        ], [
+            'account_id.exists' => 'Akun pendanaan tidak valid. Gunakan Kas Besar atau Utang Usaha.',
         ]);
 
         $qty = number_format((float) $validated['qty_purchased'], 4, '.', '');

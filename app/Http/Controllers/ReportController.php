@@ -16,9 +16,21 @@ final class ReportController extends Controller
 
     public function index(Request $request): View
     {
-        $tab = $request->query('tab', 'bku');
-        $startDate = $request->query('start_date', now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->query('end_date', now()->format('Y-m-d'));
+        $allowedTabs = ['bku', 'journal', 'trial_balance', 'income_statement', 'balance_sheet'];
+        $tab = (string) $request->query('tab', 'bku');
+
+        if (! in_array($tab, $allowedTabs, true)) {
+            $tab = 'bku';
+        }
+
+        $startDate = $this->validDate($request->query('start_date'))
+            ?? now()->startOfMonth()->format('Y-m-d');
+        $endDate = $this->validDate($request->query('end_date'))
+            ?? now()->format('Y-m-d');
+
+        if ($startDate > $endDate) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
 
         $data = match ($tab) {
             'bku' => ['entries' => $this->statementGenerator->getCashBook($startDate, $endDate)],
@@ -30,6 +42,24 @@ final class ReportController extends Controller
         };
 
         return view('reports.index', compact('tab', 'startDate', 'endDate', 'data'));
+    }
+
+    /**
+     * Validasi tanggal query string tanpa melempar exception ke halaman laporan.
+     */
+    private function validDate(mixed $value): ?string
+    {
+        if (! is_string($value) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        [$year, $month, $day] = array_map('intval', explode('-', $value));
+
+        if (! checkdate($month, $day, $year)) {
+            return null;
+        }
+
+        return sprintf('%04d-%02d-%02d', $year, $month, $day);
     }
 }
 

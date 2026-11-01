@@ -1,16 +1,24 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $canManageShift = auth()->user()->hasAnyRole(['superadmin', 'admin', 'piket_guru']);
+    $canOpenPos = $canManageShift || ($activeShift && $activeShift->attendances->contains(
+        fn ($attendance) => (int) $attendance->active_operator_user_id === (int) auth()->id()
+    ));
+@endphp
 <div class="space-y-6">
     <x-page-header
         title="Shift Kasir"
         subtitle="Buka, tutup, dan cocokkan kas shift.">
         <x-slot:actions>
-            @if($activeShift)
+            @if($activeShift && $canOpenPos)
                 <a href="{{ route('pos.terminal') }}" class="btn btn-primary">
                     <x-icon name="pos" class="h-4 w-4" />
                     Buka kasir
                 </a>
+            @elseif($activeShift)
+                <span class="text-[11px] font-medium text-slate-500">Anda bukan operator aktif shift ini</span>
             @else
                 <span class="text-[11px] font-medium text-amber-700">Shift belum dibuka</span>
             @endif
@@ -32,7 +40,7 @@
     @if($activeShift)
         <div class="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
             <!-- Kiri -->
-            <div class="space-y-6 xl:col-span-2">
+            <div class="space-y-6 {{ $canManageShift ? 'xl:col-span-2' : 'xl:col-span-3' }}">
                 <div class="card">
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                         <div>
@@ -130,6 +138,7 @@
                 </div>
             </div>
 
+            @if($canManageShift)
             <!-- Tutup shift -->
             <div class="card xl:sticky xl:top-[84px]">
                 <div class="card-header">
@@ -159,13 +168,15 @@
 
                         <div>
                             <label for="actual_closing_cash" class="form-label">Kas fisik (Rp) <span class="text-rose-600">*</span></label>
-                            <input type="number" step="1" id="actual_closing_cash" name="actual_closing_cash" required
+                            <input type="text" inputmode="numeric" data-currency="true"
+                                id="actual_closing_cash" name="actual_closing_cash" required
                                 placeholder="Contoh: 350000" class="input font-mono text-base">
                         </div>
 
                         <div>
                             <label for="supervisor_pin" class="form-label">PIN guru <span class="text-rose-600">*</span></label>
-                            <input type="password" id="supervisor_pin" name="supervisor_pin" maxlength="6" required
+                            <input type="password" inputmode="numeric" data-numeric="true" data-allow-leading-zero="true"
+                                id="supervisor_pin" name="supervisor_pin" maxlength="6" required
                                 placeholder="6 digit" class="input font-mono tracking-[0.3em]">
                             <span class="form-hint">{{ $activeShift->supervisorTeacher->name }}</span>
                         </div>
@@ -196,8 +207,10 @@
                     </div>
                 </form>
             </div>
+            @endif
         </div>
     @else
+        @if($canManageShift)
         <!-- Buka shift -->
         <div class="card">
             <div class="border-b border-slate-100 px-6 py-5">
@@ -233,13 +246,15 @@
 
                             <div>
                                 <label for="supervisor_pin" class="form-label">PIN guru <span class="text-rose-600">*</span></label>
-                                <input type="password" id="supervisor_pin" name="supervisor_pin" maxlength="6" required
+                                <input type="password" inputmode="numeric" data-numeric="true" data-allow-leading-zero="true"
+                                    id="supervisor_pin" name="supervisor_pin" maxlength="6" required
                                     placeholder="6 digit" class="input font-mono tracking-[0.3em]">
                             </div>
 
                             <div>
                                 <label for="opening_cash_balance" class="form-label">Kas awal (Rp) <span class="text-rose-600">*</span></label>
-                                <input type="number" step="1" id="opening_cash_balance" name="opening_cash_balance" value="200000" required
+                                <input type="text" inputmode="numeric" data-currency="true"
+                                    id="opening_cash_balance" name="opening_cash_balance" value="200000" required
                                     class="input font-mono text-base">
                             </div>
                         </div>
@@ -316,6 +331,21 @@
                 </div>
             </form>
         </div>
+        @else
+        <div class="card">
+            <div class="card-body flex items-start gap-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                    <x-icon name="lock" class="h-4 w-4" />
+                </span>
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-900">Shift belum dibuka</h2>
+                    <p class="mt-1 text-[12px] leading-relaxed text-slate-500">
+                        Pembukaan shift dilakukan oleh guru piket. Silakan hubungi guru piket yang bertugas.
+                    </p>
+                </div>
+            </div>
+        </div>
+        @endif
     @endif
 
     <!-- Riwayat -->

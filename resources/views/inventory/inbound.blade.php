@@ -155,7 +155,8 @@
 
                                         <!-- Quantity -->
                                         <td class="px-3 py-2">
-                                            <input type="number" step="0.0001" min="0.0001"
+                                            <input type="text" inputmode="decimal"
+                                                data-quantity="true" step="0.0001"
                                                 :name="'items[' + index + '][qty]'"
                                                 x-model.number="row.qty"
                                                 class="input w-full py-1.5 text-right text-xs font-mono font-medium"
@@ -172,7 +173,8 @@
                                         <td class="px-3 py-2">
                                             <div class="relative">
                                                 <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-400">Rp</span>
-                                                <input type="number" step="1" min="0"
+                                                <input type="text" inputmode="numeric"
+                                                    data-currency="true"
                                                     :name="'items[' + index + '][price]'"
                                                     x-model.number="row.price"
                                                     class="input w-full py-1.5 pl-8 text-right text-xs font-mono font-medium"

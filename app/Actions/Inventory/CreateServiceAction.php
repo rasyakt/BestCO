@@ -100,21 +100,38 @@ final class CreateServiceAction
 
             // Simpan Resep Bahan Baku (Bill of Materials) jika ada
             if (!empty($data['boms'])) {
+                $usedRawMaterialIds = [];
+
                 foreach ($data['boms'] as $bomItem) {
                     $rawMaterialId = (int) $bomItem['raw_material_product_id'];
                     $consumptionQty = number_format((float) $bomItem['consumption_qty'], 4, '.', '');
 
-                    if ($rawMaterialId > 0 && bccomp($consumptionQty, '0.0000', 4) > 0) {
-                        $rawProd = Product::findOrFail($rawMaterialId);
-
-                        ServiceBom::create([
-                            'service_id' => $service->id,
-                            'raw_material_product_id' => $rawProd->id,
-                            'consumption_qty' => $consumptionQty,
-                            'is_required' => true,
-                            'notes' => "BoM untuk layanan {$service->name}",
-                        ]);
+                    if ($rawMaterialId <= 0 || bccomp($consumptionQty, '0.0000', 4) !== 1) {
+                        throw new InvalidArgumentException('Data BoM layanan tidak valid.');
                     }
+
+                    if (isset($usedRawMaterialIds[$rawMaterialId])) {
+                        throw new InvalidArgumentException('Bahan baku yang sama tidak boleh muncul lebih dari satu kali pada BoM.');
+                    }
+
+                    $rawProd = Product::where('id', $rawMaterialId)
+                        ->where('inventory_type', 'RAW_MATERIAL')
+                        ->where('is_active', true)
+                        ->first();
+
+                    if ($rawProd === null) {
+                        throw new InvalidArgumentException('Bahan baku yang dipilih harus produk bahan baku yang aktif.');
+                    }
+
+                    $usedRawMaterialIds[$rawMaterialId] = true;
+
+                    ServiceBom::create([
+                        'service_id' => $service->id,
+                        'raw_material_product_id' => $rawProd->id,
+                        'consumption_qty' => $consumptionQty,
+                        'is_required' => true,
+                        'notes' => "BoM untuk layanan {$service->name}",
+                    ]);
                 }
             }
 

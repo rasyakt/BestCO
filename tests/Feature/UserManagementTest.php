@@ -352,6 +352,10 @@ final class UserManagementTest extends TestCase
 
     public function test_last_active_superadmin_cannot_be_deactivated_or_demoted(): void
     {
+        // Guard sesi nonaktif diuji terpisah; di sini fokus pada guard controller
+        // agar aktor nonaktif tetap dapat memicu pemeriksaan superadmin terakhir.
+        $this->withoutMiddleware(\App\Http\Middleware\EnsureAccountIsActive::class);
+
         $inactiveSuperadmin = User::create([
             'name' => 'Superadmin Cadangan',
             'username' => 'superadmin_cadangan',

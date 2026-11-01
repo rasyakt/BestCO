@@ -32,6 +32,11 @@ final class MutateRetailToRawMaterialAction
     public function execute(InternalMutationData $data): StockMutation
     {
         return DB::transaction(function () use ($data): StockMutation {
+            $posShift = \App\Models\PosShift::where('id', $data->posShiftId)
+                ->where('status', \App\Enums\ShiftStatus::OPEN->value)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $unitConversion = UnitConversion::where('id', $data->unitConversionId)
                 ->where('is_active', true)
                 ->lockForUpdate()
@@ -39,23 +44,35 @@ final class MutateRetailToRawMaterialAction
 
             $sourceProduct = Product::where('id', $unitConversion->source_product_id)
                 ->where('inventory_type', 'RETAIL')
+                ->where('is_active', true)
                 ->lockForUpdate()
                 ->firstOrFail();
 
             $targetProduct = Product::where('id', $unitConversion->target_product_id)
                 ->where('inventory_type', 'RAW_MATERIAL')
+                ->where('is_active', true)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            // Verifikasi stok retail mencukupi.
-            if (bccomp((string) $sourceProduct->current_stock, $data->sourceQtyToDeduct, 4) === -1) {
-                throw new \DomainException(
-                    'Stok etalase tidak mencukupi. Tersedia: ' . $sourceProduct->current_stock .
-                    ', diminta: ' . $data->sourceQtyToDeduct
-                );
+            $sourceQty = trim($data->sourceQtyToDeduct);
+
+            if ($sourceQty === '' || ! preg_match('/^\d+(\.\d{1,4})?$/', $sourceQty)) {
+                throw new \DomainException('Kuantitas mutasi tidak valid.');
             }
 
-            $sourceQty = $data->sourceQtyToDeduct;
+            $sourceQty = number_format((float) $sourceQty, 4, '.', '');
+
+            if (bccomp($sourceQty, '0.0000', 4) !== 1) {
+                throw new \DomainException('Kuantitas mutasi harus lebih besar dari nol.');
+            }
+
+            // Verifikasi stok retail mencukupi.
+            if (bccomp((string) $sourceProduct->current_stock, $sourceQty, 4) === -1) {
+                throw new \DomainException(
+                    'Stok etalase tidak mencukupi. Tersedia: ' . $sourceProduct->current_stock .
+                    ', diminta: ' . $sourceQty
+                );
+            }
             $conversionFactor = (string) $unitConversion->conversion_factor;
             $targetQtyAdded = bcmul($sourceQty, $conversionFactor, 4);
             $sourceUnitCost = (string) $sourceProduct->average_cost;
@@ -133,48 +150,70 @@ final class MutateRetailToRawMaterialAction
                 'created_at' => Carbon::now(),
             ]);
 
-            // Posting jurnal: Dr. 1-1302 Persediaan Bahan Baku Jasa, Cr. 1-1301 Persediaan Barang Dagang.
-            $coaInventoryRaw = ChartOfAccount::where('account_code', '1-1302')->lockForUpdate()->firstOrFail();
-            $coaInventoryRetail = ChartOfAccount::where('account_code', '1-1301')->lockForUpdate()->firstOrFail();
+            // Posting jurnal menggunakan akun persediaan masing-masing produk.
+            if (bccomp($totalMutationValue, '0.0000', 4) === 1) {
+                $coaInventoryRaw = ChartOfAccount::where('id', $targetProduct->inventory_account_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $coaInventoryRetail = ChartOfAccount::where('id', $sourceProduct->inventory_account_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            $period = AccountingPeriod::where('is_closed', false)
-                ->orderBy('start_date', 'desc')
-                ->first();
+                $period = AccountingPeriod::where('is_closed', false)
+                    ->orderBy('start_date', 'desc')
+                    ->first();
 
-            $journalData = new JournalEntryData(
-                journalNumber: 'JRN-' . Carbon::now()->format('Ymd') . '-' .
-                    str_pad((string) (JournalEntry::count() + 1), 4, '0', STR_PAD_LEFT),
-                accountingPeriodId: (string) ($period?->getKey() ?? ''),
-                posShiftId: $data->posShiftId,
-                entryDate: Carbon::now(),
-                journalType: JournalType::INTERNAL_MUTATION,
-                referenceType: 'App\Models\StockMutation',
-                referenceId: $mutation->id,
-                description: 'Mutasi internal: ' . $sourceQty . ' ' . $sourceProduct->unit->code .
-                    ' etalase → ' . $targetQtyAdded . ' ' . $targetProduct->unit->code . ' bahan baku jasa',
-                lines: [
-                    new JournalLineData(
-                        chartOfAccountCode: $coaInventoryRaw->account_code,
-                        debit: $totalMutationValue,
-                        credit: '0.0000',
-                        lineDescription: 'Debit Persediaan Bahan Baku Jasa',
-                    ),
-                    new JournalLineData(
-                        chartOfAccountCode: $coaInventoryRetail->account_code,
-                        debit: '0.0000',
-                        credit: $totalMutationValue,
-                        lineDescription: 'Kredit Persediaan Barang Dagang (Etalase)',
-                    ),
-                ],
-                createdByUserId: $data->requestedByUserId,
-            );
+                if ($period === null) {
+                    throw new \DomainException('Tidak ada periode akuntansi terbuka untuk mencatat mutasi.');
+                }
 
-            $journalEntry = app(\App\Actions\Accounting\PostDoubleEntryJournalAction::class)
-                ->execute($journalData);
+                $journalData = new JournalEntryData(
+                    journalNumber: $this->nextJournalNumber(),
+                    accountingPeriodId: (string) $period->getKey(),
+                    posShiftId: (string) $posShift->id,
+                    entryDate: Carbon::now(),
+                    journalType: JournalType::INTERNAL_MUTATION,
+                    referenceType: 'App\Models\StockMutation',
+                    referenceId: $mutation->id,
+                    description: 'Mutasi internal: ' . $sourceQty . ' ' . $sourceProduct->unit->code .
+                        ' etalase → ' . $targetQtyAdded . ' ' . $targetProduct->unit->code . ' bahan baku jasa',
+                    lines: [
+                        new JournalLineData(
+                            chartOfAccountCode: $coaInventoryRaw->account_code,
+                            debit: $totalMutationValue,
+                            credit: '0.0000',
+                            lineDescription: 'Debit Persediaan Bahan Baku Jasa',
+                        ),
+                        new JournalLineData(
+                            chartOfAccountCode: $coaInventoryRetail->account_code,
+                            debit: '0.0000',
+                            credit: $totalMutationValue,
+                            lineDescription: 'Kredit Persediaan Barang Dagang (Etalase)',
+                        ),
+                    ],
+                    createdByUserId: $data->requestedByUserId,
+                );
 
-            $mutation->update(['journal_entry_id' => $journalEntry->id]);
+                $journalEntry = app(\App\Actions\Accounting\PostDoubleEntryJournalAction::class)
+                    ->execute($journalData);
+
+                $mutation->update(['journal_entry_id' => $journalEntry->id]);
+            }
 
             return $mutation->fresh(['sourceProduct', 'targetProduct', 'unitConversion', 'journalEntry']);
         });
+    }
+
+    private function nextJournalNumber(): string
+    {
+        $sequence = JournalEntry::count() + 1;
+
+        do {
+            $journalNumber = 'JRN-' . Carbon::now()->format('Ymd') . '-'
+                . str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+            $sequence++;
+        } while (JournalEntry::where('journal_number', $journalNumber)->exists());
+
+        return $journalNumber;
     }
 }

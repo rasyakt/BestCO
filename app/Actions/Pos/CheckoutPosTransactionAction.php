@@ -10,6 +10,7 @@ use App\DTOs\Pos\CartItemData;
 use App\DTOs\Pos\CheckoutPayloadData;
 use App\Enums\JournalType;
 use App\Enums\PaymentMethod;
+use App\Enums\UserRole;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
@@ -19,6 +20,7 @@ use App\Models\PosTransactionBom;
 use App\Models\PosTransactionItem;
 use App\Models\Product;
 use App\Models\Service;
+use App\Models\ShiftAttendance;
 use App\Models\StockLedgerEntry;
 use App\Models\User;
 use App\Services\Pos\TieredPricingResolver;
@@ -38,17 +40,33 @@ final class CheckoutPosTransactionAction
     public function execute(CheckoutPayloadData $data): PosTransaction
     {
         return DB::transaction(function () use ($data): PosTransaction {
-            $shift = PosShift::where('id', $data->posShiftId)->where('status', 'OPEN')->lockForUpdate()->firstOrFail();
-            $cashier = User::findOrFail($data->cashierUserId);
+            if ($data->items === []) {
+                throw new \DomainException('Keranjang belanja masih kosong.');
+            }
 
-            $manualDiscountTotal = number_format((float) $data->manualDiscountTotal, 4, '.', '');
-            $amountPaid = number_format((float) $data->amountPaid, 4, '.', '');
+            $shift = PosShift::where('id', $data->posShiftId)
+                ->where('status', 'OPEN')
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $cashier = User::where('id', $data->cashierUserId)
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            $this->ensureCashierIsAuthorized($cashier, $shift);
+
+            $globalManualDiscount = $this->normalizeAmount(
+                $data->manualDiscountTotal,
+                'diskon manual'
+            );
+            $amountPaid = $this->normalizeAmount($data->amountPaid, 'jumlah pembayaran');
 
             // Accumulators.
             $subtotalRetail = '0.0000';
             $subtotalService = '0.0000';
             $tierDiscountTotal = '0.0000';
-            $manualDiscountTotal = '0.0000';
+            $retailManualDiscount = '0.0000';
+            $serviceManualDiscount = '0.0000';
             $totalCogsRetail = '0.0000';
             $totalCogsService = '0.0000';
 
@@ -61,14 +79,25 @@ final class CheckoutPosTransactionAction
             foreach ($data->items as $cartItem) {
                 if ($cartItem->itemType === 'RETAIL_PRODUCT') {
                     $result = $this->processRetailItem($cartItem, (string) $cashier->id);
-                } else {
+                    $retailManualDiscount = bcadd(
+                        $retailManualDiscount,
+                        $result['manualDiscountTotal'],
+                        4
+                    );
+                } elseif ($cartItem->itemType === 'SERVICE') {
                     $result = $this->processServiceItem($cartItem, (string) $cashier->id);
+                    $serviceManualDiscount = bcadd(
+                        $serviceManualDiscount,
+                        $result['manualDiscountTotal'],
+                        4
+                    );
+                } else {
+                    throw new \DomainException('Tipe item keranjang tidak dikenal.');
                 }
 
                 $subtotalRetail = bcadd($subtotalRetail, $result['subtotalRetail'], 4);
                 $subtotalService = bcadd($subtotalService, $result['subtotalService'], 4);
                 $tierDiscountTotal = bcadd($tierDiscountTotal, $result['tierDiscountTotal'], 4);
-                $manualDiscountTotal = bcadd($manualDiscountTotal, $result['manualDiscountTotal'], 4);
                 $totalCogsRetail = bcadd($totalCogsRetail, $result['cogsRetail'], 4);
                 $totalCogsService = bcadd($totalCogsService, $result['cogsService'], 4);
 
@@ -77,30 +106,90 @@ final class CheckoutPosTransactionAction
                 $journalLines = array_merge($journalLines, $result['journalLines']);
             }
 
-            if (bccomp($data->manualDiscountTotal, '0.0000', 4) === 1 && bccomp($manualDiscountTotal, '0.0000', 4) === 0) {
-                $manualDiscountTotal = $data->manualDiscountTotal;
-                $journalLines[] = new JournalLineData(
-                    chartOfAccountCode: '4-1102',
-                    debit: $manualDiscountTotal,
-                    credit: '0.0000',
-                    lineDescription: 'Diskon manual kasir',
-                );
+            $itemManualDiscountTotal = bcadd($retailManualDiscount, $serviceManualDiscount, 4);
+
+            // Diskon manual tingkat keranjang dialokasikan proporsional ke segmen
+            // ritel dan jasa berdasarkan nilai bersih masing-masing setelah diskon
+            // item dan diskon grosir.
+            $retailNetBeforeGlobal = bcsub($subtotalRetail, $retailManualDiscount, 4);
+            $serviceNetBeforeGlobal = bcsub(
+                bcsub($subtotalService, $tierDiscountTotal, 4),
+                $serviceManualDiscount,
+                4
+            );
+            $baseForGlobalDiscount = bcadd($retailNetBeforeGlobal, $serviceNetBeforeGlobal, 4);
+
+            if (bccomp($globalManualDiscount, '0.0000', 4) === 1) {
+                if (bccomp($baseForGlobalDiscount, '0.0000', 4) !== 1) {
+                    throw new \DomainException('Diskon manual tidak dapat diterapkan pada keranjang bernilai nol.');
+                }
+
+                if (bccomp($globalManualDiscount, $baseForGlobalDiscount, 4) === 1) {
+                    throw new \DomainException('Diskon manual melebihi total belanja.');
+                }
+
+                $retailShare = bccomp($retailNetBeforeGlobal, '0.0000', 4) === 1
+                    ? bcdiv(bcmul($globalManualDiscount, $retailNetBeforeGlobal, 6), $baseForGlobalDiscount, 4)
+                    : '0.0000';
+                $serviceShare = bcsub($globalManualDiscount, $retailShare, 4);
+
+                if (bccomp($retailShare, '0.0000', 4) === 1) {
+                    $journalLines[] = new JournalLineData(
+                        chartOfAccountCode: '4-1102',
+                        debit: $retailShare,
+                        credit: '0.0000',
+                        lineDescription: 'Diskon manual keranjang (etalase)',
+                    );
+                }
+
+                if (bccomp($serviceShare, '0.0000', 4) === 1) {
+                    $journalLines[] = new JournalLineData(
+                        chartOfAccountCode: '4-2109',
+                        debit: $serviceShare,
+                        credit: '0.0000',
+                        lineDescription: 'Diskon manual keranjang (jasa)',
+                    );
+                }
             }
+
+            $manualDiscountTotal = bcadd($itemManualDiscountTotal, $globalManualDiscount, 4);
 
             $totalGross = bcadd($subtotalRetail, $subtotalService, 4);
             $totalDiscounts = bcadd($tierDiscountTotal, $manualDiscountTotal, 4);
             $grandTotal = bcsub($totalGross, $totalDiscounts, 4);
-            $changeAmount = bcsub($amountPaid, $grandTotal, 4);
+
+            if (bccomp($grandTotal, '0.0000', 4) !== 1) {
+                throw new \DomainException('Grand total transaksi harus lebih besar dari nol.');
+            }
+
+            if ($data->paymentMethod === PaymentMethod::CASH) {
+                if (bccomp($amountPaid, $grandTotal, 4) === -1) {
+                    throw new \DomainException('Uang pembayaran tunai kurang dari grand total.');
+                }
+
+                $changeAmount = bcsub($amountPaid, $grandTotal, 4);
+            } else {
+                if (bccomp($amountPaid, $grandTotal, 4) !== 0) {
+                    throw new \DomainException('Pembayaran non-tunai harus sama dengan grand total.');
+                }
+
+                $changeAmount = '0.0000';
+            }
 
             // --- Buat pos_transactions ---
-            $invoiceNumber = 'INV-' . Carbon::now()->format('Ymd') . '-' .
-                str_pad((string) (PosTransaction::count() + 1), 4, '0', STR_PAD_LEFT);
+            $invoiceSequence = PosTransaction::whereDate('transaction_date', today())->count() + 1;
+
+            do {
+                $invoiceNumber = 'INV-' . Carbon::now()->format('Ymd') . '-'
+                    . str_pad((string) $invoiceSequence, 4, '0', STR_PAD_LEFT);
+                $invoiceSequence++;
+            } while (PosTransaction::where('invoice_number', $invoiceNumber)->exists());
 
             $transaction = PosTransaction::create([
                 'invoice_number' => $invoiceNumber,
                 'pos_shift_id' => $shift->id,
                 'cashier_user_id' => $cashier->id,
-                'customer_name' => $data->customerName ?? 'Pelanggan Umum',
+                'customer_name' => $data->customerName ?: 'Pelanggan Umum',
                 'subtotal_retail' => $subtotalRetail,
                 'subtotal_service' => $subtotalService,
                 'tier_discount_total' => $tierDiscountTotal,
@@ -121,7 +210,7 @@ final class CheckoutPosTransactionAction
                 $ti['pos_transaction_id'] = $transaction->id;
                 $posItem = PosTransactionItem::create(array_filter($ti, fn ($k) => $k !== '_boms', ARRAY_FILTER_USE_KEY));
 
-                if (!empty($ti['_boms'])) {
+                if (! empty($ti['_boms'])) {
                     foreach ($ti['_boms'] as $bom) {
                         PosTransactionBom::create([
                             'pos_transaction_item_id' => $posItem->id,
@@ -135,18 +224,24 @@ final class CheckoutPosTransactionAction
             }
 
             foreach ($stockLedgerEntries as $sle) {
-                $sle['pos_transaction_id'] = $transaction->id;
+                $sle['reference_id'] = $transaction->id;
                 $sle['pos_shift_id'] = $shift->id;
                 StockLedgerEntry::create(array_filter($sle, fn ($k) => $k !== '_product', ARRAY_FILTER_USE_KEY));
             }
 
-            // --- Update system_expected_cash pada shift ---
-            $shift->increment('system_expected_cash', $grandTotal);
+            // --- Update system_expected_cash pada shift (hanya transaksi tunai) ---
+            if ($data->paymentMethod === PaymentMethod::CASH) {
+                $shift->increment('system_expected_cash', $grandTotal);
+            }
 
             // --- Posting jurnal akuntansi lengkap ---
             $period = AccountingPeriod::where('is_closed', false)
                 ->orderBy('start_date', 'desc')
                 ->first();
+
+            if ($period === null) {
+                throw new \DomainException('Tidak ada periode akuntansi terbuka untuk mencatat transaksi.');
+            }
 
             $coaCash = ChartOfAccount::where('account_code', '1-1101')->lockForUpdate()->firstOrFail();
             $coaQris = ChartOfAccount::where('account_code', '1-1103')->lockForUpdate()->firstOrFail();
@@ -164,7 +259,7 @@ final class CheckoutPosTransactionAction
             $journalData = new JournalEntryData(
                 journalNumber: 'JRN-' . Carbon::now()->format('Ymd') . '-' .
                     str_pad((string) (JournalEntry::count() + 1), 4, '0', STR_PAD_LEFT),
-                accountingPeriodId: (string) ($period?->getKey() ?? ''),
+                accountingPeriodId: (string) $period->getKey(),
                 posShiftId: (string) $shift->id,
                 entryDate: Carbon::now(),
                 journalType: JournalType::SALES_POS,
@@ -185,12 +280,64 @@ final class CheckoutPosTransactionAction
     }
 
     /**
+     * Pastikan kasir aktif dan berhak bertransaksi pada shift yang dipilih.
+     */
+    private function ensureCashierIsAuthorized(User $cashier, PosShift $shift): void
+    {
+        if ($cashier->hasAnyRole([UserRole::SUPERADMIN, UserRole::ADMIN])) {
+            return;
+        }
+
+        if ($cashier->role_type === UserRole::PIKET_SISWA) {
+            $isOperator = ShiftAttendance::where('pos_shift_id', $shift->id)
+                ->where('active_operator_user_id', $cashier->id)
+                ->exists();
+
+            if (! $isOperator) {
+                throw new \DomainException('Kasir tidak terdaftar sebagai operator aktif pada shift ini.');
+            }
+
+            return;
+        }
+
+        if ($cashier->role_type === UserRole::PIKET_GURU) {
+            $isSupervisor = (int) $shift->supervisor_teacher_id === (int) $cashier->id;
+            $isOperator = ShiftAttendance::where('pos_shift_id', $shift->id)
+                ->where('active_operator_user_id', $cashier->id)
+                ->exists();
+
+            if (! $isSupervisor && ! $isOperator) {
+                throw new \DomainException('Guru piket bukan supervisor atau operator aktif pada shift ini.');
+            }
+
+            return;
+        }
+
+        throw new \DomainException('Peran pengguna tidak berhak melakukan transaksi kasir.');
+    }
+
+    /**
+     * Validasi dan normalisasi nominal non-negatif dengan maksimal 4 desimal.
+     */
+    private function normalizeAmount(string $value, string $label): string
+    {
+        $value = trim($value);
+
+        if ($value === '' || ! preg_match('/^\d+(\.\d{1,4})?$/', $value)) {
+            throw new \DomainException("Nilai {$label} tidak valid.");
+        }
+
+        return number_format((float) $value, 4, '.', '');
+    }
+
+    /**
      * Proses item retail: kunci produk, validasi stok, potong stok, hitung COGS.
      *
      * @return array{
      *     subtotalRetail: string,
      *     subtotalService: string,
      *     tierDiscountTotal: string,
+     *     manualDiscountTotal: string,
      *     cogsRetail: string,
      *     cogsService: string,
      *     transactionItem: array,
@@ -200,18 +347,31 @@ final class CheckoutPosTransactionAction
      */
     private function processRetailItem(CartItemData $item, string $cashierId): array
     {
-        $product = Product::where('id', $item->productId)->lockForUpdate()->firstOrFail();
+        $product = Product::with(['inventoryAccount', 'cogsAccount'])
+            ->where('id', $item->productId)
+            ->where('is_active', true)
+            ->where('inventory_type', 'RETAIL')
+            ->lockForUpdate()
+            ->firstOrFail();
 
-        $qty = number_format((float) $item->qty, 4, '.', '');
-        $manualDiscount = number_format((float) $item->manualDiscountAmount, 4, '.', '');
+        $inventoryCode = $product->inventoryAccount?->account_code ?? '1-1301';
+        $cogsCode = $product->cogsAccount?->account_code ?? '5-1101';
+
+        $qty = $this->normalizeQuantity($item->qty);
+        $manualDiscount = $this->normalizeAmount($item->manualDiscountAmount, 'diskon item');
         $unitPrice = (string) $product->selling_price;
         $avgCost = (string) $product->average_cost;
+
+        $subtotalGross = bcmul($qty, $unitPrice, 4);
+
+        if (bccomp($manualDiscount, $subtotalGross, 4) === 1) {
+            throw new \DomainException('Diskon item melebihi nilai barang ' . $product->name . '.');
+        }
 
         if (bccomp((string) $product->current_stock, $qty, 4) === -1) {
             throw new \DomainException('Stok tidak mencukupi untuk ' . $product->name);
         }
 
-        $subtotalGross = bcmul($qty, $unitPrice, 4);
         $subtotalNet = bcsub($subtotalGross, $manualDiscount, 4);
         $cogsTotal = bcmul($qty, $avgCost, 4);
 
@@ -238,13 +398,13 @@ final class CheckoutPosTransactionAction
         }
         if (bccomp($cogsTotal, '0.0000', 4) === 1) {
             $journalLines[] = new JournalLineData(
-                chartOfAccountCode: '5-1101',
+                chartOfAccountCode: $cogsCode,
                 debit: $cogsTotal,
                 credit: '0.0000',
                 lineDescription: 'HPP ' . $product->name,
             );
             $journalLines[] = new JournalLineData(
-                chartOfAccountCode: '1-1301',
+                chartOfAccountCode: $inventoryCode,
                 debit: '0.0000',
                 credit: $cogsTotal,
                 lineDescription: 'Kredit Persediaan Etalase ' . $product->name,
@@ -301,15 +461,29 @@ final class CheckoutPosTransactionAction
      */
     private function processServiceItem(CartItemData $item, string $cashierId): array
     {
-        $service = Service::where('id', $item->serviceId)->firstOrFail();
-        $qty = number_format((float) $item->qty, 4, '.', '');
-        $manualDiscount = number_format((float) $item->manualDiscountAmount, 4, '.', '');
+        $service = Service::with(['revenueAccount', 'discountAccount'])
+            ->where('id', $item->serviceId)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $revenueCode = $service->revenueAccount?->account_code ?? '4-2101';
+        $discountCode = $service->discountAccount?->account_code ?? '4-2109';
+
+        $qty = $this->normalizeQuantity($item->qty);
+        $manualDiscount = $this->normalizeAmount($item->manualDiscountAmount, 'diskon item');
 
         $pricing = $this->tierResolver->resolve($service, $qty);
         $finalUnitPrice = $pricing['final_unit_price'];
         $subtotalNet = bcmul($qty, $finalUnitPrice, 4);
         $tierDiscount = $pricing['line_tier_discount_total'];
         $grossSubtotal = $pricing['line_subtotal_gross'];
+
+        if (bccomp($manualDiscount, $subtotalNet, 4) === 1) {
+            throw new \DomainException('Diskon item melebihi nilai layanan ' . $service->name . '.');
+        }
+
+        $lineNetTotal = bcsub($subtotalNet, $manualDiscount, 4);
+        $finalUnitPriceAfterManual = bcsub($finalUnitPrice, bcdiv($manualDiscount, $qty, 4), 4);
 
         $cogsService = '0.0000';
         $bomRecords = [];
@@ -318,8 +492,18 @@ final class CheckoutPosTransactionAction
 
         $boms = $service->boms()->get();
         foreach ($boms as $bom) {
-            $rawMaterial = Product::where('id', $bom->raw_material_product_id)->lockForUpdate()->firstOrFail();
-            $qtyConsumed = bcmul($qty, (string) $bom->consumption_qty, 4);
+            $rawMaterial = Product::where('id', $bom->raw_material_product_id)
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $consumptionQty = (string) $bom->consumption_qty;
+
+            if (bccomp($consumptionQty, '0.0000', 4) !== 1) {
+                throw new \DomainException('Konfigurasi BoM layanan ' . $service->name . ' tidak valid.');
+            }
+
+            $qtyConsumed = bcmul($qty, $consumptionQty, 4);
             $unitCost = (string) $rawMaterial->average_cost;
             $bomCost = bcmul($qtyConsumed, $unitCost, 4);
 
@@ -355,14 +539,14 @@ final class CheckoutPosTransactionAction
         }
 
         $journalLines[] = new JournalLineData(
-            chartOfAccountCode: '4-2101',
+            chartOfAccountCode: $revenueCode,
             debit: '0.0000',
             credit: $grossSubtotal,
             lineDescription: 'Pendapatan jasa ' . $service->name . ' (bruto)',
         );
         if (bccomp($tierDiscount, '0.0000', 4) === 1) {
             $journalLines[] = new JournalLineData(
-                chartOfAccountCode: '4-2109',
+                chartOfAccountCode: $discountCode,
                 debit: $tierDiscount,
                 credit: '0.0000',
                 lineDescription: 'Potongan grosir jasa ' . $service->name,
@@ -370,7 +554,7 @@ final class CheckoutPosTransactionAction
         }
         if (bccomp($manualDiscount, '0.0000', 4) === 1) {
             $journalLines[] = new JournalLineData(
-                chartOfAccountCode: '4-2109',
+                chartOfAccountCode: $discountCode,
                 debit: $manualDiscount,
                 credit: '0.0000',
                 lineDescription: 'Diskon manual jasa ' . $service->name,
@@ -401,10 +585,10 @@ final class CheckoutPosTransactionAction
             'base_unit_price' => $pricing['base_unit_price'],
             'tier_discount_per_unit' => $pricing['tier_discount_per_unit'],
             'manual_discount_amount' => $manualDiscount,
-            'final_unit_price' => $finalUnitPrice,
+            'final_unit_price' => $finalUnitPriceAfterManual,
             'line_subtotal_gross' => $grossSubtotal,
             'line_total_discount' => bcadd($tierDiscount, $manualDiscount, 4),
-            'line_net_total' => $subtotalNet,
+            'line_net_total' => $lineNetTotal,
             'line_cogs_total' => $cogsService,
             '_boms' => $bomRecords,
         ];
@@ -420,5 +604,22 @@ final class CheckoutPosTransactionAction
             'stockLedgerEntries' => $stockLedgerEntries,
             'journalLines' => $journalLines,
         ];
+    }
+
+    private function normalizeQuantity(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '' || ! preg_match('/^\d+(\.\d{1,4})?$/', $value)) {
+            throw new \DomainException('Kuantitas item tidak valid.');
+        }
+
+        $normalized = number_format((float) $value, 4, '.', '');
+
+        if (bccomp($normalized, '0.0000', 4) !== 1) {
+            throw new \DomainException('Kuantitas item harus lebih besar dari nol.');
+        }
+
+        return $normalized;
     }
 }

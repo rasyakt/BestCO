@@ -606,7 +606,8 @@
                                 </label>
                                 <div class="relative">
                                     <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">Rp</span>
-                                    <input type="number" id="prod_avg_cost" name="average_cost" step="1" min="0" required
+                                    <input type="text" inputmode="numeric" id="prod_avg_cost" name="average_cost"
+                                        data-currency="true" required
                                         x-model.number="newProd.average_cost"
                                         placeholder="0"
                                         class="input w-full pl-9 font-mono text-sm font-semibold">
@@ -621,7 +622,8 @@
                                 </label>
                                 <div class="relative">
                                     <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">Rp</span>
-                                    <input type="number" id="prod_selling_price" name="selling_price" step="1" min="0"
+                                    <input type="text" inputmode="numeric" id="prod_selling_price" name="selling_price"
+                                        data-currency="true"
                                         :required="newProd.inventory_type === 'RETAIL'"
                                         x-model.number="newProd.selling_price"
                                         placeholder="0"
@@ -646,7 +648,8 @@
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
                             <label for="prod_min_alert" class="form-label">Batas Peringatan Stok Menipis</label>
-                            <input type="number" id="prod_min_alert" name="min_stock_alert" step="1" min="0"
+                            <input type="text" inputmode="numeric" id="prod_min_alert" name="min_stock_alert"
+                                data-quantity="true" step="1"
                                 x-model.number="newProd.min_stock_alert"
                                 class="input w-full font-mono text-xs">
                             <p class="mt-1 text-[11px] text-slate-500">Sistem memberi notifikasi jika stok di bawah nilai ini.</p>
@@ -654,7 +657,8 @@
 
                         <div>
                             <label for="prod_initial_stock" class="form-label">Stok Awal Fisik (Opsional)</label>
-                            <input type="number" id="prod_initial_stock" name="initial_stock" step="0.0001" min="0"
+                            <input type="text" inputmode="decimal" id="prod_initial_stock" name="initial_stock"
+                                data-quantity="true" step="0.0001"
                                 x-model.number="newProd.initial_stock"
                                 placeholder="0"
                                 class="input w-full font-mono text-xs">
@@ -757,7 +761,8 @@
                             </label>
                             <div class="relative">
                                 <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">Rp</span>
-                                <input type="number" id="srv_price" name="base_price" step="1" min="0" required
+                                <input type="text" inputmode="numeric" id="srv_price" name="base_price"
+                                    data-currency="true" required
                                     x-model.number="newSrv.base_price"
                                     placeholder="0"
                                     class="input w-full pl-9 font-mono text-sm font-semibold text-brand-700">
@@ -795,7 +800,8 @@
                                     </div>
                                     <div class="w-32">
                                         <div class="relative">
-                                            <input type="number" step="0.0001" min="0.0001"
+                                            <input type="text" inputmode="decimal"
+                                                data-quantity="true" step="0.0001"
                                                 :name="'boms[' + bIdx + '][consumption_qty]'"
                                                 x-model.number="bom.consumption_qty"
                                                 placeholder="Qty konsumsi"
@@ -884,12 +890,14 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="form-label">HPP (Modal) Rp</label>
-                            <input type="number" step="1" min="0" name="average_cost" x-model.number="editProd.average_cost" required
+                            <input type="text" inputmode="numeric" data-currency="true" name="average_cost"
+                                x-model.number="editProd.average_cost" required
                                 class="input w-full font-mono text-xs font-semibold">
                         </div>
                         <div>
                             <label class="form-label">Harga Jual Ritel Rp</label>
-                            <input type="number" step="1" min="0" name="selling_price" x-model.number="editProd.selling_price" required
+                            <input type="text" inputmode="numeric" data-currency="true" name="selling_price"
+                                x-model.number="editProd.selling_price" required
                                 class="input w-full font-mono text-xs font-semibold text-brand-700">
                         </div>
                     </div>
@@ -897,7 +905,8 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="form-label">Min Alert Stok</label>
-                            <input type="number" step="1" min="0" name="min_stock_alert" x-model.number="editProd.min_stock_alert" required
+                            <input type="text" inputmode="numeric" data-quantity="true" step="1"
+                                name="min_stock_alert" x-model.number="editProd.min_stock_alert" required
                                 class="input w-full font-mono text-xs">
                         </div>
                         <div>
@@ -949,7 +958,8 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="form-label">Tarif / Harga Jual Rp</label>
-                            <input type="number" step="1" min="0" name="base_price" x-model.number="editSrv.base_price" required
+                            <input type="text" inputmode="numeric" data-currency="true" name="base_price"
+                                x-model.number="editSrv.base_price" required
                                 class="input w-full font-mono text-xs font-semibold text-brand-700">
                         </div>
                         <div>
@@ -988,7 +998,8 @@
                                         </select>
                                     </div>
                                     <div class="w-28">
-                                        <input type="number" step="0.0001" min="0.0001"
+                                        <input type="text" inputmode="decimal"
+                                            data-quantity="true" step="0.0001"
                                             :name="'boms[' + bIdx + '][consumption_qty]'"
                                             x-model.number="bom.consumption_qty"
                                             placeholder="Qty"
@@ -1061,12 +1072,14 @@
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
                             <label class="form-label">Jumlah</label>
-                            <input type="number" step="0.0001" min="0.0001" name="qty_purchased" x-model="qty" required
+                            <input type="text" inputmode="decimal" data-quantity="true" step="0.0001"
+                                name="qty_purchased" x-model="qty" required
                                 class="input font-mono w-full">
                         </div>
                         <div>
                             <label class="form-label">Harga Satuan (Rp)</label>
-                            <input type="number" step="100" min="0" name="purchase_unit_price" x-model="price" required
+                            <input type="text" inputmode="numeric" data-currency="true"
+                                name="purchase_unit_price" x-model="price" required
                                 placeholder="Contoh: 45000"
                                 class="input font-mono w-full">
                         </div>

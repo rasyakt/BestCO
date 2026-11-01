@@ -26,6 +26,7 @@ class PiketShiftTest extends TestCase
     private User $teacher;
     private User $student1;
     private User $student2;
+    private User $student3;
     private User $studentSubstitute;
 
     protected function setUp(): void
@@ -37,7 +38,8 @@ class PiketShiftTest extends TestCase
         $students = User::where('role_type', 'piket_siswa')->get();
         $this->student1 = $students[0];
         $this->student2 = $students[1];
-        $this->studentSubstitute = $students[2];
+        $this->student3 = $students[2];
+        $this->studentSubstitute = $students[3];
 
         AccountingPeriod::firstOrCreate(
             ['period_name' => now()->format('F Y')],
@@ -55,7 +57,7 @@ class PiketShiftTest extends TestCase
 
         $shift = $action->execute(new ShiftOpeningData(
             supervisorTeacherId: (string) $this->teacher->id,
-            openedByUserId: (string) $this->student1->id,
+            openedByUserId: (string) $this->teacher->id,
             openingCashBalance: '250000.0000',
             slots: [
                 new StudentAttendanceSlotData(
@@ -81,12 +83,12 @@ class PiketShiftTest extends TestCase
                 new StudentAttendanceSlotData(
                     piketScheduleId: null,
                     slotNumber: 3,
-                    scheduledUserId: (string) $this->student1->id,
+                    scheduledUserId: (string) $this->student3->id,
                     scheduledStudentStatus: AbsenceStatus::PRESENT,
                     absenceReason: null,
                     isSubstituted: false,
                     substitutedUserId: null,
-                    activeOperatorUserId: (string) $this->student1->id,
+                    activeOperatorUserId: (string) $this->student3->id,
                 ),
             ],
         ));
@@ -105,7 +107,7 @@ class PiketShiftTest extends TestCase
         $openAction = app(OpenPosShiftAction::class);
         $shift = $openAction->execute(new ShiftOpeningData(
             supervisorTeacherId: (string) $this->teacher->id,
-            openedByUserId: (string) $this->student1->id,
+            openedByUserId: (string) $this->teacher->id,
             openingCashBalance: '200000.0000',
             slots: [
                 new StudentAttendanceSlotData(
@@ -117,6 +119,26 @@ class PiketShiftTest extends TestCase
                     isSubstituted: false,
                     substitutedUserId: null,
                     activeOperatorUserId: (string) $this->student1->id,
+                ),
+                new StudentAttendanceSlotData(
+                    piketScheduleId: null,
+                    slotNumber: 2,
+                    scheduledUserId: (string) $this->student2->id,
+                    scheduledStudentStatus: AbsenceStatus::PRESENT,
+                    absenceReason: null,
+                    isSubstituted: false,
+                    substitutedUserId: null,
+                    activeOperatorUserId: (string) $this->student2->id,
+                ),
+                new StudentAttendanceSlotData(
+                    piketScheduleId: null,
+                    slotNumber: 3,
+                    scheduledUserId: (string) $this->student3->id,
+                    scheduledStudentStatus: AbsenceStatus::PRESENT,
+                    absenceReason: null,
+                    isSubstituted: false,
+                    substitutedUserId: null,
+                    activeOperatorUserId: (string) $this->student3->id,
                 ),
             ],
         ));

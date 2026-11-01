@@ -55,32 +55,38 @@ final class RecordCashBookEntryAction
                 $posShift = PosShift::findOrFail($posShiftId);
             }
 
-            // Ambil saldo berjalan terakhir untuk akun kas ini (urutan kronologis).
-            $lastEntry = CashBookEntry::where('cash_account_id', $cashAccountId)
-                ->orderBy('transaction_date', 'asc')
-                ->orderBy('id', 'asc')
-                ->latest('id')
-                ->first();
-
-            $previousBalance = $lastEntry ? (string) $lastEntry->running_balance : '0.0000';
-
+            $transactionDate = Carbon::parse($transactionDate)->startOfSecond();
             $debitIn = number_format((float) $debitIn, 4, '.', '');
             $creditOut = number_format((float) $creditOut, 4, '.', '');
+            $delta = bcsub($debitIn, $creditOut, 4);
 
-            $newBalance = bcadd($previousBalance, $debitIn, 4);
-            $newBalance = bcsub($newBalance, $creditOut, 4);
+            // Kunci seluruh entri akun kas agar saldo berjalan konsisten saat ada
+            // entri backdate (mis. jurnal pembalik periode lama).
+            $existingEntries = CashBookEntry::where('cash_account_id', $cashAccount->id)
+                ->orderBy('transaction_date', 'asc')
+                ->orderBy('id', 'asc')
+                ->lockForUpdate()
+                ->get();
 
-            $bkuNumber = 'BKU-' . Carbon::parse($transactionDate)->format('Ymd') . '-' .
-                str_pad((string) (CashBookEntry::whereDate('transaction_date', Carbon::parse($transactionDate)->format('Y-m-d'))->count() + 1), 4, '0', STR_PAD_LEFT);
+            $previousBalance = '0.0000';
 
-            return CashBookEntry::create([
+            foreach ($existingEntries as $existingEntry) {
+                if ($existingEntry->transaction_date->lte($transactionDate)) {
+                    $previousBalance = (string) $existingEntry->running_balance;
+                }
+            }
+
+            $newBalance = bcadd($previousBalance, $delta, 4);
+
+            $bkuNumber = 'BKU-' . $transactionDate->format('Ymd') . '-' .
+                str_pad((string) (CashBookEntry::whereDate('transaction_date', $transactionDate->format('Y-m-d'))->count() + 1), 4, '0', STR_PAD_LEFT);
+
+            $entry = CashBookEntry::create([
                 'bku_number' => $bkuNumber,
                 'pos_shift_id' => $posShift?->id,
                 'journal_entry_id' => $journalEntry->id,
                 'cash_account_id' => $cashAccount->id,
-                'transaction_date' => $transactionDate instanceof Carbon
-                    ? $transactionDate
-                    : Carbon::parse($transactionDate),
+                'transaction_date' => $transactionDate,
                 'mutation_direction' => $mutationDirection,
                 'category' => $categoryValue,
                 'description' => $description,
@@ -89,6 +95,30 @@ final class RecordCashBookEntryAction
                 'running_balance' => $newBalance,
                 'recorded_by_user_id' => $recordedByUserId,
             ]);
+
+            // Jika entri baru disisipkan di tengah riwayat, geser saldo berjalan
+            // seluruh entri setelahnya sebesar delta yang sama.
+            $laterEntries = CashBookEntry::where('cash_account_id', $cashAccount->id)
+                ->whereKeyNot($entry->id)
+                ->where(function ($query) use ($transactionDate, $entry): void {
+                    $query->where('transaction_date', '>', $transactionDate)
+                        ->orWhere(function ($sameDateQuery) use ($transactionDate, $entry): void {
+                            $sameDateQuery->where('transaction_date', $transactionDate)
+                                ->where('id', '>', $entry->id);
+                        });
+                })
+                ->orderBy('transaction_date', 'asc')
+                ->orderBy('id', 'asc')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($laterEntries as $laterEntry) {
+                $laterEntry->update([
+                    'running_balance' => bcadd((string) $laterEntry->running_balance, $delta, 4),
+                ]);
+            }
+
+            return $entry;
         });
     }
 }

@@ -85,7 +85,7 @@
                             <tr>
                                 <td class="whitespace-nowrap font-mono text-[10px] font-medium text-slate-600">{{ $e->bku_number }}</td>
                                 <td class="whitespace-nowrap text-[11px] text-slate-500">{{ $e->transaction_date->format('d/m/Y') }}</td>
-                                <td class="text-[11px] font-medium text-slate-700">{{ $e->cashAccount->name }}</td>
+                                <td class="text-[11px] font-medium text-slate-700">{{ $e->cashAccount->account_name }}</td>
                                 <td class="max-w-[280px] text-[11px] text-slate-600">{{ $e->description }}</td>
                                 <td class="text-right font-medium text-emerald-600 num-tabular">
                                     {{ bccomp((string) $e->debit_in, '0.0000', 4) === 1 ? 'Rp ' . number_format((float) $e->debit_in, 0, ',', '.') : '—' }}
@@ -137,7 +137,7 @@
                                         <tr>
                                             <td class="w-28 font-mono text-[10px] text-slate-400">{{ $it->chartOfAccount->account_code }}</td>
                                             <td class="{{ bccomp((string) $it->credit, '0.0000', 4) === 1 ? 'pl-8 text-slate-500' : 'font-medium text-slate-800' }}">
-                                                {{ $it->chartOfAccount->name }}
+                                                {{ $it->chartOfAccount->account_name }}
                                             </td>
                                             <td class="w-36 text-right num-tabular">
                                                 {{ bccomp((string) $it->debit, '0.0000', 4) === 1 ? 'Rp ' . number_format((float) $it->debit, 0, ',', '.') : '—' }}

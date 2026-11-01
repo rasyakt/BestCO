@@ -13,6 +13,7 @@ use App\Rules\StrictCurrency;
 use App\Rules\StrictQuantity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 final class StockInboundController extends Controller
@@ -46,18 +47,28 @@ final class StockInboundController extends Controller
     public function store(Request $request, RecordBatchPurchaseInboundAction $action): RedirectResponse
     {
         $validated = $request->validate([
-            'account_id' => ['required', 'exists:chart_of_accounts,id'],
+            'account_id' => [
+                'required',
+                Rule::exists('chart_of_accounts', 'id')->whereIn('account_code', ['1-1102', '2-1101']),
+            ],
             'invoice_number' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.product_id' => [
+                'required',
+                'distinct',
+                Rule::exists('products', 'id')->where('is_active', true),
+            ],
             'items.*.qty' => ['required', new StrictQuantity(allowDecimal: true, min: 0.0001)],
-            'items.*.price' => ['required', new StrictCurrency(min: 0)],
+            'items.*.price' => ['required', new StrictCurrency(min: 0.0001)],
         ], [
             'account_id.required' => 'Pilih akun sumber dana (Kas Besar atau Utang Usaha).',
+            'account_id.exists' => 'Akun pendanaan tidak valid. Gunakan Kas Besar atau Utang Usaha.',
             'items.required' => 'Minimal satu produk harus ditambahkan ke daftar barang masuk.',
             'items.min' => 'Minimal satu produk harus ditambahkan ke daftar barang masuk.',
             'items.*.product_id.required' => 'Pilih produk untuk setiap baris.',
+            'items.*.product_id.distinct' => 'Produk yang sama tidak boleh muncul lebih dari satu baris.',
+            'items.*.product_id.exists' => 'Produk yang dipilih tidak aktif atau tidak ditemukan.',
             'items.*.qty.required' => 'Kuantitas barang wajib diisi.',
             'items.*.price.required' => 'Harga beli satuan wajib diisi.',
         ]);

@@ -74,7 +74,9 @@ class User extends Authenticatable
      */
     public function hasAnyRole(array $roles): bool
     {
-        return collect($roles)->contains(fn (string $role): bool => $this->hasRole($role));
+        return collect($roles)->contains(
+            fn (string|UserRole $role): bool => $this->hasRole($role)
+        );
     }
 
     /**

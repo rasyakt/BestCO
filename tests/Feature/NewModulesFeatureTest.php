@@ -32,13 +32,17 @@ class NewModulesFeatureTest extends TestCase
     private User $admin;
     private User $superadmin;
 
+    /** @var array<int, User> */
+    private array $students;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed();
 
         $this->teacher = User::where('role_type', 'piket_guru')->firstOrFail();
-        $this->student = User::where('role_type', 'piket_siswa')->firstOrFail();
+        $this->students = User::where('role_type', 'piket_siswa')->get()->all();
+        $this->student = $this->students[0];
         $this->admin = User::where('role_type', 'admin')->firstOrFail();
         $this->superadmin = User::where('role_type', 'superadmin')->firstOrFail();
 
@@ -121,46 +125,7 @@ class NewModulesFeatureTest extends TestCase
     public function test_user_can_view_transactions_and_void_with_supervisor_teacher_pin(): void
     {
         // 1. Setup shift aktif
-        $openShiftAction = app(OpenPosShiftAction::class);
-        $shift = $openShiftAction->execute(
-            new ShiftOpeningData(
-                supervisorTeacherId: (string) $this->teacher->id,
-                openedByUserId: (string) $this->student->id,
-                openingCashBalance: '100000.0000',
-                slots: [
-                    new StudentAttendanceSlotData(
-                        piketScheduleId: null,
-                        slotNumber: 1,
-                        scheduledUserId: (string) $this->student->id,
-                        scheduledStudentStatus: AbsenceStatus::PRESENT,
-                        absenceReason: null,
-                        isSubstituted: false,
-                        substitutedUserId: null,
-                        activeOperatorUserId: (string) $this->student->id,
-                    ),
-                    new StudentAttendanceSlotData(
-                        piketScheduleId: null,
-                        slotNumber: 2,
-                        scheduledUserId: (string) $this->student->id,
-                        scheduledStudentStatus: AbsenceStatus::PRESENT,
-                        absenceReason: null,
-                        isSubstituted: false,
-                        substitutedUserId: null,
-                        activeOperatorUserId: (string) $this->student->id,
-                    ),
-                    new StudentAttendanceSlotData(
-                        piketScheduleId: null,
-                        slotNumber: 3,
-                        scheduledUserId: (string) $this->student->id,
-                        scheduledStudentStatus: AbsenceStatus::PRESENT,
-                        absenceReason: null,
-                        isSubstituted: false,
-                        substitutedUserId: null,
-                        activeOperatorUserId: (string) $this->student->id,
-                    ),
-                ]
-            )
-        );
+        $shift = $this->openShift();
 
         // 2. Buat transaksi checkout
         $product = Product::where('inventory_type', InventoryType::RETAIL)->firstOrFail();
@@ -312,5 +277,46 @@ class NewModulesFeatureTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Pindah Stok');
         $response->assertSee('Nilai stok dipindah');
+    }
+
+    private function openShift(): PosShift
+    {
+        return app(OpenPosShiftAction::class)->execute(new ShiftOpeningData(
+            supervisorTeacherId: (string) $this->teacher->id,
+            openedByUserId: (string) $this->teacher->id,
+            openingCashBalance: '100000.0000',
+            slots: [
+                new StudentAttendanceSlotData(
+                    piketScheduleId: null,
+                    slotNumber: 1,
+                    scheduledUserId: (string) $this->students[0]->id,
+                    scheduledStudentStatus: AbsenceStatus::PRESENT,
+                    absenceReason: null,
+                    isSubstituted: false,
+                    substitutedUserId: null,
+                    activeOperatorUserId: (string) $this->students[0]->id,
+                ),
+                new StudentAttendanceSlotData(
+                    piketScheduleId: null,
+                    slotNumber: 2,
+                    scheduledUserId: (string) $this->students[1]->id,
+                    scheduledStudentStatus: AbsenceStatus::PRESENT,
+                    absenceReason: null,
+                    isSubstituted: false,
+                    substitutedUserId: null,
+                    activeOperatorUserId: (string) $this->students[1]->id,
+                ),
+                new StudentAttendanceSlotData(
+                    piketScheduleId: null,
+                    slotNumber: 3,
+                    scheduledUserId: (string) $this->students[2]->id,
+                    scheduledStudentStatus: AbsenceStatus::PRESENT,
+                    absenceReason: null,
+                    isSubstituted: false,
+                    substitutedUserId: null,
+                    activeOperatorUserId: (string) $this->students[2]->id,
+                ),
+            ],
+        ));
     }
 }

@@ -8,8 +8,9 @@ use App\DTOs\Piket\ShiftOpeningData;
 use App\DTOs\Piket\StudentAttendanceSlotData;
 use App\Enums\AbsenceStatus;
 use App\Enums\ShiftStatus;
-use App\Models\PosShift;
+use App\Enums\UserRole;
 use App\Models\PiketSchedule;
+use App\Models\PosShift;
 use App\Models\ShiftAttendance;
 use App\Models\StudentProfile;
 use App\Models\User;
@@ -25,18 +26,110 @@ final class OpenPosShiftAction
     public function execute(ShiftOpeningData $data): PosShift
     {
         return DB::transaction(function () use ($data): PosShift {
+            $existingOpenShift = PosShift::where('status', ShiftStatus::OPEN->value)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingOpenShift !== null) {
+                throw new \DomainException(
+                    'Masih ada shift kasir yang terbuka (' . $existingOpenShift->shift_code . '). Tutup shift tersebut terlebih dahulu.'
+                );
+            }
+
             $supervisor = User::where('id', $data->supervisorTeacherId)
-                ->whereIn('role_type', ['piket_guru', 'admin', 'superadmin'])
+                ->where('role_type', UserRole::PIKET_GURU)
+                ->where('is_active', true)
                 ->firstOrFail();
 
-            $shiftCode = 'SHF-' . Carbon::now()->format('Ymd') . '-' .
-                str_pad((string) (PosShift::whereDate('shift_date', today())->count() + 1), 2, '0', STR_PAD_LEFT);
+            $openedBy = User::where('id', $data->openedByUserId)
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            if (! $openedBy->hasAnyRole([UserRole::SUPERADMIN, UserRole::ADMIN, UserRole::PIKET_GURU])) {
+                throw new \DomainException('Hanya staf yang dapat membuka shift kasir.');
+            }
+
+            if (count($data->slots) !== 3) {
+                throw new \DomainException('Shift kasir memerlukan tepat 3 petugas piket.');
+            }
+
+            $slotsByNumber = [];
+            $scheduledIds = [];
+            $operatorIds = [];
+
+            foreach ($data->slots as $slot) {
+                if (! in_array($slot->slotNumber, [1, 2, 3], true)) {
+                    throw new \DomainException('Nomor slot petugas piket tidak valid.');
+                }
+
+                if (isset($slotsByNumber[$slot->slotNumber])) {
+                    throw new \DomainException('Slot petugas piket tidak boleh duplikat.');
+                }
+
+                if (isset($scheduledIds[$slot->scheduledUserId])) {
+                    throw new \DomainException('Setiap slot harus diisi siswa piket yang berbeda.');
+                }
+
+                User::where('id', $slot->scheduledUserId)
+                    ->where('role_type', UserRole::PIKET_SISWA)
+                    ->where('is_active', true)
+                    ->firstOrFail();
+
+                if ($slot->scheduledStudentStatus === AbsenceStatus::PRESENT) {
+                    if ($slot->isSubstituted || $slot->substitutedUserId !== null) {
+                        throw new \DomainException('Slot hadir tidak boleh memiliki siswa pengganti.');
+                    }
+
+                    $activeOperatorId = $slot->scheduledUserId;
+                } else {
+                    if (
+                        ! $slot->isSubstituted
+                        || $slot->substitutedUserId === null
+                        || trim((string) $slot->absenceReason) === ''
+                    ) {
+                        throw new \DomainException('Slot tidak hadir wajib memiliki alasan dan siswa pengganti.');
+                    }
+
+                    $activeOperatorId = $slot->substitutedUserId;
+                }
+
+                if ($slot->activeOperatorUserId !== $activeOperatorId) {
+                    throw new \DomainException('Operator aktif tidak konsisten dengan status kehadiran slot.');
+                }
+
+                $operator = User::where('id', $activeOperatorId)
+                    ->where('role_type', UserRole::PIKET_SISWA)
+                    ->where('is_active', true)
+                    ->firstOrFail();
+
+                if (isset($operatorIds[$operator->id])) {
+                    throw new \DomainException('Setiap slot harus memiliki operator aktif yang berbeda.');
+                }
+
+                $slotsByNumber[$slot->slotNumber] = $slot;
+                $scheduledIds[$slot->scheduledUserId] = true;
+                $operatorIds[$operator->id] = true;
+            }
+
+            ksort($slotsByNumber);
+
+            if (array_keys($slotsByNumber) !== [1, 2, 3]) {
+                throw new \DomainException('Shift kasir memerlukan slot 1, 2, dan 3.');
+            }
+
+            $sequence = PosShift::whereDate('shift_date', today())->count() + 1;
+
+            do {
+                $shiftCode = 'SHF-' . Carbon::now()->format('Ymd') . '-'
+                    . str_pad((string) $sequence, 2, '0', STR_PAD_LEFT);
+                $sequence++;
+            } while (PosShift::where('shift_code', $shiftCode)->exists());
 
             $shift = PosShift::create([
                 'shift_code' => $shiftCode,
                 'shift_date' => today(),
-                'supervisor_teacher_id' => $data->supervisorTeacherId,
-                'opened_by_user_id' => $data->openedByUserId,
+                'supervisor_teacher_id' => $supervisor->id,
+                'opened_by_user_id' => $openedBy->id,
                 'closed_by_user_id' => null,
                 'opened_at' => Carbon::now(),
                 'closed_at' => null,
@@ -48,15 +141,19 @@ final class OpenPosShiftAction
                 'closing_notes' => null,
             ]);
 
-            $today = today();
-            $dayOfWeek = $today->dayOfWeek; // 1=Sun ... 7=Sat in Laravel; sesuaikan ke 1=Senin
+            foreach ($slotsByNumber as $slot) {
+                $piketScheduleId = $slot->piketScheduleId;
 
-            foreach ($data->slots as $slot) {
-                $piketSchedule = PiketSchedule::where('id', $slot->piketScheduleId)->first();
+                if ($piketScheduleId === null) {
+                    $piketScheduleId = PiketSchedule::whereDate('schedule_date', today())
+                        ->where('slot_number', $slot->slotNumber)
+                        ->where('scheduled_student_id', $slot->scheduledUserId)
+                        ->value('id');
+                }
 
                 ShiftAttendance::create([
                     'pos_shift_id' => $shift->id,
-                    'piket_schedule_id' => $slot->piketScheduleId,
+                    'piket_schedule_id' => $piketScheduleId,
                     'slot_number' => $slot->slotNumber,
                     'scheduled_user_id' => $slot->scheduledUserId,
                     'scheduled_student_status' => $slot->scheduledStudentStatus->value,
@@ -66,12 +163,11 @@ final class OpenPosShiftAction
                     'active_operator_user_id' => $slot->activeOperatorUserId,
                     'check_in_at' => Carbon::now(),
                     'check_out_at' => null,
-                    'approved_by_teacher_id' => $data->supervisorTeacherId,
+                    'approved_by_teacher_id' => $supervisor->id,
                 ]);
 
                 // Increment statistik piket siswa.
                 if ($slot->scheduledStudentStatus !== AbsenceStatus::PRESENT) {
-                    // Siswa yang diganti: hitung sebagai substitusi untuk pengganti.
                     if ($slot->isSubstituted && $slot->substitutedUserId) {
                         $subProfile = StudentProfile::where('user_id', $slot->substitutedUserId)->first();
                         if ($subProfile) {

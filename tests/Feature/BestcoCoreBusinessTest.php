@@ -17,6 +17,7 @@ use App\Models\JournalEntry;
 use App\Models\PosShift;
 use App\Models\Product;
 use App\Models\Service;
+use App\Models\ShiftAttendance;
 use App\Models\UnitConversion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,11 +41,26 @@ class BestcoCoreBusinessTest extends TestCase
             'shift_code' => 'SHF-TEST-' . now()->format('YmdHis'),
             'shift_date' => today(),
             'supervisor_teacher_id' => $this->teacher->id,
-            'opened_by_user_id' => $this->student->id,
+            'opened_by_user_id' => $this->teacher->id,
             'opening_cash_balance' => '200000.0000',
             'system_expected_cash' => '200000.0000',
             'status' => 'OPEN',
             'opened_at' => now(),
+        ]);
+
+        ShiftAttendance::create([
+            'pos_shift_id' => $this->shift->id,
+            'piket_schedule_id' => null,
+            'slot_number' => 1,
+            'scheduled_user_id' => $this->student->id,
+            'scheduled_student_status' => 'PRESENT',
+            'absence_reason' => null,
+            'is_substituted' => false,
+            'substituted_user_id' => null,
+            'active_operator_user_id' => $this->student->id,
+            'check_in_at' => now(),
+            'check_out_at' => null,
+            'approved_by_teacher_id' => $this->teacher->id,
         ]);
 
         // Pastikan periode akuntansi terbuka tersedia.

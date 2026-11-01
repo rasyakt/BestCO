@@ -7,6 +7,7 @@ namespace App\Actions\Accounting;
 use App\DTOs\Accounting\JournalEntryData;
 use App\DTOs\Accounting\JournalLineData;
 use App\Enums\JournalType;
+use App\Models\AccountingPeriod;
 use App\Models\JournalEntry;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -21,6 +22,30 @@ final class CreateReversingJournalAction
     public function execute(JournalEntry $originalJournal, string $reversingJournalNumber, User $createdBy): JournalEntry
     {
         return DB::transaction(function () use ($originalJournal, $reversingJournalNumber, $createdBy): JournalEntry {
+            $originalJournal = JournalEntry::whereKey($originalJournal->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($originalJournal->is_reversed) {
+                throw new \DomainException('Jurnal ini sudah pernah dibalik.');
+            }
+
+            // Jurnal pembalik harus masuk ke periode yang masih terbuka. Jika
+            // periode asal sudah ditutup, gunakan periode terbuka terbaru agar
+            // koreksi tidak mengubah laporan periode yang sudah final.
+            $period = $originalJournal->accountingPeriod;
+
+            if ($period === null || $period->is_closed) {
+                $period = AccountingPeriod::where('is_closed', false)
+                    ->orderBy('start_date', 'desc')
+                    ->lockForUpdate()
+                    ->first();
+            }
+
+            if ($period === null) {
+                throw new \DomainException('Tidak ada periode akuntansi terbuka untuk jurnal pembalik.');
+            }
+
             // Tandai jurnal asli sebagai reversed.
             $originalJournal->update(['is_reversed' => true]);
 
@@ -46,7 +71,7 @@ final class CreateReversingJournalAction
 
             $data = new JournalEntryData(
                 journalNumber: $reversingJournalNumber,
-                accountingPeriodId: (string) $originalJournal->accounting_period_id,
+                accountingPeriodId: (string) $period->id,
                 posShiftId: $originalJournal->pos_shift_id ? (string) $originalJournal->pos_shift_id : null,
                 entryDate: Carbon::now(),
                 journalType: JournalType::REVERSING,

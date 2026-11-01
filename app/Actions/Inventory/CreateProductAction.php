@@ -23,6 +23,8 @@ use InvalidArgumentException;
 
 final class CreateProductAction
 {
+    private const FUNDING_ACCOUNT_CODES = ['1-1102', '2-1101', '3-1101'];
+
     /**
      * Daftarkan produk baru (barang etalase atau bahan baku jasa) beserta HPP,
      * harga jual, dan saldo awal persediaan jika ada.
@@ -108,56 +110,66 @@ final class CreateProductAction
                 'is_active' => true,
             ]);
 
-            // Jika ada stok awal > 0 dan HPP > 0, catat mutasi stok dan jurnal pembukuan
-            if (bccomp($initialStock, '0.0000', 4) > 0 && bccomp($avgCost, '0.0000', 4) > 0) {
+            // Stok awal selalu dicatat ke kartu stok. Jurnal hanya dibuat jika
+            // nilai persediaan benar-benar positif.
+            if (bccomp($initialStock, '0.0000', 4) > 0) {
                 $totalValue = bcmul($initialStock, $avgCost, 4);
+                $journalEntry = null;
 
-                // Default akun lawan: Kas Besar (1-1102), Utang Usaha (2-1101), atau Modal Awal (3-1101)
-                $fundingAccountId = $data['funding_account_id'] ?? null;
-                $fundingCoa = $fundingAccountId
-                    ? ChartOfAccount::findOrFail($fundingAccountId)
-                    : ChartOfAccount::where('account_code', '3-1101')->first() ?? ChartOfAccount::where('account_code', '1-1102')->firstOrFail();
+                if (bccomp($totalValue, '0.0000', 4) > 0) {
+                    // Default akun lawan: Kas Besar (1-1102), Utang Usaha (2-1101), atau Modal Awal (3-1101)
+                    $fundingAccountId = $data['funding_account_id'] ?? null;
+                    $fundingCoa = $fundingAccountId
+                        ? ChartOfAccount::findOrFail($fundingAccountId)
+                        : ChartOfAccount::where('account_code', '3-1101')->first()
+                            ?? ChartOfAccount::where('account_code', '1-1102')->firstOrFail();
 
-                $period = AccountingPeriod::where('is_closed', false)
-                    ->orderBy('start_date', 'desc')
-                    ->first();
+                    if (! in_array($fundingCoa->account_code, self::FUNDING_ACCOUNT_CODES, true)) {
+                        throw new InvalidArgumentException('Akun sumber dana harus Kas Besar, Utang Usaha, atau Modal Awal.');
+                    }
 
-                $journalCount = JournalEntry::count() + 1;
-                $journalNumber = 'JRN-' . Carbon::now()->format('Ymd') . '-' . str_pad((string) $journalCount, 4, '0', STR_PAD_LEFT);
+                    $period = AccountingPeriod::where('is_closed', false)
+                        ->orderBy('start_date', 'desc')
+                        ->first();
 
-                $journalData = new JournalEntryData(
-                    journalNumber: $journalNumber,
-                    accountingPeriodId: (string) ($period?->getKey() ?? ''),
-                    posShiftId: null,
-                    entryDate: Carbon::now(),
-                    journalType: JournalType::PURCHASE,
-                    referenceType: 'App\Models\Product',
-                    referenceId: $product->id,
-                    description: "Saldo awal produk baru {$product->name} ({$initialStock} {$unit->code} @ Rp " . number_format((float) $avgCost, 0, ',', '.') . ")",
-                    lines: [
-                        new JournalLineData(
-                            chartOfAccountCode: $invCoa->account_code,
-                            debit: $totalValue,
-                            credit: '0.0000',
-                            lineDescription: "Debit Persediaan {$product->name}",
-                        ),
-                        new JournalLineData(
-                            chartOfAccountCode: $fundingCoa->account_code,
-                            debit: '0.0000',
-                            credit: $totalValue,
-                            lineDescription: "Kredit {$fundingCoa->account_name} (Saldo Awal)",
-                        ),
-                    ],
-                    createdByUserId: (string) $data['user_id'],
-                );
+                    if ($period === null) {
+                        throw new InvalidArgumentException('Tidak ada periode akuntansi terbuka untuk mencatat saldo awal.');
+                    }
 
-                $journalEntry = app(PostDoubleEntryJournalAction::class)->execute($journalData);
+                    $journalData = new JournalEntryData(
+                        journalNumber: $this->nextJournalNumber(),
+                        accountingPeriodId: (string) $period->getKey(),
+                        posShiftId: null,
+                        entryDate: Carbon::now(),
+                        journalType: JournalType::PURCHASE,
+                        referenceType: 'App\Models\Product',
+                        referenceId: $product->id,
+                        description: "Saldo awal produk baru {$product->name} ({$initialStock} {$unit->code} @ Rp " . number_format((float) $avgCost, 0, ',', '.') . ")",
+                        lines: [
+                            new JournalLineData(
+                                chartOfAccountCode: $invCoa->account_code,
+                                debit: $totalValue,
+                                credit: '0.0000',
+                                lineDescription: "Debit Persediaan {$product->name}",
+                            ),
+                            new JournalLineData(
+                                chartOfAccountCode: $fundingCoa->account_code,
+                                debit: '0.0000',
+                                credit: $totalValue,
+                                lineDescription: "Kredit {$fundingCoa->account_name} (Saldo Awal)",
+                            ),
+                        ],
+                        createdByUserId: (string) $data['user_id'],
+                    );
+
+                    $journalEntry = app(PostDoubleEntryJournalAction::class)->execute($journalData);
+                }
 
                 StockLedgerEntry::create([
                     'product_id' => $product->id,
                     'pos_shift_id' => null,
                     'reference_type' => 'INITIAL_STOCK',
-                    'reference_id' => $journalEntry->id,
+                    'reference_id' => $journalEntry?->id ?? 0,
                     'qty_change' => $initialStock,
                     'balance_before' => '0.0000',
                     'balance_after' => $initialStock,
@@ -170,6 +182,19 @@ final class CreateProductAction
 
             return $product->fresh(['unit', 'category', 'inventoryAccount', 'cogsAccount']);
         });
+    }
+
+    private function nextJournalNumber(): string
+    {
+        $sequence = JournalEntry::count() + 1;
+
+        do {
+            $journalNumber = 'JRN-' . Carbon::now()->format('Ymd') . '-'
+                . str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+            $sequence++;
+        } while (JournalEntry::where('journal_number', $journalNumber)->exists());
+
+        return $journalNumber;
     }
 }
 
