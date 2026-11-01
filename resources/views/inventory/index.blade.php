@@ -8,25 +8,58 @@
         <x-slot:actions>
             <a href="{{ route('inventory.inbound') }}" class="btn btn-secondary">
                 <x-icon name="download" class="h-4 w-4" />
-                Barang masuk (Batch)
+                Barang Masuk
             </a>
             <a href="{{ route('inventory.mutations') }}" class="btn btn-secondary">
                 <x-icon name="swap" class="h-4 w-4" />
-                Pindah stok
+                Pindah Stok
             </a>
             <a href="{{ route('inventory.spoilage') }}" class="btn btn-secondary">
                 <x-icon name="spoilage" class="h-4 w-4" />
-                Barang rusak
+                Barang Rusak
             </a>
             @if(auth()->user()?->hasAnyRole(['superadmin', 'admin']))
-                <button type="button" @click="openAddProductModal()" class="btn btn-primary">
-                    <x-icon name="plus" class="h-4 w-4" />
-                    Tambah Produk
-                </button>
-                <button type="button" @click="openAddServiceModal()" class="btn btn-dark">
-                    <x-icon name="sparkles" class="h-4 w-4" />
-                    Tambah Layanan
-                </button>
+                <div class="relative inline-block text-left" x-data="{ addMenuOpen: false }" @click.outside="addMenuOpen = false">
+                    <button type="button" @click="addMenuOpen = !addMenuOpen" class="btn btn-primary inline-flex items-center gap-2">
+                        <x-icon name="plus" class="h-4 w-4" />
+                        <span>Tambah Baru</span>
+                        <span class="inline-flex transition-transform duration-150" :class="addMenuOpen ? 'rotate-180' : ''">
+                            <x-icon name="chevron-down" class="h-3.5 w-3.5 opacity-70" />
+                        </span>
+                    </button>
+
+                    <div x-show="addMenuOpen" x-cloak
+                        x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="transform opacity-0 scale-95"
+                        x-transition:enter-end="transform opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-75"
+                        x-transition:leave-start="transform opacity-100 scale-100"
+                        x-transition:leave-end="transform opacity-0 scale-95"
+                        class="absolute right-0 z-50 mt-1.5 w-56 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-lg ring-1 ring-black/5">
+
+                        <button type="button" @click="addMenuOpen = false; openAddProductModal()"
+                            class="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-700">
+                            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-brand-50 text-brand-600">
+                                <x-icon name="package" class="h-4 w-4" />
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-slate-800">Tambah Produk</p>
+                                <p class="text-[10px] text-slate-400">Barang etalase & bahan baku</p>
+                            </div>
+                        </button>
+
+                        <button type="button" @click="addMenuOpen = false; openAddServiceModal()"
+                            class="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-700">
+                            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-600">
+                                <x-icon name="sparkles" class="h-4 w-4" />
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-slate-800">Tambah Layanan</p>
+                                <p class="text-[10px] text-slate-400">Fotocopy, print, laminating, dsb</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
             @endif
         </x-slot:actions>
     </x-page-header>
