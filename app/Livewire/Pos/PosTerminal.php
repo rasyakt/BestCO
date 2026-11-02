@@ -40,6 +40,15 @@ final class PosTerminal extends Component
 
     public string $manualDiscountTotal = '0';
 
+    // Promotion State
+    public ?int $appliedPromotionId = null;
+
+    public string $appliedPromotionName = '';
+
+    public string $promoDiscountTotal = '0';
+
+    public string $couponCode = '';
+
     // Payment Modal State
     public bool $showPaymentModal = false;
 
@@ -136,6 +145,9 @@ final class PosTerminal extends Component
                 4
             );
         }
+
+        // Potongan promo ikut mengurangi basis diskon manual
+        $discounts = bcadd($discounts, (string) $this->promoDiscountTotal, 4);
 
         $max = bcsub($gross, $discounts, 4);
 
@@ -319,6 +331,10 @@ final class PosTerminal extends Component
     public function clearCart(): void
     {
         $this->cart = [];
+        $this->appliedPromotionId = null;
+        $this->appliedPromotionName = '';
+        $this->promoDiscountTotal = '0';
+        $this->couponCode = '';
         $this->recalculateCart();
 
         // Livewire memoizes legacy computed properties per request. Clear them so
@@ -359,9 +375,61 @@ final class PosTerminal extends Component
             }
         }
 
+        // Evaluasi promo berjadwal
+        $cartForPromo = [];
+        foreach ($this->cart as $item) {
+            $cartForPromo[] = [
+                'type' => $item['type'],
+                'id' => $item['id'],
+                'subtotal_net' => number_format((float) ($item['subtotal_net'] ?? 0), 4, '.', ''),
+            ];
+        }
+
+        $promoResolver = app(\App\Services\Pos\PromotionResolver::class);
+        $promoResult = $promoResolver->resolve(
+            cartItems: $cartForPromo,
+            requestedPromotionId: $this->appliedPromotionId,
+            couponCode: $this->couponCode !== '' ? $this->couponCode : null,
+        );
+
+        if ($promoResult['applied_promotion'] !== null) {
+            $this->appliedPromotionId = $promoResult['applied_promotion']->id;
+            $this->appliedPromotionName = $promoResult['applied_promotion']->name;
+            $this->promoDiscountTotal = $promoResult['promo_discount_total'];
+        } else {
+            $this->appliedPromotionId = null;
+            $this->appliedPromotionName = '';
+            $this->promoDiscountTotal = '0';
+        }
+
         // Keranjang bisa menyusut (item dihapus atau qty dikurangi), sehingga
         // diskon manual yang sudah diinput harus ikut dibatasi ulang.
         $this->manualDiscountTotal = $this->clampManualDiscount($this->manualDiscountTotal);
+
+        unset($this->subtotalRetail, $this->subtotalService, $this->totalTierDiscount, $this->grandTotal);
+    }
+
+    public function applyCoupon(): void
+    {
+        $this->recalculateCart();
+        if ($this->appliedPromotionId !== null) {
+            $this->feedbackType = 'success';
+            $this->feedbackMessage = "Kupon promo berhasil diterapkan: {$this->appliedPromotionName}";
+        } else {
+            $this->feedbackType = 'error';
+            $this->feedbackMessage = 'Kode kupon tidak valid atau keranjang belum memenuhi syarat promo.';
+        }
+    }
+
+    public function removePromotion(): void
+    {
+        $this->appliedPromotionId = null;
+        $this->appliedPromotionName = '';
+        $this->promoDiscountTotal = '0';
+        $this->couponCode = '';
+        $this->recalculateCart();
+        $this->feedbackType = 'info';
+        $this->feedbackMessage = 'Promo/kupon dilepas.';
     }
 
     public function getSubtotalRetailProperty(): float
@@ -387,7 +455,11 @@ final class PosTerminal extends Component
     public function getGrandTotalProperty(): float
     {
         $gross = bcadd((string) $this->subtotalRetail, (string) $this->subtotalService, 4);
-        $discounts = bcadd((string) $this->totalTierDiscount, (string) $this->manualDiscountTotal, 4);
+        $discounts = bcadd(
+            bcadd((string) $this->totalTierDiscount, (string) $this->manualDiscountTotal, 4),
+            (string) $this->promoDiscountTotal,
+            4
+        );
         $grand = bcsub($gross, $discounts, 4);
 
         return (float) (bccomp($grand, '0.0000', 4) === 1 ? $grand : '0.0000');
@@ -482,6 +554,7 @@ final class PosTerminal extends Component
                 amountPaid: $paid,
                 manualDiscountTotal: number_format((float) $this->manualDiscountTotal, 4, '.', ''),
                 items: $itemsPayload,
+                appliedPromotionId: $this->appliedPromotionId,
             ));
 
             $this->completedTransactionId = $transaction->id;

@@ -42,6 +42,7 @@
             request()->routeIs('dashboard') => 'Dashboard',
             request()->routeIs('pos.terminal') => 'Kasir',
             request()->routeIs('transactions.*') => 'Riwayat Transaksi',
+            request()->routeIs('promotions.*') => 'Diskon & Promo',
             request()->routeIs('inventory.inbound*') => 'Barang Masuk',
             request()->routeIs('inventory.index') => 'Persediaan',
             request()->routeIs('inventory.mutations') => 'Pindah Stok',
@@ -64,6 +65,7 @@
                     ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'dashboard', 'active' => 'dashboard', 'roles' => ['superadmin', 'admin', 'piket_guru']],
                     ['label' => 'Kasir', 'route' => 'pos.terminal', 'icon' => 'pos', 'active' => 'pos.terminal'],
                     ['label' => 'Riwayat Transaksi', 'route' => 'transactions.index', 'icon' => 'receipt', 'active' => 'transactions.*'],
+                    ['label' => 'Diskon & Promo', 'route' => 'promotions.index', 'icon' => 'tag', 'active' => 'promotions.*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
                 ],
             ],
             [

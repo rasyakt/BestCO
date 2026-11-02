@@ -20,6 +20,7 @@ use App\Models\PosTransaction;
 use App\Models\PosTransactionBom;
 use App\Models\PosTransactionItem;
 use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\SchoolClass;
 use App\Models\Service;
 use App\Models\ServiceBom;
@@ -50,6 +51,7 @@ class DatabaseSeeder extends Seeder
         $this->seedServices();
         $this->seedAccountingPeriod();
         $this->seedSystemSettings();
+        $this->seedPromotions();
     }
 
     /**
@@ -542,6 +544,73 @@ class DatabaseSeeder extends Seeder
             [
                 'setting_group' => 'school',
                 'setting_value' => ['name' => 'BESTCO MPLB Teaching Factory'],
+            ]
+        );
+    }
+
+    /**
+     * Seed program promo default untuk teaching factory.
+     */
+    private function seedPromotions(): void
+    {
+        $admin = User::where('role_type', UserRole::ADMIN->value)->first();
+        if (! $admin) {
+            return;
+        }
+
+        $photocopyService = Service::where('name', 'like', '%Fotocopy%')->first();
+
+        Promotion::firstOrCreate(
+            ['name' => 'Promo Pelajar MPLB 10%'],
+            [
+                'code' => 'MPLB10',
+                'description' => 'Diskon 10% seluruh produk & jasa untuk siswa dengan minimal belanja Rp 10.000.',
+                'scope' => \App\Enums\PromotionScope::ALL_ITEMS,
+                'discount_type' => \App\Enums\PromotionDiscountType::PERCENTAGE,
+                'discount_value' => '10.0000',
+                'min_order_amount' => '10000.0000',
+                'max_discount_amount' => '15000.0000',
+                'start_datetime' => now()->startOfMonth(),
+                'end_datetime' => now()->addMonths(2)->endOfMonth(),
+                'is_active' => true,
+                'created_by_user_id' => $admin->id,
+            ]
+        );
+
+        if ($photocopyService) {
+            Promotion::firstOrCreate(
+                ['name' => 'Promo Ujian Sekolah (Diskon Fotocopy)'],
+                [
+                    'code' => 'UJIANPAS',
+                    'description' => 'Potongan harga khusus layanan fotocopy selama masa ujian semester.',
+                    'scope' => \App\Enums\PromotionScope::SERVICE,
+                    'service_id' => $photocopyService->id,
+                    'discount_type' => \App\Enums\PromotionDiscountType::PERCENTAGE,
+                    'discount_value' => '15.0000',
+                    'min_order_amount' => '0.0000',
+                    'max_discount_amount' => '10000.0000',
+                    'start_datetime' => now()->subDay(),
+                    'end_datetime' => now()->addDays(14),
+                    'is_active' => true,
+                    'created_by_user_id' => $admin->id,
+                ]
+            );
+        }
+
+        Promotion::firstOrCreate(
+            ['name' => 'Kupon Belanja Berkah Rp 5.000'],
+            [
+                'code' => 'BERKAH5K',
+                'description' => 'Potongan langsung Rp 5.000 untuk total belanja minimal Rp 50.000.',
+                'scope' => \App\Enums\PromotionScope::MIN_SPEND,
+                'discount_type' => \App\Enums\PromotionDiscountType::FIXED_AMOUNT,
+                'discount_value' => '5000.0000',
+                'min_order_amount' => '50000.0000',
+                'max_discount_amount' => null,
+                'start_datetime' => now()->subDays(2),
+                'end_datetime' => now()->addDays(30),
+                'is_active' => true,
+                'created_by_user_id' => $admin->id,
             ]
         );
     }

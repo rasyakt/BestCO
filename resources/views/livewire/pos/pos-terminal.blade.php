@@ -248,6 +248,31 @@
                                 </div>
                             @endif
 
+                            @if((float) $promoDiscountTotal > 0)
+                                <div class="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50/80 px-2.5 py-1.5 text-emerald-800">
+                                    <div class="flex min-w-0 items-center gap-1.5">
+                                        <x-icon name="sparkles" class="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                                        <span class="truncate text-[10.5px] font-medium" title="{{ $appliedPromotionName }}">{{ $appliedPromotionName }}</span>
+                                    </div>
+                                    <div class="flex shrink-0 items-center gap-1">
+                                        <span class="num-tabular font-semibold text-emerald-700">-Rp {{ number_format((float) $promoDiscountTotal, 0, ',', '.') }}</span>
+                                        <button type="button" wire:click="removePromotion" class="rounded p-0.5 text-emerald-600 transition hover:bg-emerald-200/60 hover:text-rose-600" title="Lepas Promo">
+                                            <x-icon name="x" class="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Input Kupon / Promo Manual -->
+                            <div class="flex items-center gap-1.5 pt-1">
+                                <input type="text" placeholder="Kode kupon/promo..."
+                                    wire:model="couponCode" wire:keydown.enter="applyCoupon"
+                                    class="input py-1 px-2.5 text-[10.5px] uppercase placeholder:normal-case flex-1">
+                                <button type="button" wire:click="applyCoupon" class="btn btn-secondary py-1 px-2 text-[10.5px]">
+                                    Pakai
+                                </button>
+                            </div>
+
                             <div class="flex items-start justify-between gap-3 pt-1">
                                 <span class="text-slate-500">Diskon manual</span>
                                 <div class="text-right">
@@ -655,6 +680,13 @@
                                     <div class="flex justify-between text-slate-500">
                                         <span>Diskon Grosir</span>
                                         <span>-Rp {{ number_format((float) $completedTransaction->tier_discount_total, 0, ',', '.') }}</span>
+                                    </div>
+                                @endif
+
+                                @if((float) $completedTransaction->promo_discount_total > 0)
+                                    <div class="flex justify-between text-slate-500">
+                                        <span>Promo ({{ $completedTransaction->promo_name_snapshot ?? 'Diskon' }})</span>
+                                        <span>-Rp {{ number_format((float) $completedTransaction->promo_discount_total, 0, ',', '.') }}</span>
                                     </div>
                                 @endif
                                 

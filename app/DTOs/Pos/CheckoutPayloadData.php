@@ -17,5 +17,6 @@ final readonly class CheckoutPayloadData
         public string $manualDiscountTotal,
         /** @var CartItemData[] */
         public array $items,
+        public ?int $appliedPromotionId = null,
     ) {}
 }

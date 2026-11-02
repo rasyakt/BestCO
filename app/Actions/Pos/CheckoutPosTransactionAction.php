@@ -24,6 +24,7 @@ use App\Models\Service;
 use App\Models\ShiftAttendance;
 use App\Models\StockLedgerEntry;
 use App\Models\User;
+use App\Services\Pos\PromotionResolver;
 use App\Services\Pos\TieredPricingResolver;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,7 @@ final class CheckoutPosTransactionAction
 {
     public function __construct(
         private TieredPricingResolver $tierResolver,
+        private PromotionResolver $promoResolver,
     ) {}
 
     /**
@@ -124,12 +126,64 @@ final class CheckoutPosTransactionAction
             $coaDiscRetail = ChartOfAccount::where('account_code', '4-1102')->lockForUpdate()->firstOrFail();
             $coaDiscService = ChartOfAccount::where('account_code', '4-2109')->lockForUpdate()->firstOrFail();
 
+            // --- Evaluasi dan Alokasi Promo Berjadwal ---
+            $cartForPromo = [];
+            foreach ($data->items as $idx => $cartItem) {
+                $isRetail = $cartItem->itemType === 'RETAIL_PRODUCT';
+                $subtotalGross = $transactionItems[$idx]['line_subtotal_gross'];
+                $tierDiscount = $transactionItems[$idx]['tier_discount_per_unit']
+                    ? bcmul((string) $cartItem->qty, (string) $transactionItems[$idx]['tier_discount_per_unit'], 4)
+                    : '0.0000';
+                $itemManualDiscount = $this->normalizeAmount($cartItem->manualDiscountAmount, 'diskon manual item');
+                $net = bcsub(bcsub($subtotalGross, $tierDiscount, 4), $itemManualDiscount, 4);
+
+                $cartForPromo[] = [
+                    'type' => $isRetail ? 'RETAIL' : 'SERVICE',
+                    'id' => $isRetail ? (int) $cartItem->productId : (int) $cartItem->serviceId,
+                    'subtotal_net' => $net,
+                ];
+            }
+
+            $promoResolution = $this->promoResolver->resolve(
+                cartItems: $cartForPromo,
+                requestedPromotionId: $data->appliedPromotionId,
+            );
+
+            $promoDiscountTotal = '0.0000';
+            $appliedPromotionId = null;
+            $promoNameSnapshot = null;
+
+            if ($promoResolution['applied_promotion'] !== null) {
+                $appliedPromotionId = $promoResolution['applied_promotion']->id;
+                $promoNameSnapshot = $promoResolution['applied_promotion']->name;
+                $promoDiscountTotal = $promoResolution['promo_discount_total'];
+
+                if (bccomp($promoResolution['retail_discount'], '0.0000', 4) === 1) {
+                    $journalLines[] = new JournalLineData(
+                        chartOfAccountCode: $coaDiscRetail->account_code,
+                        debit: $promoResolution['retail_discount'],
+                        credit: '0.0000',
+                        lineDescription: "Diskon promo '{$promoNameSnapshot}' (etalase)",
+                    );
+                }
+
+                if (bccomp($promoResolution['service_discount'], '0.0000', 4) === 1) {
+                    $journalLines[] = new JournalLineData(
+                        chartOfAccountCode: $coaDiscService->account_code,
+                        debit: $promoResolution['service_discount'],
+                        credit: '0.0000',
+                        lineDescription: "Diskon promo '{$promoNameSnapshot}' (jasa)",
+                    );
+                }
+            }
+
             if (bccomp($globalManualDiscount, '0.0000', 4) === 1) {
-                if (bccomp($baseForGlobalDiscount, '0.0000', 4) !== 1) {
+                $effectiveBaseForManual = bcsub($baseForGlobalDiscount, $promoDiscountTotal, 4);
+                if (bccomp($effectiveBaseForManual, '0.0000', 4) !== 1) {
                     throw new \DomainException('Diskon manual tidak dapat diterapkan pada keranjang bernilai nol.');
                 }
 
-                if (bccomp($globalManualDiscount, $baseForGlobalDiscount, 4) === 1) {
+                if (bccomp($globalManualDiscount, $effectiveBaseForManual, 4) === 1) {
                     throw new \DomainException('Diskon manual melebihi total belanja.');
                 }
 
@@ -160,7 +214,7 @@ final class CheckoutPosTransactionAction
             $manualDiscountTotal = bcadd($itemManualDiscountTotal, $globalManualDiscount, 4);
 
             $totalGross = bcadd($subtotalRetail, $subtotalService, 4);
-            $totalDiscounts = bcadd($tierDiscountTotal, $manualDiscountTotal, 4);
+            $totalDiscounts = bcadd(bcadd($tierDiscountTotal, $manualDiscountTotal, 4), $promoDiscountTotal, 4);
             $grandTotal = bcsub($totalGross, $totalDiscounts, 4);
 
             if (bccomp($grandTotal, '0.0000', 4) !== 1) {
@@ -199,6 +253,9 @@ final class CheckoutPosTransactionAction
                 'subtotal_service' => $subtotalService,
                 'tier_discount_total' => $tierDiscountTotal,
                 'manual_discount_total' => $manualDiscountTotal,
+                'promo_discount_total' => $promoDiscountTotal,
+                'applied_promotion_id' => $appliedPromotionId,
+                'promo_name_snapshot' => $promoNameSnapshot,
                 'grand_total' => $grandTotal,
                 'total_cogs_retail' => $totalCogsRetail,
                 'total_cogs_service' => $totalCogsService,

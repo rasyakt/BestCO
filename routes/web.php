@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PiketAttendanceController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\QrisSettingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShiftController;
@@ -71,6 +72,17 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/transactions/{id}/void', [TransactionController::class, 'void'])
         ->middleware('role:superadmin,admin,piket_guru')
         ->name('transactions.void');
+
+    // Manajemen Promo & Diskon Berjadwal (Superadmin, Admin, Piket Guru)
+    Route::middleware('role:superadmin,admin,piket_guru')->group(function (): void {
+        Route::get('/promotions', [PromotionController::class, 'index'])->name('promotions.index');
+        Route::get('/promotions/create', [PromotionController::class, 'create'])->name('promotions.create');
+        Route::post('/promotions', [PromotionController::class, 'store'])->name('promotions.store');
+        Route::get('/promotions/{promotion}/edit', [PromotionController::class, 'edit'])->name('promotions.edit');
+        Route::put('/promotions/{promotion}', [PromotionController::class, 'update'])->name('promotions.update');
+        Route::patch('/promotions/{promotion}/toggle', [PromotionController::class, 'toggle'])->name('promotions.toggle');
+        Route::delete('/promotions/{promotion}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
+    });
 
     // Manajemen Dual-Inventory, Restock Pembelian, Mutasi Internal, & Spoilage
     Route::middleware('role:superadmin,admin,piket_guru')->group(function (): void {

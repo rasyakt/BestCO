@@ -121,8 +121,10 @@
                                 'void_reason' => $tx->void_reason ?? '',
                                 'subtotal_gross' => (float) ($tx->subtotal_retail + $tx->subtotal_service),
                                 'tier_discount' => (float) $tx->tier_discount_total,
+                                'promo_discount' => (float) $tx->promo_discount_total,
+                                'promo_name' => $tx->promo_name_snapshot ?? '',
                                 'manual_discount' => (float) $tx->manual_discount_total,
-                                'total_discount' => (float) ($tx->tier_discount_total + $tx->manual_discount_total),
+                                'total_discount' => (float) ($tx->tier_discount_total + $tx->manual_discount_total + $tx->promo_discount_total),
                                 'grand_total' => (float) $tx->grand_total,
                                 'amount_paid' => (float) $tx->amount_paid,
                                 'change_amount' => (float) $tx->change_amount,
@@ -340,6 +342,12 @@
                                             <div class="flex justify-between text-slate-500">
                                                 <span>Diskon Grosir</span>
                                                 <span x-text="'-' + formatRp(activeReceipt.tier_discount)"></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="activeReceipt.promo_discount > 0">
+                                            <div class="flex justify-between text-slate-500">
+                                                <span x-text="'Promo (' + (activeReceipt.promo_name || 'Diskon') + ')'"></span>
+                                                <span x-text="'-' + formatRp(activeReceipt.promo_discount)"></span>
                                             </div>
                                         </template>
                                         <template x-if="activeReceipt.manual_discount > 0">
