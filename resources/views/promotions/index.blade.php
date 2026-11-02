@@ -1,32 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="space-y-6" x-data="{
-    confirmToggle(form, name, isCurrentlyActive) {
-        window.bestcoDialog.confirm({
-            title: isCurrentlyActive ? 'Nonaktifkan Promo?' : 'Aktifkan Promo?',
-            message: isCurrentlyActive 
-                ? 'Promo ' + name + ' tidak akan otomatis terpasang di kasir hingga diaktifkan kembali.'
-                : 'Promo ' + name + ' akan langsung berlaku di kasir jika sudah memasuki rentang waktu aktif.',
-            type: isCurrentlyActive ? 'warning' : 'success',
-            confirmText: isCurrentlyActive ? 'Nonaktifkan' : 'Aktifkan',
-            cancelText: 'Batal'
-        }).then(confirmed => {
-            if (confirmed) form.submit();
-        });
-    },
-    confirmDelete(form, name) {
-        window.bestcoDialog.confirm({
-            title: 'Hapus Promo?',
-            message: 'Promo ' + name + ' akan dihapus permanen. Transaksi masa lalu yang sudah menggunakan promo ini tidak akan terpengaruh.',
-            type: 'danger',
-            confirmText: 'Hapus Promo',
-            cancelText: 'Batal'
-        }).then(confirmed => {
-            if (confirmed) form.submit();
-        });
-    }
-}">
+<div class="space-y-6" x-data="promoManager()" @keydown.escape.window="closeMenu()">
     <!-- Header Halaman -->
     <x-page-header
         title="Diskon & Promo"
@@ -60,9 +35,9 @@
             <div class="flex items-start justify-between">
                 <div>
                     <p class="stat-label">Sedang Aktif Saat Ini</p>
-                    <p class="stat-value text-emerald-600 num-tabular">{{ $counts['active'] }}</p>
+                    <p class="stat-value text-slate-900 num-tabular">{{ $counts['active'] }}</p>
                 </div>
-                <span class="stat-icon text-emerald-600">
+                <span class="stat-icon text-slate-900">
                     <x-icon name="check-circle" class="h-4 w-4" />
                 </span>
             </div>
@@ -75,9 +50,9 @@
             <div class="flex items-start justify-between">
                 <div>
                     <p class="stat-label">Terjadwal Mendatang</p>
-                    <p class="stat-value text-sky-600 num-tabular">{{ $counts['scheduled'] }}</p>
+                    <p class="stat-value text-slate-900 num-tabular">{{ $counts['scheduled'] }}</p>
                 </div>
-                <span class="stat-icon text-sky-600">
+                <span class="stat-icon text-slate-900">
                     <x-icon name="clock" class="h-4 w-4" />
                 </span>
             </div>
@@ -112,19 +87,19 @@
                     Semua <span class="ml-1 opacity-75">({{ $counts['all'] }})</span>
                 </a>
                 <a href="{{ route('promotions.index', ['tab' => 'active', 'q' => $search]) }}"
-                    class="rounded-md px-3 py-1.5 text-xs font-semibold transition {{ $tab === 'active' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                    class="rounded-md px-3 py-1.5 text-xs font-semibold transition {{ $tab === 'active' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
                     Sedang Aktif <span class="ml-1 opacity-75">({{ $counts['active'] }})</span>
                 </a>
                 <a href="{{ route('promotions.index', ['tab' => 'scheduled', 'q' => $search]) }}"
-                    class="rounded-md px-3 py-1.5 text-xs font-semibold transition {{ $tab === 'scheduled' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                    class="rounded-md px-3 py-1.5 text-xs font-semibold transition {{ $tab === 'scheduled' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
                     Terjadwal <span class="ml-1 opacity-75">({{ $counts['scheduled'] }})</span>
                 </a>
                 <a href="{{ route('promotions.index', ['tab' => 'expired', 'q' => $search]) }}"
-                    class="rounded-md px-3 py-1.5 text-xs font-semibold transition {{ $tab === 'expired' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                    class="rounded-md px-3 py-1.5 text-xs font-semibold transition {{ $tab === 'expired' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
                     Kedaluwarsa <span class="ml-1 opacity-75">({{ $counts['expired'] }})</span>
                 </a>
                 <a href="{{ route('promotions.index', ['tab' => 'inactive', 'q' => $search]) }}"
-                    class="rounded-md px-3 py-1.5 text-xs font-semibold transition {{ $tab === 'inactive' ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                    class="rounded-md px-3 py-1.5 text-xs font-semibold transition {{ $tab === 'inactive' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
                     Dinonaktifkan <span class="ml-1 opacity-75">({{ $counts['inactive'] }})</span>
                 </a>
             </div>
@@ -147,7 +122,7 @@
         </div>
     </div>
 
-    <!-- Tabel Data Promo (Menggunakan Komponen Standar BESTCO) -->
+    <!-- Tabel Data Promo -->
     <div class="table-shell">
         <div class="card-header">
             <div>
@@ -185,10 +160,10 @@
                             <th class="w-12 text-left whitespace-nowrap px-4 py-3">No</th>
                             <th class="text-left whitespace-nowrap px-4 py-3">Program Promo</th>
                             <th class="text-left whitespace-nowrap px-4 py-3">Cakupan Target</th>
-                            <th class="text-left whitespace-nowrap px-4 py-3">Nilai Potongan</th>
+                            <th class="text-right whitespace-nowrap px-4 py-3">Nilai Potongan</th>
                             <th class="text-left whitespace-nowrap px-4 py-3">Periode Berlaku</th>
                             <th class="text-center whitespace-nowrap px-4 py-3">Status</th>
-                            <th class="text-right whitespace-nowrap px-4 py-3 w-[110px]">Aksi</th>
+                            <th class="text-right whitespace-nowrap px-4 py-3 w-[56px]">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -199,76 +174,77 @@
                                 $isExpired = $promo->isExpired();
                             @endphp
                             <tr>
-                                <td class="text-slate-400 num-tabular px-4 py-3">{{ $promotions->firstItem() + $index }}</td>
+                                <td class="text-slate-400 num-tabular px-4 py-3 whitespace-nowrap">{{ $promotions->firstItem() + $index }}</td>
                                 
                                 <!-- Program Promo & Kode -->
-                                <td class="px-4 py-3 max-w-xs">
-                                    <div class="flex items-start gap-2.5">
-                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border {{ $isNowActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : ($isScheduled ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-slate-200 bg-slate-50 text-slate-500') }}">
-                                            <x-icon name="tag" class="h-4 w-4" />
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-600">
+                                            <x-icon name="tag" class="h-3.5 w-3.5" />
                                         </div>
                                         <div class="min-w-0">
-                                            <div class="flex items-center gap-1.5 flex-wrap">
-                                                <p class="font-semibold text-slate-900 leading-tight">{{ $promo->name }}</p>
+                                            <div class="flex items-center gap-1">
+                                                <p class="font-semibold text-slate-900 leading-none whitespace-nowrap">{{ $promo->name }}</p>
                                                 @if($promo->code)
-                                                    <span class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold text-slate-700 border border-slate-200">
+                                                    <span class="inline-block rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-bold text-slate-700 whitespace-nowrap">
                                                         {{ $promo->code }}
                                                     </span>
                                                 @endif
                                             </div>
-                                            @if($promo->description)
-                                                <p class="mt-0.5 text-[11px] text-slate-500 line-clamp-1">{{ $promo->description }}</p>
-                                            @endif
-                                            <p class="mt-1 text-[10px] text-slate-400">Oleh: {{ $promo->creator->name }}</p>
+                                            <p class="mt-0.5 text-[10px] text-slate-500 line-clamp-1 whitespace-nowrap">{{ $promo->description ?? '' }}</p>
                                         </div>
                                     </div>
                                 </td>
 
                                 <!-- Cakupan Target -->
-                                <td class="px-4 py-3">
-                                    <span class="badge badge-neutral text-[10px]">
-                                        {{ $promo->scope->label() }}
-                                    </span>
-                                    <p class="mt-1 font-medium text-slate-800 text-[11px]">
-                                        @if($promo->scope === \App\Enums\PromotionScope::PRODUCT)
-                                            {{ $promo->product?->name ?? 'Produk Dihapus' }}
-                                        @elseif($promo->scope === \App\Enums\PromotionScope::SERVICE)
-                                            {{ $promo->service?->name ?? 'Layanan Dihapus' }}
-                                        @elseif($promo->scope === \App\Enums\PromotionScope::CATEGORY)
-                                            Kategori: {{ $promo->category?->name ?? 'Kategori Dihapus' }}
-                                        @elseif($promo->scope === \App\Enums\PromotionScope::MIN_SPEND)
-                                            Min. Belanja: Rp {{ number_format((float) $promo->min_order_amount, 0, ',', '.') }}
-                                        @else
-                                            Semua Produk & Jasa
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex flex-col gap-1">
+                                        <span class="inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600 whitespace-nowrap">
+                                            {{ $promo->scope->label() }}
+                                        </span>
+                                        <p class="font-medium text-slate-800 text-[11px] leading-none whitespace-nowrap">
+                                            @if($promo->scope === \App\Enums\PromotionScope::PRODUCT)
+                                                {{ $promo->product?->name ?? 'Produk Dihapus' }}
+                                            @elseif($promo->scope === \App\Enums\PromotionScope::SERVICE)
+                                                {{ $promo->service?->name ?? 'Layanan Dihapus' }}
+                                            @elseif($promo->scope === \App\Enums\PromotionScope::CATEGORY)
+                                                Kategori: {{ $promo->category?->name ?? 'Kategori Dihapus' }}
+                                            @elseif($promo->scope === \App\Enums\PromotionScope::MIN_SPEND)
+                                                Min. Belanja: Rp {{ number_format((float) $promo->min_order_amount, 0, ',', '.') }}
+                                            @else
+                                                Semua Produk & Jasa
+                                            @endif
+                                        </p>
+                                        @if($promo->min_order_amount > 0 && $promo->scope !== \App\Enums\PromotionScope::MIN_SPEND)
+                                            <p class="text-[10px] text-slate-400 whitespace-nowrap">Min. Rp {{ number_format((float) $promo->min_order_amount, 0, ',', '.') }}</p>
                                         @endif
-                                    </p>
-                                    @if($promo->min_order_amount > 0 && $promo->scope !== \App\Enums\PromotionScope::MIN_SPEND)
-                                        <p class="text-[10px] text-slate-400">Syarat min. Rp {{ number_format((float) $promo->min_order_amount, 0, ',', '.') }}</p>
-                                    @endif
+                                    </div>
                                 </td>
 
                                 <!-- Nilai Potongan -->
-                                <td class="px-4 py-3">
-                                    @if($promo->discount_type === \App\Enums\PromotionDiscountType::PERCENTAGE)
-                                        <p class="font-bold text-brand-700 text-sm num-tabular">
-                                            {{ rtrim(rtrim((string) $promo->discount_value, '0'), '.') }}%
-                                        </p>
-                                        @if($promo->max_discount_amount)
-                                            <p class="text-[10px] text-slate-400">Maks. Rp {{ number_format((float) $promo->max_discount_amount, 0, ',', '.') }}</p>
+                                <td class="px-4 py-3 text-right whitespace-nowrap">
+                                    <div class="flex flex-col items-end gap-1">
+                                        @if($promo->discount_type === \App\Enums\PromotionDiscountType::PERCENTAGE)
+                                            <p class="font-bold text-slate-900 text-sm num-tabular whitespace-nowrap">
+                                                {{ rtrim(rtrim((string) $promo->discount_value, '0'), '.') }}%
+                                            </p>
+                                            @if($promo->max_discount_amount)
+                                                <p class="text-[10px] text-slate-400 whitespace-nowrap">Maks. Rp {{ number_format((float) $promo->max_discount_amount, 0, ',', '.') }}</p>
+                                            @endif
+                                        @else
+                                            <p class="font-bold text-slate-900 text-sm num-tabular whitespace-nowrap">
+                                                Rp {{ number_format((float) $promo->discount_value, 0, ',', '.') }}
+                                            </p>
+                                            <p class="text-[10px] text-slate-400 whitespace-nowrap">Potongan langsung</p>
                                         @endif
-                                    @else
-                                        <p class="font-bold text-brand-700 text-sm num-tabular">
-                                            Rp {{ number_format((float) $promo->discount_value, 0, ',', '.') }}
-                                        </p>
-                                        <p class="text-[10px] text-slate-400">Potongan langsung</p>
-                                    @endif
+                                    </div>
                                 </td>
 
                                 <!-- Periode Berlaku -->
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <div class="space-y-0.5 text-[11px]">
-                                        <p class="text-slate-800 font-medium">{{ $promo->start_datetime->format('d M Y, H:i') }}</p>
-                                        <p class="text-slate-500 flex items-center gap-1">
+                                        <p class="text-slate-800 font-medium whitespace-nowrap">{{ $promo->start_datetime->format('d M Y, H:i') }}</p>
+                                        <p class="text-slate-500 flex items-center gap-1 whitespace-nowrap">
                                             <span class="text-slate-400">s.d.</span>
                                             <span>{{ $promo->end_datetime->format('d M Y, H:i') }}</span>
                                         </p>
@@ -278,49 +254,71 @@
                                 <!-- Status -->
                                 <td class="px-4 py-3 text-center whitespace-nowrap">
                                     @if(! $promo->is_active)
-                                        <span class="badge badge-danger">Nonaktif</span>
+                                        <span class="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-medium text-[10px] text-slate-600 whitespace-nowrap">Nonaktif</span>
                                     @elseif($isNowActive)
-                                        <span class="badge badge-success">Aktif Berjalan</span>
+                                        <span class="inline-flex items-center gap-1 rounded-md border-emerald-200 bg-emerald-50 px-2 py-0.5 font-medium text-[10px] text-emerald-700 whitespace-nowrap">Aktif</span>
                                     @elseif($isScheduled)
-                                        <span class="badge badge-info">Terjadwal</span>
+                                        <span class="inline-flex items-center gap-1 rounded-md border-sky-200 bg-sky-50 px-2 py-0.5 font-medium text-[10px] text-sky-700 whitespace-nowrap">Terjadwal</span>
                                     @else
-                                        <span class="badge badge-neutral">Kedaluwarsa</span>
+                                        <span class="inline-flex items-center gap-1 rounded-md border-slate-200 bg-slate-50 px-2 py-0.5 font-medium text-[10px] text-slate-600 whitespace-nowrap">Kedaluwarsa</span>
                                     @endif
                                 </td>
 
-                                <!-- Aksi -->
+                                <!-- Aksi: Elipsis Dropdown -->
                                 <td class="px-4 py-3 text-right whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-1">
-                                        <!-- Toggle Status Cepat -->
-                                        <form method="POST" action="{{ route('promotions.toggle', $promo) }}" class="inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="button" @click="confirmToggle($el.closest('form'), '{{ addslashes($promo->name) }}', {{ $promo->is_active ? 'true' : 'false' }})"
-                                                class="rounded p-1 transition {{ $promo->is_active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600' }}"
-                                                title="{{ $promo->is_active ? 'Klik untuk menonaktifkan' : 'Klik untuk mengaktifkan' }}">
-                                                <x-icon name="{{ $promo->is_active ? 'check-circle' : 'x-circle' }}" class="h-4 w-4" />
-                                            </button>
-                                        </form>
+                                    <div class="relative inline-block text-left" @click.outside="if (activeMenuId === 'promo-{{ $promo->id }}') closeMenu()">
+                                        <button type="button"
+                                            @click="toggleMenu('promo-{{ $promo->id }}', $event)"
+                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                                            title="Menu Aksi">
+                                            <x-icon name="more-vertical" class="h-3.5 w-3.5" />
+                                        </button>
 
-                                        <!-- Edit -->
-                                        <a href="{{ route('promotions.edit', $promo) }}"
-                                            class="rounded p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-                                            title="Ubah promo">
-                                            <x-icon name="pencil" class="h-4 w-4" />
-                                        </a>
+                                        <div x-show="activeMenuId === 'promo-{{ $promo->id }}'"
+                                            x-cloak
+                                            x-transition:enter="transition ease-out duration-100"
+                                            x-transition:enter-start="transform opacity-0 scale-95"
+                                            x-transition:enter-end="transform opacity-100 scale-100"
+                                            x-transition:leave="transition ease-in duration-75"
+                                            x-transition:leave-start="transform opacity-100 scale-100"
+                                            x-transition:leave-end="transform opacity-0 scale-95"
+                                            :class="isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'"
+                                            class="absolute right-0 z-50 w-48 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-lg ring-1 ring-black/5">
 
-                                        <!-- Hapus (Admin & Superadmin) -->
-                                        @if(auth()->user()?->hasAnyRole(['superadmin', 'admin']))
-                                            <form method="POST" action="{{ route('promotions.destroy', $promo) }}" class="inline">
+                                            <!-- Toggle Status -->
+                                            <form method="POST" action="{{ route('promotions.toggle', $promo) }}" class="inline">
                                                 @csrf
-                                                @method('DELETE')
-                                                <button type="button" @click="confirmDelete($el.closest('form'), '{{ addslashes($promo->name) }}')"
-                                                    class="rounded p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
-                                                    title="Hapus promo">
-                                                    <x-icon name="trash" class="h-4 w-4" />
+                                                @method('PATCH')
+                                                <button type="button" @click="confirmToggle($el.closest('form'), '{{ addslashes($promo->name) }}', {{ $promo->is_active ? 'true' : 'false' }}); closeMenu()"
+                                                    class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900">
+                                                    <x-icon name="{{ $promo->is_active ? 'x-circle' : 'check-circle' }}" class="h-3.5 w-3.5 {{ $promo->is_active ? 'text-slate-500' : 'text-emerald-600' }}" />
+                                                    <span>{{ $promo->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</span>
                                                 </button>
                                             </form>
-                                        @endif
+
+                                            <!-- Edit -->
+                                            <a href="{{ route('promotions.edit', $promo) }}"
+                                                @click="closeMenu()"
+                                                class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900">
+                                                <x-icon name="pencil" class="h-3.5 w-3.5 text-slate-500" />
+                                                <span>Ubah Promo</span>
+                                            </a>
+
+                                            @if(auth()->user()?->hasAnyRole(['superadmin', 'admin']))
+                                                <div class="my-1 border-t border-slate-100"></div>
+
+                                                <!-- Hapus -->
+                                                <form method="POST" action="{{ route('promotions.destroy', $promo) }}" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="button" @click="confirmDelete($el.closest('form'), '{{ addslashes($promo->name) }}'); closeMenu()"
+                                                        class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-rose-50 hover:text-rose-600">
+                                                        <x-icon name="trash" class="h-3.5 w-3.5 text-slate-500" />
+                                                        <span>Hapus Promo</span>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -337,4 +335,56 @@
         @endif
     </div>
 </div>
+
+<script>
+function promoManager() {
+    return {
+        activeMenuId: null,
+        isNearBottom: false,
+
+        toggleMenu(id, event) {
+            if (event) event.stopPropagation();
+            if (this.activeMenuId === id) {
+                this.activeMenuId = null;
+                return;
+            }
+            this.activeMenuId = id;
+            if (event) {
+                const rect = event.currentTarget.getBoundingClientRect();
+                this.isNearBottom = (window.innerHeight - rect.bottom) < 200;
+            }
+        },
+
+        closeMenu() {
+            this.activeMenuId = null;
+        },
+
+        confirmToggle(form, name, isCurrentlyActive) {
+            window.bestcoDialog.confirm({
+                title: isCurrentlyActive ? 'Nonaktifkan Promo?' : 'Aktifkan Promo?',
+                message: isCurrentlyActive
+                    ? 'Promo ' + name + ' tidak akan otomatis terpasang di kasir hingga diaktifkan kembali.'
+                    : 'Promo ' + name + ' akan langsung berlaku di kasir jika sudah memasuki rentang waktu aktif.',
+                type: isCurrentlyActive ? 'warning' : 'success',
+                confirmText: isCurrentlyActive ? 'Nonaktifkan' : 'Aktifkan',
+                cancelText: 'Batal'
+            }).then(confirmed => {
+                if (confirmed) form.submit();
+            });
+        },
+
+        confirmDelete(form, name) {
+            window.bestcoDialog.confirm({
+                title: 'Hapus Promo?',
+                message: 'Promo ' + name + ' akan dihapus permanen. Transaksi masa lalu yang sudah menggunakan promo ini tidak akan terpengaruh.',
+                type: 'danger',
+                confirmText: 'Hapus Promo',
+                cancelText: 'Batal'
+            }).then(confirmed => {
+                if (confirmed) form.submit();
+            });
+        }
+    };
+}
+</script>
 @endsection

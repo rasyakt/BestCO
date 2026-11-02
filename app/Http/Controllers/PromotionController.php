@@ -42,14 +42,15 @@ final class PromotionController extends Controller
                 ->where('end_datetime', '>=', $now),
             'scheduled' => $query->where('is_active', true)
                 ->where('start_datetime', '>', $now),
-            'expired' => $query->where('end_datetime', '<', $now),
+            'expired' => $query->where('is_active', true)
+                ->where('end_datetime', '<', $now),
             'inactive' => $query->where('is_active', false),
             default => null,
         };
 
         $promotions = $query->paginate(12)->withQueryString();
 
-        // Hitung statistik untuk badge tab
+        // Hitung statistik untuk badge tab (mutually exclusive)
         $counts = [
             'all' => Promotion::count(),
             'active' => Promotion::where('is_active', true)
@@ -59,7 +60,9 @@ final class PromotionController extends Controller
             'scheduled' => Promotion::where('is_active', true)
                 ->where('start_datetime', '>', $now)
                 ->count(),
-            'expired' => Promotion::where('end_datetime', '<', $now)->count(),
+            'expired' => Promotion::where('is_active', true)
+                ->where('end_datetime', '<', $now)
+                ->count(),
             'inactive' => Promotion::where('is_active', false)->count(),
         ];
 
@@ -96,7 +99,7 @@ final class PromotionController extends Controller
             'service_id' => ['nullable', 'required_if:scope,SERVICE', 'exists:services,id'],
             'discount_type' => ['required', Rule::enum(PromotionDiscountType::class)],
             'discount_value' => ['required', 'numeric', 'gt:0'],
-            'min_order_amount' => ['nullable', 'numeric', 'min:0'],
+            'min_order_amount' => ['nullable', 'numeric', 'min:0', 'required_if:scope,MIN_SPEND', 'gt:0'],
             'max_discount_amount' => ['nullable', 'numeric', 'min:0'],
             'start_datetime' => ['required', 'date'],
             'end_datetime' => ['required', 'date', 'after:start_datetime'],
@@ -161,7 +164,7 @@ final class PromotionController extends Controller
             'service_id' => ['nullable', 'required_if:scope,SERVICE', 'exists:services,id'],
             'discount_type' => ['required', Rule::enum(PromotionDiscountType::class)],
             'discount_value' => ['required', 'numeric', 'gt:0'],
-            'min_order_amount' => ['nullable', 'numeric', 'min:0'],
+            'min_order_amount' => ['nullable', 'numeric', 'min:0', 'required_if:scope,MIN_SPEND', 'gt:0'],
             'max_discount_amount' => ['nullable', 'numeric', 'min:0'],
             'start_datetime' => ['required', 'date'],
             'end_datetime' => ['required', 'date', 'after:start_datetime'],
