@@ -26,7 +26,61 @@
         </x-slot:actions>
     </x-page-header>
 
-    <!-- Pratinjau -->
+    <!-- Mode tampilan -->
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Mode tampilan</h2>
+                <p class="card-subtitle">Pilih tema terang, gelap, atau ikuti setelan perangkat ini.</p>
+            </div>
+            <span class="badge badge-neutral" id="theme-mode-current">Terang</span>
+        </div>
+
+        <div class="card-body">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <button type="button" data-theme-mode="light" class="theme-mode-option">
+                    <span class="block h-16 w-full overflow-hidden rounded-md border border-slate-200 bg-[#f6f7f9] p-2">
+                        <span class="block h-2 w-12 rounded-sm bg-[#d7dee8]"></span>
+                        <span class="mt-1.5 block h-6 w-full rounded-sm bg-[#ffffff] shadow-sm"></span>
+                    </span>
+                    <span class="theme-mode-label">
+                        <x-icon name="sun" class="h-4 w-4 text-amber-500" />
+                        Terang
+                    </span>
+                </button>
+
+                <button type="button" data-theme-mode="dark" class="theme-mode-option">
+                    <span class="block h-16 w-full overflow-hidden rounded-md border border-slate-200 bg-[#0b1220] p-2">
+                        <span class="block h-2 w-12 rounded-sm bg-[#2f425d]"></span>
+                        <span class="mt-1.5 block h-6 w-full rounded-sm bg-[#162033]"></span>
+                    </span>
+                    <span class="theme-mode-label">
+                        <x-icon name="moon" class="h-4 w-4 text-indigo-500" />
+                        Gelap
+                    </span>
+                </button>
+
+                <button type="button" data-theme-mode="system" class="theme-mode-option">
+                    <span class="block h-16 w-full overflow-hidden rounded-md border border-slate-200 p-2"
+                        style="background-image: linear-gradient(90deg, #f6f7f9 0%, #f6f7f9 50%, #0b1220 50%, #0b1220 100%);">
+                        <span class="block h-2 w-12 rounded-sm"
+                            style="background-image: linear-gradient(90deg, #d7dee8 0%, #d7dee8 50%, #2f425d 50%, #2f425d 100%);"></span>
+                        <span class="mt-1.5 block h-6 w-full rounded-sm border border-slate-200"
+                            style="background-image: linear-gradient(90deg, #ffffff 0%, #ffffff 50%, #162033 50%, #162033 100%);"></span>
+                    </span>
+                    <span class="theme-mode-label">
+                        <x-icon name="monitor" class="h-4 w-4 text-slate-500" />
+                        Ikuti sistem
+                    </span>
+                </button>
+            </div>
+
+            <p class="mt-3 text-[11px] leading-relaxed text-slate-500">
+                Preferensi disimpan di perangkat ini. Mode &ldquo;Ikuti sistem&rdquo; otomatis menyesuaikan saat perangkat mengganti tema.
+            </p>
+        </div>
+    </div>
+
     <div class="card overflow-hidden">
         <div class="card-header">
             <div>
@@ -169,7 +223,7 @@
                             <div class="group relative h-11 overflow-hidden rounded border border-slate-200"
                                 style="background-color: {{ $preset['palette'][$shade] }};"
                                 title="{{ str_replace('--color-primary-', '', $shade) }}">
-                                <span class="absolute bottom-1 left-1.5 text-[8px] font-medium {{ in_array($shade, ['--color-primary-600', '--color-primary-800', '--color-primary-950'], true) ? 'text-white/70' : 'text-slate-500/70' }}">
+                                <span class="absolute bottom-1 left-1.5 text-[8px] font-medium {{ in_array($shade, ['--color-primary-600', '--color-primary-800', '--color-primary-950'], true) ? 'text-white/70' : 'text-[#475569]' }}">
                                     {{ str_replace('--color-primary-', '', $shade) }}
                                 </span>
                             </div>
@@ -406,6 +460,43 @@
                 });
             }
         }
+    })();
+</script>
+
+<script>
+    (() => {
+        const buttons = Array.from(document.querySelectorAll('button[data-theme-mode]'));
+        const badge = document.getElementById('theme-mode-current');
+        const labels = { light: 'Terang', dark: 'Gelap', system: 'Ikuti sistem' };
+
+        if (buttons.length === 0 || !window.BestcoTheme) {
+            return;
+        }
+
+        const sync = () => {
+            const activeMode = window.BestcoTheme.mode;
+
+            buttons.forEach((button) => {
+                const isActive = button.dataset.themeMode === activeMode;
+
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+
+            if (badge) {
+                badge.textContent = labels[activeMode] ?? 'Terang';
+            }
+        };
+
+        buttons.forEach((button) => {
+            button.addEventListener('click', () => {
+                window.BestcoTheme.set(button.dataset.themeMode);
+                sync();
+            });
+        });
+
+        window.addEventListener('bestco-theme-changed', sync);
+        sync();
     })();
 </script>
 @endsection

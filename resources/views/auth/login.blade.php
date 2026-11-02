@@ -6,6 +6,8 @@
     <meta name="theme-color" content="#0f172a">
     <title>Masuk — BESTCO Teaching Factory</title>
 
+    @include('partials.theme-script')
+
     <link rel="icon" type="image/png" href="{{ asset('img/best.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('img/best.png') }}">
 
@@ -22,6 +24,18 @@
 </head>
 <body class="min-h-full bg-slate-100/90 font-sans text-slate-800 antialiased selection:bg-brand-500 selection:text-white relative flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8">
 
+    <!-- Toggle tema terang / gelap -->
+    <button type="button" id="login-theme-toggle"
+        class="fixed right-4 top-4 z-30 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 sm:right-5 sm:top-5"
+        title="Ganti tema" aria-label="Ganti tema" aria-pressed="false">
+        <span class="theme-icon-moon">
+            <x-icon name="moon" class="h-4 w-4" />
+        </span>
+        <span class="theme-icon-sun">
+            <x-icon name="sun" class="h-4 w-4" />
+        </span>
+    </button>
+
     <!-- Latar Belakang Halus & Bersih -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div class="absolute -top-32 -left-32 h-[420px] w-[420px] rounded-full bg-brand-500/10 blur-3xl"></div>
@@ -35,7 +49,8 @@
         <!-- ============================================================= -->
         <!-- SISI KIRI: IDENTITAS & ILUSTRASI WORKSTATION KASIR SEIMBANG    -->
         <!-- ============================================================= -->
-        <section class="hidden lg:flex flex-col justify-between bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-8 xl:p-12 text-white relative overflow-hidden border-r border-slate-800/60">
+        <section class="login-hero hidden lg:flex flex-col justify-between p-8 xl:p-12 text-white relative overflow-hidden border-r border-white/10"
+            style="background-image: linear-gradient(135deg, #020617 0%, #0f172a 55%, #1e1b4b 100%);">
             <!-- Ambient Lighting -->
             <div class="absolute top-0 right-0 -mr-16 -mt-16 h-56 w-56 rounded-full bg-brand-500/15 blur-3xl pointer-events-none"></div>
 
@@ -145,7 +160,7 @@
             </div>
 
             <!-- Footer Panel Kiri -->
-            <div class="relative z-10 border-t border-slate-800/80 pt-4 flex items-center justify-between text-[11px] text-slate-500">
+            <div class="relative z-10 border-t border-white/10 pt-4 flex items-center justify-between text-[11px] text-slate-500">
                 <!-- <span>SMK Negeri 1 Ciamis</span> -->
             </div>
         </section>
@@ -241,6 +256,34 @@
             open.classList.toggle('hidden', isHidden);
             closed.classList.toggle('hidden', ! isHidden);
         }
+    </script>
+
+    <!-- Sinkronisasi ikon toggle tema -->
+    <script>
+        (() => {
+            const button = document.getElementById('login-theme-toggle');
+
+            if (!button || !window.BestcoTheme) {
+                return;
+            }
+
+            const sync = () => {
+                const isDark = window.BestcoTheme.isDark;
+                const label = isDark ? 'Aktifkan tema terang' : 'Aktifkan tema gelap';
+
+                button.title = label;
+                button.setAttribute('aria-label', label);
+                button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            };
+
+            button.addEventListener('click', () => {
+                window.BestcoTheme.toggle();
+                sync();
+            });
+
+            window.addEventListener('bestco-theme-changed', sync);
+            sync();
+        })();
     </script>
 </body>
 </html>

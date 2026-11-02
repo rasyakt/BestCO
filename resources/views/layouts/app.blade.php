@@ -6,6 +6,8 @@
     <meta name="theme-color" content="#111827">
     <title>{{ $title ?? 'BESTCO — Kasir & Persediaan' }}</title>
 
+    @include('partials.theme-script')
+
     <link rel="icon" type="image/png" href="{{ asset('img/best.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('img/best.png') }}">
 
@@ -101,8 +103,13 @@
     <div x-data="{
         sidebarOpen: false,
         userMenu: false,
+        isDark: window.BestcoTheme?.isDark ?? document.documentElement.classList.contains('dark'),
         posFocus: localStorage.getItem('bestco_pos_focus') === 'true',
         isFullscreen: false,
+        toggleTheme() {
+            window.BestcoTheme?.toggle();
+            this.isDark = window.BestcoTheme?.isDark ?? !this.isDark;
+        },
         togglePosFocus() {
             this.posFocus = !this.posFocus;
             localStorage.setItem('bestco_pos_focus', this.posFocus);
@@ -121,6 +128,10 @@
         init() {
             document.addEventListener('fullscreenchange', () => {
                 this.isFullscreen = !!document.fullscreenElement;
+            });
+
+            window.addEventListener('bestco-theme-changed', (event) => {
+                this.isDark = event.detail?.isDark ?? window.BestcoTheme?.isDark ?? false;
             });
         }
     }" class="min-h-screen {{ $isPosLayout ? 'lg:h-screen lg:min-h-0 lg:overflow-hidden' : '' }}">
@@ -227,6 +238,21 @@
                     </div>
 
                     <div class="ml-auto flex items-center gap-2 sm:gap-3">
+                        <!-- Toggle tema terang / gelap -->
+                        <button type="button" @click="toggleTheme()"
+                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                            title="Ganti tema" aria-label="Ganti tema"
+                            :title="isDark ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'"
+                            :aria-label="isDark ? 'Aktifkan tema terang' : 'Aktifkan tema gelap'"
+                            :aria-pressed="isDark ? 'true' : 'false'">
+                            <span class="theme-icon-moon">
+                                <x-icon name="moon" class="h-4 w-4" />
+                            </span>
+                            <span class="theme-icon-sun">
+                                <x-icon name="sun" class="h-4 w-4" />
+                            </span>
+                        </button>
+
                         @if($isPosLayout)
                             <!-- Tombol Mode Bersih / Fokus Kasir (1 Tombol Toggle) -->
                             <button type="button" @click="togglePosFocus()"

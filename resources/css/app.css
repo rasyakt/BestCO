@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
@@ -397,6 +399,19 @@
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
     }
 
+    /* --- Pilihan mode tampilan --------------------------------------------- */
+    .theme-mode-option {
+        @apply flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:border-slate-300 hover:bg-slate-50;
+    }
+
+    .theme-mode-option.is-active {
+        @apply border-brand-500 ring-1 ring-brand-500;
+    }
+
+    .theme-mode-option .theme-mode-label {
+        @apply flex items-center gap-2 text-xs font-semibold text-slate-800;
+    }
+
     /* --- Modals ------------------------------------------------------------ */
     .modal-backdrop {
         position: fixed;
@@ -555,6 +570,369 @@
     }
 }
 
+/* ==========================================================================
+   Dark mode
+   --------------------------------------------------------------------------
+   Mode gelap bekerja dengan menginversi token netral & status, sehingga
+   utility seperti bg-white, text-slate-900, badge-success, dan alert-danger
+   otomatis ikut menyesuaikan tanpa harus menambahkan dark: di setiap view.
+   ========================================================================== */
+html.dark:root {
+    color-scheme: dark;
+
+    /* Netral: 50 = permukaan paling gelap, 900/950 = teks paling terang */
+    --color-white: #0f1726;
+    --color-slate-50: #0b1220;
+    --color-slate-100: #162033;
+    --color-slate-200: #203049;
+    --color-slate-300: #2f425d;
+    --color-slate-400: #8a99ad;
+    --color-slate-500: #a4b1c2;
+    --color-slate-600: #c3cedd;
+    --color-slate-700: #d5dfeb;
+    --color-slate-800: #e4ecf6;
+    --color-slate-900: #f2f6fb;
+    --color-slate-950: #f8fafc;
+
+    /* Brand: hanya tint gelap yang diubah, warna solid tetap dari tema dinamis */
+    --color-primary-50: color-mix(in srgb, var(--color-primary-500) 14%, #0b1220);
+    --color-primary-100: color-mix(in srgb, var(--color-primary-500) 20%, #0b1220);
+    --color-primary-200: color-mix(in srgb, var(--color-primary-500) 34%, #0b1220);
+
+    /* Status: tint gelap + teks terang */
+    --color-emerald-50: #06251d;
+    --color-emerald-100: #07372a;
+    --color-emerald-200: #0f5c46;
+    --color-emerald-300: #15a06f;
+    --color-emerald-400: #34d399;
+    --color-emerald-500: #10b981;
+    --color-emerald-600: #4ade80;
+    --color-emerald-700: #6ee7b7;
+    --color-emerald-800: #a7f3d0;
+    --color-emerald-900: #d1fae5;
+    --color-emerald-950: #ecfdf5;
+
+    --color-rose-50: #2a0a14;
+    --color-rose-100: #45101f;
+    --color-rose-200: #6b1a2e;
+    --color-rose-300: #be123c;
+    --color-rose-400: #fb7185;
+    --color-rose-500: #f43f5e;
+    --color-rose-600: #fb7185;
+    --color-rose-700: #fda4af;
+    --color-rose-800: #fecdd3;
+    --color-rose-900: #ffe4e6;
+    --color-rose-950: #fff1f2;
+
+    --color-amber-50: #2a1b05;
+    --color-amber-100: #3d2707;
+    --color-amber-200: #5c3b08;
+    --color-amber-300: #b45309;
+    --color-amber-400: #fbbf24;
+    --color-amber-500: #f59e0b;
+    --color-amber-600: #fbbf24;
+    --color-amber-700: #fcd34d;
+    --color-amber-800: #fde68a;
+    --color-amber-900: #fef3c7;
+    --color-amber-950: #fffbeb;
+
+    --color-sky-50: #062a3d;
+    --color-sky-100: #0b3a52;
+    --color-sky-200: #10506f;
+    --color-sky-300: #0284c7;
+    --color-sky-400: #38bdf8;
+    --color-sky-500: #0ea5e9;
+    --color-sky-600: #7dd3fc;
+    --color-sky-700: #bae6fd;
+    --color-sky-800: #e0f2fe;
+    --color-sky-900: #f0f9ff;
+    --color-sky-950: #f8fcff;
+
+    --color-violet-50: #1d1838;
+    --color-violet-100: #2a1f52;
+    --color-violet-200: #40307a;
+    --color-violet-300: #7c3aed;
+    --color-violet-400: #a78bfa;
+    --color-violet-500: #8b5cf6;
+    --color-violet-600: #c4b5fd;
+    --color-violet-700: #ddd6fe;
+    --color-violet-800: #ede9fe;
+    --color-violet-900: #f5f3ff;
+    --color-violet-950: #faf8ff;
+
+    --color-blue-50: #0a2542;
+    --color-blue-100: #0c3358;
+    --color-blue-200: #12456f;
+    --color-blue-300: #1d4ed8;
+    --color-blue-400: #60a5fa;
+    --color-blue-500: #3b82f6;
+    --color-blue-600: #93c5fd;
+    --color-blue-700: #bfdbfe;
+    --color-blue-800: #dbeafe;
+    --color-blue-900: #eff6ff;
+    --color-blue-950: #f5f9ff;
+
+    --color-indigo-50: #191a44;
+    --color-indigo-100: #23245e;
+    --color-indigo-200: #33357d;
+    --color-indigo-300: #4338ca;
+    --color-indigo-400: #818cf8;
+    --color-indigo-500: #6366f1;
+    --color-indigo-600: #a5b4fc;
+    --color-indigo-700: #c7d2fe;
+    --color-indigo-800: #e0e7ff;
+    --color-indigo-900: #eef2ff;
+    --color-indigo-950: #f5f7ff;
+}
+
+html.dark body {
+    background-color: #070d17;
+    color: #e2e8f0;
+}
+
+/* Teks/aksen putih harus tetap putih walau token --color-white diinversi */
+html.dark .text-white {
+    color: #ffffff;
+}
+
+html.dark .text-white\/70 {
+    color: rgb(255 255 255 / 0.7);
+}
+
+html.dark .text-white\/80 {
+    color: rgb(255 255 255 / 0.8);
+}
+
+html.dark .bg-white\/15 {
+    background-color: rgb(255 255 255 / 0.15);
+}
+
+html.dark .border-white\/20 {
+    border-color: rgb(255 255 255 / 0.2);
+}
+
+html.dark .group:hover .group-hover\:text-white {
+    color: #ffffff;
+}
+
+html.dark ::selection {
+    color: #ffffff;
+}
+
+/* Ikon toggle tema: ditentukan CSS agar tidak berkedip sebelum Alpine siap */
+.theme-icon-sun {
+    display: none;
+}
+
+html.dark .theme-icon-sun {
+    display: inline-flex;
+}
+
+html.dark .theme-icon-moon {
+    display: none;
+}
+
+/* Permukaan yang memang harus tetap gelap (bukan hasil inversi) */
+html.dark .bg-slate-900 {
+    background-color: #111b2d;
+}
+
+html.dark .bg-slate-800 {
+    background-color: #17253c;
+}
+
+html.dark .bg-slate-950 {
+    background-color: #060b14;
+}
+
+html.dark .bg-slate-900\/50 {
+    background-color: rgb(2 6 23 / 0.68);
+}
+
+html.dark .bg-slate-950\/65 {
+    background-color: rgb(2 6 23 / 0.8);
+}
+
+html.dark .hover\:bg-slate-800:hover {
+    background-color: #223049;
+}
+
+html.dark .hover\:bg-slate-900:hover {
+    background-color: #0c1524;
+}
+
+/* Tombol solid: token status 600 kini terang, jadi kembalikan ke warna solid */
+html.dark .btn-success {
+    background-color: #0f7a5a;
+    color: #ffffff;
+}
+
+html.dark .btn-primary {
+    color: #ffffff;
+}
+
+html.dark .btn-success:hover {
+    background-color: #0b6047;
+}
+
+html.dark .btn-danger {
+    background-color: #be123c;
+    color: #ffffff;
+}
+
+html.dark .btn-danger:hover {
+    background-color: #9f1239;
+}
+
+html.dark .btn-warning {
+    background-color: #b45309;
+    color: #ffffff;
+}
+
+html.dark .btn-warning:hover {
+    background-color: #92400e;
+}
+
+html.dark .btn-dark {
+    background-color: #1b2739;
+    color: #ffffff;
+}
+
+html.dark .btn-dark:hover {
+    background-color: #26364e;
+}
+
+/* Teks brand agar tetap terbaca di atas permukaan gelap */
+html.dark .text-brand-500,
+html.dark .text-brand-600,
+html.dark .text-brand-700,
+html.dark .text-brand-800,
+html.dark .text-brand-900 {
+    color: var(--color-primary-300);
+}
+
+html.dark .hover\:text-brand-600:hover,
+html.dark .hover\:text-brand-700:hover,
+html.dark .hover\:text-brand-800:hover {
+    color: var(--color-primary-200);
+}
+
+html.dark .sidebar-link-active,
+html.dark .link,
+html.dark .segmented > .is-active {
+    color: var(--color-primary-300);
+}
+
+html.dark .avatar,
+html.dark .badge-brand {
+    color: var(--color-primary-300);
+}
+
+/* Segmented control: tab aktif harus terlihat lebih terang dari track */
+html.dark .segmented {
+    background-color: #0b1220;
+}
+
+html.dark .segmented > .is-active {
+    background-color: #1e2c42;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+}
+
+/* Modal & dialog */
+html.dark .modal-backdrop {
+    background-color: rgb(2 6 23 / 0.78);
+}
+
+html.dark .modal-card {
+    background-color: #0e1726;
+    border-color: #1e2c42;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.8);
+}
+
+html.dark .modal-header {
+    background-color: #0e1726;
+    border-bottom-color: #1b2740;
+}
+
+html.dark .modal-footer {
+    background-color: #0b1320;
+    border-top-color: #1b2740;
+}
+
+/* Input & select */
+html.dark .input,
+html.dark .select,
+html.dark .textarea {
+    background-color: #0d1727;
+    border-color: #26374f;
+    color: #eaf1fa;
+}
+
+html.dark .input:hover,
+html.dark .select:hover,
+html.dark .textarea:hover {
+    border-color: #355070;
+}
+
+html.dark .input::placeholder,
+html.dark .textarea::placeholder {
+    color: #6f8098;
+}
+
+html.dark .input:disabled,
+html.dark .select:disabled,
+html.dark .textarea:disabled {
+    background-color: #111c2d;
+    color: #7f8ea3;
+}
+
+html.dark .select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Autofill browser tetap mengikuti permukaan gelap */
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #eaf1fa;
+    -webkit-box-shadow: 0 0 0 1000px #0d1727 inset;
+    caret-color: #eaf1fa;
+}
+
+/* Kartu & tabel */
+html.dark .card {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+
+html.dark .table-shell {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+
+/* QRIS & struk harus tetap putih agar tetap terbaca/di-scan */
+html.dark img.bg-white {
+    background-color: #ffffff !important;
+}
+
+html.dark #thermal-receipt,
+html.dark #thermal-receipt * {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #000000 !important;
+}
+
+/* Scrollbar */
+html.dark * {
+    scrollbar-color: #334155 transparent;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
 /* Clean Thermal Receipt & Report Print Styles */
 @media print {
     /* Sembunyikan elemen navigasi, filter, dan tombol saat cetak */
@@ -569,6 +947,25 @@
 
     body {
         background: #fff !important;
+    }
+
+    /* Cetak selalu hitam-putih, walau mode gelap sedang aktif */
+    html.dark body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    html.dark .card,
+    html.dark .table-shell,
+    html.dark table,
+    html.dark .data-table thead th,
+    html.dark .data-table tbody td,
+    html.dark .data-table tfoot td,
+    html.dark #thermal-receipt,
+    html.dark #thermal-receipt * {
+        background: #fff !important;
+        color: #000 !important;
+        border-color: #cbd5e1 !important;
     }
 
     .app-main {
