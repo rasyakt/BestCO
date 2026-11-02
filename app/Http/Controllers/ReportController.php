@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Services\Accounting\FinancialStatementGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 final class ReportController extends Controller
@@ -41,7 +43,34 @@ final class ReportController extends Controller
             default => ['entries' => $this->statementGenerator->getCashBook($startDate, $endDate)],
         };
 
+        if ($tab === 'bku' || $tab === 'journal') {
+            $data['entries'] = $this->paginateRows($data['entries'], $request);
+        } elseif ($tab === 'trial_balance') {
+            $data['rows'] = $this->paginateRows($data['rows'], $request);
+        }
+
         return view('reports.index', compact('tab', 'startDate', 'endDate', 'data'));
+    }
+
+    /**
+     * Bagi koleksi/array baris laporan menjadi halaman agar tabel panjang
+     * tetap ringkas tanpa mengubah total perhitungan laporan.
+     */
+    private function paginateRows(Collection|array $rows, Request $request, int $perPage = 10): LengthAwarePaginator
+    {
+        $items = $rows instanceof Collection ? $rows->values() : collect($rows)->values();
+        $page = LengthAwarePaginator::resolveCurrentPage();
+
+        return new LengthAwarePaginator(
+            $items->forPage($page, $perPage)->values(),
+            $items->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
     }
 
     /**

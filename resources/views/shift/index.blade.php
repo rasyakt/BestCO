@@ -354,9 +354,9 @@
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                 <div>
                     <h2 class="card-title">Riwayat shift</h2>
-                    <p class="card-subtitle">5 shift terakhir dan selisih kas</p>
+                    <p class="card-subtitle">Riwayat shift dan selisih kas</p>
                 </div>
-                <span class="text-[11px] text-slate-500">Audit kas</span>
+                <span class="text-[11px] text-slate-500">{{ $recentShifts->total() }} shift</span>
             </div>
 
             <div class="table-wrap">
@@ -405,6 +405,12 @@
                     </tbody>
                 </table>
             </div>
+
+            @if($recentShifts->hasPages())
+                <div class="border-t border-slate-100 bg-slate-50 px-4 py-3">
+                    {{ $recentShifts->links() }}
+                </div>
+            @endif
         </div>
     @endif
 </div>

@@ -38,7 +38,7 @@ final class StockInboundController extends Controller
         $recentPurchases = JournalEntry::with(['items.chartOfAccount', 'createdBy'])
             ->where('journal_type', JournalType::PURCHASE)
             ->latest('id')
-            ->paginate(15);
+            ->paginate(10);
 
         return view('inventory.inbound', compact('products', 'fundingAccounts', 'recentPurchases'));
     }
@@ -55,6 +55,7 @@ final class StockInboundController extends Controller
             ],
             'invoice_number' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:255'],
+            'entry_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => [
                 'required',
@@ -73,6 +74,8 @@ final class StockInboundController extends Controller
             'items.*.product_id.exists' => 'Produk yang dipilih tidak aktif atau tidak ditemukan.',
             'items.*.qty.required' => 'Kuantitas barang wajib diisi.',
             'items.*.price.required' => 'Harga beli satuan wajib diisi.',
+            'entry_date.date_format' => 'Format tanggal masuk tidak valid.',
+            'entry_date.before_or_equal' => 'Tanggal masuk tidak boleh melebihi hari ini.',
         ]);
 
         $result = $action->execute(
@@ -81,6 +84,7 @@ final class StockInboundController extends Controller
             createdByUserId: (string) auth()->id(),
             invoiceNumber: $validated['invoice_number'] ?? null,
             notes: $validated['notes'] ?? null,
+            entryDate: $validated['entry_date'] ?? null,
         );
 
         $formattedTotal = number_format((float) $result['total_amount'], 0, ',', '.');

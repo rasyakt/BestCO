@@ -58,7 +58,7 @@ final class UserController extends Controller
                 WHEN 'piket_siswa' THEN 4
                 ELSE 5 END")
             ->orderBy('name')
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         $baseQuery = User::query()->whereIn('role_type', $roleValues);

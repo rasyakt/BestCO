@@ -90,11 +90,16 @@
                         </div>
 
                         <div>
-                            <label class="form-label">Tanggal Masuk</label>
-                            <input type="text" readonly
-                                value="{{ now()->translatedFormat('l, d F Y') }}"
-                                class="input w-full bg-slate-100 text-slate-500 cursor-not-allowed">
-                            <p class="mt-1 text-[11px] text-slate-500">Dicatat sesuai waktu transaksi sistem</p>
+                            <label for="entry_date" class="form-label">Tanggal Masuk</label>
+                            <x-date-picker
+                                name="entry_date"
+                                :value="old('entry_date', now()->format('Y-m-d'))"
+                                :max="now()->format('Y-m-d')"
+                            />
+                            <p class="mt-1 text-[11px] text-slate-500">Bisa diubah mundur, maksimal hari ini</p>
+                            @error('entry_date')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
                 </div>

@@ -50,7 +50,7 @@ final class PiketAttendanceController extends Controller
             });
         }
 
-        $attendances = $query->paginate(20);
+        $attendances = $query->paginate(10)->withQueryString();
 
         return view('piket.index', compact(
             'attendances',

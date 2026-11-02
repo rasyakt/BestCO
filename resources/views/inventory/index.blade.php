@@ -126,7 +126,7 @@
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                 <div>
                     <h2 class="card-title">Daftar stok</h2>
-                    <p class="card-subtitle">{{ $products->count() }} barang aktif</p>
+                    <p class="card-subtitle">{{ $productPage->total() }} barang aktif</p>
                 </div>
                 <div class="flex items-center gap-4 text-[11px] text-slate-500">
                     <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-sm bg-sky-500"></span> Barang etalase</span>
@@ -148,7 +148,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($products as $p)
+                        @forelse($productPage as $p)
                             @php
                                 $isLow = (float) $p->current_stock <= (float) ($p->min_stock_alert ?? 0);
                                 $isRetail = $p->inventory_type->value === 'RETAIL';
@@ -252,7 +252,7 @@
 
             <!-- Tampilan Mobile -->
             <div class="divide-y divide-slate-100 md:hidden">
-                @forelse($products as $p)
+                @forelse($productPage as $p)
                     @php
                         $isLow = (float) $p->current_stock <= (float) ($p->min_stock_alert ?? 0);
                         $isRetail = $p->inventory_type->value === 'RETAIL';
@@ -344,6 +344,12 @@
                     </div>
                 @endforelse
             </div>
+
+            @if($productPage->hasPages())
+                <div class="border-t border-slate-100 bg-slate-50 px-4 py-3">
+                    {{ $productPage->links() }}
+                </div>
+            @endif
         </div>
     @endif
 
@@ -353,10 +359,10 @@
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                 <div>
                     <h2 class="card-title">Katalog Layanan Jasa</h2>
-                    <p class="card-subtitle">{{ $services->count() }} layanan aktif dengan kalkulasi HPP bahan baku (BoM) otomatis.</p>
+                    <p class="card-subtitle">{{ $services->total() }} layanan aktif dengan kalkulasi HPP bahan baku (BoM) otomatis.</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="badge badge-success">{{ $services->count() }} Layanan Terdaftar</span>
+                    <span class="badge badge-success">{{ $services->total() }} Layanan Terdaftar</span>
                     @if(auth()->user()?->hasAnyRole(['superadmin', 'admin']))
                         <button type="button" @click="openAddServiceModal()" class="btn btn-primary btn-sm">
                             <x-icon name="plus" class="h-3.5 w-3.5" />
@@ -495,6 +501,12 @@
                     </tbody>
                 </table>
             </div>
+
+            @if($services->hasPages())
+                <div class="border-t border-slate-100 bg-slate-50 px-4 py-3">
+                    {{ $services->links() }}
+                </div>
+            @endif
         </div>
     @endif
 

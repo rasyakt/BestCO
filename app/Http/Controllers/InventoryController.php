@@ -44,9 +44,16 @@ final class InventoryController extends Controller
             });
         }
 
+        $productQuery = $query->orderBy('inventory_type')->orderBy('name');
+
+        // Daftar lengkap tetap dipakai modal Tambah Stok; tabel memakai versi terpaginasi.
         $products = ($type !== 'SERVICE')
-            ? $query->orderBy('inventory_type')->orderBy('name')->get()
+            ? (clone $productQuery)->get()
             : collect();
+
+        $productPage = ($type !== 'SERVICE')
+            ? (clone $productQuery)->paginate(10)->withQueryString()
+            : null;
 
         // Query daftar layanan jasa
         $servicesQuery = Service::with(['category', 'boms.rawMaterialProduct.unit', 'priceTiers'])
@@ -59,9 +66,9 @@ final class InventoryController extends Controller
             });
         }
 
-        $services = ($type === 'ALL' || $type === 'SERVICE')
-            ? $servicesQuery->orderBy('service_group')->orderBy('name')->get()
-            : collect();
+        $services = ($type === 'SERVICE')
+            ? $servicesQuery->orderBy('service_group')->orderBy('name')->paginate(10)->withQueryString()
+            : null;
 
         // Data master untuk modal Tambah & Edit Produk/Layanan
         $categories = Category::all();
@@ -77,6 +84,7 @@ final class InventoryController extends Controller
 
         return view('inventory.index', compact(
             'products',
+            'productPage',
             'services',
             'type',
             'search',
@@ -274,7 +282,7 @@ final class InventoryController extends Controller
         $movements = StockLedgerEntry::with(['createdBy', 'posShift'])
             ->where('product_id', $product->id)
             ->latest('id')
-            ->paginate(25);
+            ->paginate(10);
 
         return view('inventory.ledger', compact('product', 'movements'));
     }

@@ -23,7 +23,7 @@ use Illuminate\View\View;
 
 final class ShiftController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $activeShift = PosShift::with(['attendances.scheduledUser', 'attendances.substituteUser', 'attendances.activeOperator', 'supervisorTeacher', 'openedBy'])
             ->where('status', ShiftStatus::OPEN->value)
@@ -96,8 +96,8 @@ final class ShiftController extends Controller
 
         $recentShifts = PosShift::with(['supervisorTeacher', 'openedBy', 'closedBy'])
             ->latest('id')
-            ->limit(5)
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('shift.index', compact(
             'activeShift',

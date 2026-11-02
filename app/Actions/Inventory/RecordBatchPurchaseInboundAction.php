@@ -35,6 +35,7 @@ final class RecordBatchPurchaseInboundAction
         string $createdByUserId,
         ?string $invoiceNumber = null,
         ?string $notes = null,
+        ?string $entryDate = null,
     ): array {
         if (empty($items)) {
             throw new InvalidArgumentException('Daftar barang masuk tidak boleh kosong.');
@@ -45,7 +46,8 @@ final class RecordBatchPurchaseInboundAction
             $accountId,
             $createdByUserId,
             $invoiceNumber,
-            $notes
+            $notes,
+            $entryDate
         ): array {
             $productIds = array_map(
                 static fn (array $item): int => (int) ($item['product_id'] ?? 0),
@@ -54,6 +56,15 @@ final class RecordBatchPurchaseInboundAction
 
             if (count(array_unique($productIds)) !== count($productIds)) {
                 throw new InvalidArgumentException('Produk yang sama tidak boleh muncul lebih dari satu baris.');
+            }
+
+            // Tanggal masuk dapat dipilih manual (mis. backdate), tetapi tidak boleh melebihi hari ini.
+            $transactionDate = $entryDate !== null
+                ? Carbon::parse($entryDate)->startOfDay()
+                : Carbon::today();
+
+            if ($transactionDate->greaterThan(Carbon::today())) {
+                throw new InvalidArgumentException('Tanggal masuk tidak boleh melebihi hari ini.');
             }
 
             $coaCashOrDebt = ChartOfAccount::where('id', $accountId)->lockForUpdate()->firstOrFail();
@@ -157,7 +168,11 @@ final class RecordBatchPurchaseInboundAction
                     'unit_cost' => $price,
                     'total_value' => $lineSubtotal,
                     'created_by' => $createdByUserId,
-                    'created_at' => Carbon::now(),
+                    'created_at' => $transactionDate->copy()->setTime(
+                        Carbon::now()->hour,
+                        Carbon::now()->minute,
+                        Carbon::now()->second
+                    ),
                 ];
 
                 $processedProducts[] = [
@@ -183,7 +198,7 @@ final class RecordBatchPurchaseInboundAction
                 lineDescription: "Kredit {$coaCashOrDebt->account_name}{$invLabel}",
             );
 
-            $journalNumber = $this->nextJournalNumber();
+            $journalNumber = $this->nextJournalNumber($transactionDate);
 
             $descParts = [
                 'Barang Masuk Multi-item (' . count($items) . ' produk)',
@@ -200,7 +215,7 @@ final class RecordBatchPurchaseInboundAction
                 journalNumber: $journalNumber,
                 accountingPeriodId: (string) $period->getKey(),
                 posShiftId: null,
-                entryDate: Carbon::now(),
+                entryDate: $transactionDate,
                 journalType: JournalType::PURCHASE,
                 referenceType: 'BATCH_PURCHASE',
                 referenceId: null,
@@ -227,12 +242,12 @@ final class RecordBatchPurchaseInboundAction
         });
     }
 
-    private function nextJournalNumber(): string
+    private function nextJournalNumber(Carbon $entryDate): string
     {
         $sequence = JournalEntry::count() + 1;
 
         do {
-            $journalNumber = 'JRN-' . Carbon::now()->format('Ymd') . '-'
+            $journalNumber = 'JRN-' . $entryDate->format('Ymd') . '-'
                 . str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
             $sequence++;
         } while (JournalEntry::where('journal_number', $journalNumber)->exists());

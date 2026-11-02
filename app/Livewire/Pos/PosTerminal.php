@@ -105,7 +105,57 @@ final class PosTerminal extends Component
      */
     public function updatedManualDiscountTotal($value): void
     {
-        $this->manualDiscountTotal = $this->sanitizeNumericInput($value);
+        $this->manualDiscountTotal = $this->clampManualDiscount((string) $value);
+    }
+
+    /**
+     * Sisa nilai keranjang yang boleh dipotong oleh diskon manual.
+     *
+     * Backend menghitung diskon manual dari nilai kotor setelah diskon grosir
+     * dan diskon manual per item, jadi batas di UI harus memakai basis yang sama.
+     */
+    public function maxManualDiscountAmount(): float
+    {
+        $gross = '0.0000';
+        $discounts = '0.0000';
+
+        foreach ($this->cart as $item) {
+            $gross = bcadd(
+                $gross,
+                number_format((float) ($item['subtotal_gross'] ?? 0), 4, '.', ''),
+                4
+            );
+            $discounts = bcadd(
+                $discounts,
+                number_format((float) ($item['tier_discount_total'] ?? 0), 4, '.', ''),
+                4
+            );
+            $discounts = bcadd(
+                $discounts,
+                number_format((float) ($item['manual_discount'] ?? 0), 4, '.', ''),
+                4
+            );
+        }
+
+        $max = bcsub($gross, $discounts, 4);
+
+        return (float) (bccomp($max, '0.0000', 4) === 1 ? $max : '0.0000');
+    }
+
+    /**
+     * Batasi diskon manual agar tidak pernah melebihi sisa nilai keranjang.
+     */
+    protected function clampManualDiscount(string $value): string
+    {
+        $sanitized = $this->sanitizeNumericInput($value);
+
+        if ($sanitized === '') {
+            return '0';
+        }
+
+        $max = $this->maxManualDiscountAmount();
+
+        return (float) $sanitized > $max ? (string) $max : $sanitized;
     }
 
     public function updatedAmountPaid($value): void
@@ -308,6 +358,10 @@ final class PosTerminal extends Component
                 $this->cart[$key]['subtotal_net'] = (float) $net;
             }
         }
+
+        // Keranjang bisa menyusut (item dihapus atau qty dikurangi), sehingga
+        // diskon manual yang sudah diinput harus ikut dibatasi ulang.
+        $this->manualDiscountTotal = $this->clampManualDiscount($this->manualDiscountTotal);
     }
 
     public function getSubtotalRetailProperty(): float
@@ -348,6 +402,10 @@ final class PosTerminal extends Component
             return;
         }
 
+        // Pengaman terakhir sebelum pembayaran: diskon manual tidak boleh
+        // melebihi sisa nilai keranjang.
+        $this->manualDiscountTotal = $this->clampManualDiscount($this->manualDiscountTotal);
+
         $this->amountPaid = (string) $this->grandTotal;
         $this->showPaymentModal = true;
     }
@@ -366,10 +424,20 @@ final class PosTerminal extends Component
 
     public function executeCheckout(CheckoutPosTransactionAction $action): void
     {
+        // Pastikan diskon manual sudah dibatasi sebelum validasi & checkout.
+        $this->manualDiscountTotal = $this->clampManualDiscount($this->manualDiscountTotal);
+
         // Validasi input
         $this->validate([
             'amountPaid' => ['required', new StrictCurrency(min: 0)],
-            'manualDiscountTotal' => ['nullable', new StrictCurrency(min: 0, required: false)],
+            'manualDiscountTotal' => ['nullable', new StrictCurrency(
+                min: 0,
+                max: $this->maxManualDiscountAmount(),
+                required: false
+            )],
+        ], [], [
+            'amountPaid' => 'jumlah pembayaran',
+            'manualDiscountTotal' => 'diskon manual',
         ]);
 
         $activeShift = PosShift::where('status', ShiftStatus::OPEN->value)

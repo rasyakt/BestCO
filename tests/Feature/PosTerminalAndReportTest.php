@@ -92,6 +92,54 @@ class PosTerminalAndReportTest extends TestCase
             ->assertCount('cart', 2);
     }
 
+    public function test_manual_discount_cannot_exceed_cart_total(): void
+    {
+        $this->openShift();
+
+        $retailProduct = \App\Models\Product::where('inventory_type', 'RETAIL')->firstOrFail();
+        $gross = (float) $retailProduct->selling_price;
+
+        $component = \Livewire\Livewire::actingAs($this->student)
+            ->test(\App\Livewire\Pos\PosTerminal::class)
+            ->call('addToCart', 'RETAIL', $retailProduct->id)
+            ->set('manualDiscountTotal', '99999999');
+
+        $this->assertSame($gross, (float) $component->get('manualDiscountTotal'));
+        $this->assertSame(0.0, (float) $component->get('grandTotal'));
+        $component->assertSee('Maks. Rp '.number_format($gross, 0, ',', '.'));
+
+        $component->call('openPaymentModal');
+        $component->assertSet('showPaymentModal', true);
+        $this->assertSame($gross, (float) $component->get('manualDiscountTotal'));
+    }
+
+    public function test_manual_discount_is_reclamped_when_cart_shrinks(): void
+    {
+        $this->openShift();
+
+        $products = \App\Models\Product::where('inventory_type', 'RETAIL')->take(2)->get();
+        $this->assertCount(2, $products);
+
+        $firstGross = (float) $products[0]->selling_price;
+        $secondGross = (float) $products[1]->selling_price;
+
+        $component = \Livewire\Livewire::actingAs($this->student)
+            ->test(\App\Livewire\Pos\PosTerminal::class)
+            ->call('addToCart', 'RETAIL', $products[0]->id)
+            ->call('addToCart', 'RETAIL', $products[1]->id)
+            ->set('manualDiscountTotal', (string) ($firstGross + $secondGross));
+
+        $this->assertSame(
+            $firstGross + $secondGross,
+            (float) $component->get('manualDiscountTotal')
+        );
+
+        $component->call('removeItem', 0);
+
+        $this->assertSame($secondGross, (float) $component->get('manualDiscountTotal'));
+        $this->assertSame(0.0, (float) $component->get('grandTotal'));
+    }
+
     private function openShift(): PosShift
     {
         return app(OpenPosShiftAction::class)->execute(new ShiftOpeningData(

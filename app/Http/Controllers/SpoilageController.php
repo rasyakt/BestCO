@@ -40,7 +40,7 @@ final class SpoilageController extends Controller
             $query->where('reason_category', $category);
         }
 
-        $logs = $query->paginate(15);
+        $logs = $query->paginate(10)->withQueryString();
 
         return view('inventory.spoilage', compact(
             'logs',

@@ -132,6 +132,20 @@
             <polyline points="9 18 15 12 9 6" />
             @break
 
+        @case('chevron-left')
+            <polyline points="15 18 9 12 15 6" />
+            @break
+
+        @case('chevrons-left')
+            <polyline points="11 17 6 12 11 7" />
+            <polyline points="18 17 13 12 18 7" />
+            @break
+
+        @case('chevrons-right')
+            <polyline points="13 17 18 12 13 7" />
+            <polyline points="6 17 11 12 6 7" />
+            @break
+
         @case('menu')
             <line x1="3" y1="6" x2="21" y2="6" />
             <line x1="3" y1="12" x2="21" y2="12" />

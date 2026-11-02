@@ -64,7 +64,7 @@
                     <h2 class="card-title">Buku Kas</h2>
                     <p class="card-subtitle">{{ date('d/m/Y', strtotime($startDate)) }} &mdash; {{ date('d/m/Y', strtotime($endDate)) }}</p>
                 </div>
-                <span class="text-[11px] text-slate-500">{{ count($data['entries']) }} catatan</span>
+                <span class="text-[11px] text-slate-500">{{ $data['entries']->total() }} catatan</span>
             </div>
 
             <div class="table-wrap">
@@ -110,13 +110,19 @@
                 </table>
             </div>
 
+            @if($data['entries']->hasPages())
+                <div class="border-t border-slate-100 bg-slate-50 px-4 py-3 no-print">
+                    {{ $data['entries']->links() }}
+                </div>
+            @endif
+
         @elseif($tab === 'journal')
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                 <div>
                     <h2 class="card-title">Jurnal Umum</h2>
                     <p class="card-subtitle">Catatan transaksi berpasangan</p>
                 </div>
-                <span class="text-[11px] text-slate-500">{{ count($data['entries']) }} jurnal</span>
+                <span class="text-[11px] text-slate-500">{{ $data['entries']->total() }} jurnal</span>
             </div>
 
             <div class="space-y-4 p-5">
@@ -167,6 +173,12 @@
                 @endforelse
             </div>
 
+            @if($data['entries']->hasPages())
+                <div class="border-t border-slate-100 bg-slate-50 px-4 py-3 no-print">
+                    {{ $data['entries']->links() }}
+                </div>
+            @endif
+
         @elseif($tab === 'trial_balance')
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
                 <div>
@@ -213,6 +225,12 @@
                     </tfoot>
                 </table>
             </div>
+
+            @if($data['rows']->hasPages())
+                <div class="border-t border-slate-100 bg-slate-50 px-4 py-3 no-print">
+                    {{ $data['rows']->links() }}
+                </div>
+            @endif
 
         @elseif($tab === 'income_statement')
             <div class="border-b border-slate-100 px-5 py-4 text-center">

@@ -36,7 +36,7 @@ final class StockMutationController extends Controller
             });
         }
 
-        $mutations = $query->paginate(15);
+        $mutations = $query->paginate(10)->withQueryString();
 
         return view('inventory.mutations', compact(
             'mutations',

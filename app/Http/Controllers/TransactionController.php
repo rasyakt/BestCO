@@ -40,7 +40,7 @@ final class TransactionController extends Controller
             $query->whereDate('transaction_date', $date);
         }
 
-        $transactions = $query->paginate(25);
+        $transactions = $query->paginate(10)->withQueryString();
         $teachers = User::where('role_type', 'piket_guru')->where('is_active', true)->get();
         $storeInfo = StoreSettingController::getStoreInfo();
 

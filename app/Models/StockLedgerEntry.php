@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'unit_cost',
     'total_value',
     'created_by',
+    'created_at',
 ])]
 class StockLedgerEntry extends Model
 {

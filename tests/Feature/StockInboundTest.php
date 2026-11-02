@@ -134,6 +134,68 @@ class StockInboundTest extends TestCase
         $this->assertEquals(600000, (float) $creditLine->credit);
     }
 
+    public function test_admin_can_record_inbound_with_manual_entry_date(): void
+    {
+        $product = Product::firstOrFail();
+        $fundingAccount = ChartOfAccount::where('account_code', '1-1102')->firstOrFail();
+        $entryDate = now()->subDays(3)->format('Y-m-d');
+
+        $response = $this->actingAs($this->admin)->post(route('inventory.inbound.store'), [
+            'account_id' => $fundingAccount->id,
+            'entry_date' => $entryDate,
+            'invoice_number' => 'INV-BACKDATE-001',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'qty' => 2,
+                    'price' => 15000,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('inventory.inbound'));
+        $response->assertSessionHas('success');
+
+        $journal = JournalEntry::with('items.chartOfAccount')
+            ->where('journal_type', JournalType::PURCHASE)
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertSame($entryDate, $journal->entry_date->format('Y-m-d'));
+        $this->assertStringContainsString(
+            now()->subDays(3)->format('Ymd'),
+            $journal->journal_number
+        );
+
+        $ledger = StockLedgerEntry::where('reference_id', $journal->id)->firstOrFail();
+        $this->assertSame($entryDate, $ledger->created_at->format('Y-m-d'));
+    }
+
+    public function test_entry_date_cannot_be_in_the_future(): void
+    {
+        $product = Product::firstOrFail();
+        $fundingAccount = ChartOfAccount::where('account_code', '1-1102')->firstOrFail();
+        $purchaseCountBefore = JournalEntry::where('journal_type', JournalType::PURCHASE)->count();
+
+        $response = $this->actingAs($this->admin)->post(route('inventory.inbound.store'), [
+            'account_id' => $fundingAccount->id,
+            'entry_date' => now()->addDay()->format('Y-m-d'),
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'qty' => 1,
+                    'price' => 10000,
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('entry_date');
+        $this->assertSame(
+            $purchaseCountBefore,
+            JournalEntry::where('journal_type', JournalType::PURCHASE)->count()
+        );
+    }
+
     public function test_teacher_and_student_cannot_submit_inbound_stock(): void
     {
         $fundingAccount = ChartOfAccount::where('account_code', '1-1102')->firstOrFail();
