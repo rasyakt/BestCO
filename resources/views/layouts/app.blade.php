@@ -332,7 +332,7 @@
                 @if(session('success'))
                     <div x-data="{ show: true }" x-show="show" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
                         class="mb-5 flex items-start gap-3.5 rounded-xl border border-emerald-200/80 bg-emerald-50/90 p-4 text-xs shadow-xs text-emerald-900">
-                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 shadow-2xs">
+                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-emerald-200 bg-white/80 text-emerald-600">
                             <x-icon name="check-circle" class="h-4 w-4" />
                         </div>
                         <div class="flex-1 pt-0.5">
@@ -348,7 +348,7 @@
                 @if(session('error') || $errors->has('error'))
                     <div x-data="{ show: true }" x-show="show" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
                         class="mb-5 flex items-start gap-3.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-4 text-xs shadow-xs text-rose-900">
-                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-600 shadow-2xs">
+                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-rose-200 bg-white/80 text-rose-600">
                             <x-icon name="x-circle" class="h-4 w-4" />
                         </div>
                         <div class="flex-1 pt-0.5">

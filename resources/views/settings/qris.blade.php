@@ -123,7 +123,7 @@
     <div class="card mt-6">
         <div class="card-body">
             <div class="flex gap-3">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-500">
                     <x-icon name="info" class="h-5 w-5" />
                 </div>
                 <div class="flex-1 text-sm text-slate-600">

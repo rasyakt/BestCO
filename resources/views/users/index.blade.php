@@ -47,7 +47,7 @@
                     <p class="text-[11px] font-medium text-slate-500">Total akun terkelola</p>
                     <p class="mt-1 text-2xl font-semibold text-slate-900 num-tabular">{{ $counts['total'] }}</p>
                 </div>
-                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                <span class="stat-icon text-brand-600">
                     <x-icon name="users" class="h-4 w-4" />
                 </span>
             </div>
@@ -60,7 +60,7 @@
                     <p class="text-[11px] font-medium text-slate-500">Akun aktif</p>
                     <p class="mt-1 text-2xl font-semibold text-emerald-700 num-tabular">{{ $counts['active'] }}</p>
                 </div>
-                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <span class="stat-icon text-emerald-600">
                     <x-icon name="check-circle" class="h-4 w-4" />
                 </span>
             </div>
@@ -73,7 +73,7 @@
                     <p class="text-[11px] font-medium text-slate-500">Akun nonaktif</p>
                     <p class="mt-1 text-2xl font-semibold text-rose-600 num-tabular">{{ $counts['inactive'] }}</p>
                 </div>
-                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                <span class="stat-icon text-rose-600">
                     <x-icon name="x-circle" class="h-4 w-4" />
                 </span>
             </div>
@@ -125,10 +125,10 @@
     <div class="table-shell">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
             <div>
-                <h2 class="card-title">Daftar akun</h2>
+                <h2 class="card-title">Daftar Akun Pengguna</h2>
                 <p class="card-subtitle">
                     @if($users->total() > 0)
-                        Menampilkan {{ $users->firstItem() }}–{{ $users->lastItem() }} dari {{ $users->total() }} akun
+                        Menampilkan {{ $users->firstItem() }}–{{ $users->lastItem() }} dari {{ $users->total() }} akun terdaftar.
                     @else
                         Belum ada akun yang sesuai
                     @endif
@@ -138,7 +138,7 @@
         </div>
 
         @if($users->isEmpty())
-            <div class="empty-state">
+            <div class="empty-state py-10">
                 <span class="empty-state-icon"><x-icon name="users" class="h-5 w-5" /></span>
                 <p class="text-sm font-semibold text-slate-700">Pengguna tidak ditemukan</p>
                 <p class="mt-1 max-w-sm text-xs leading-relaxed text-slate-400">
@@ -150,17 +150,15 @@
                 </a>
             </div>
         @else
-            <div class="table-wrap">
-                <table class="data-table">
+            <div class="w-full overflow-x-auto">
+                <table class="data-table w-full border-collapse">
                     <thead>
                         <tr>
-                            <th>Pengguna</th>
-                            <th>Role</th>
-                            <th class="hidden xl:table-cell">NIP / NISN</th>
-                            <th class="hidden xl:table-cell">Kelas / NIS</th>
-                            <th>Status</th>
-                            <th class="hidden xl:table-cell">Terakhir masuk</th>
-                            <th class="text-right">Aksi</th>
+                            <th class="text-left whitespace-nowrap px-4 py-3">Pengguna</th>
+                            <th class="text-left whitespace-nowrap px-4 py-3">Role & NIP/NISN</th>
+                            <th class="text-left whitespace-nowrap px-4 py-3">Kelas & NIS</th>
+                            <th class="text-left whitespace-nowrap px-4 py-3">Status & Terakhir Masuk</th>
+                            <th class="text-right whitespace-nowrap px-4 py-3 w-[150px]">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -174,18 +172,18 @@
                                 $isSelf = $managedUser->is($actor);
                             @endphp
                             <tr>
-                                <td>
+                                <td class="whitespace-nowrap px-4 py-3">
                                     <div class="flex items-center gap-2.5">
-                                        <span class="avatar h-8 w-8">{{ $initials }}</span>
+                                        <span class="avatar h-8 w-8 text-xs font-bold shrink-0">{{ $initials }}</span>
                                         <div class="min-w-0">
-                                            <p class="flex items-center gap-1.5 truncate text-[12px] font-semibold text-slate-900">
+                                            <p class="flex items-center gap-1.5 truncate text-xs font-semibold text-slate-900">
                                                 {{ $managedUser->name }}
                                                 @if($isSelf)
-                                                    <span class="badge badge-neutral">Anda</span>
+                                                    <span class="badge badge-neutral px-1.5">Anda</span>
                                                 @endif
                                             </p>
                                             <p class="mt-0.5 truncate text-[10px] text-slate-400">
-                                                <span class="font-mono">{{ '@' . $managedUser->username }}</span>
+                                                <span class="font-mono text-slate-500">{{ '@' . $managedUser->username }}</span>
                                                 @if($managedUser->email)
                                                     <span class="mx-1">&bull;</span>{{ $managedUser->email }}
                                                 @endif
@@ -193,50 +191,54 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="badge {{ $roleBadges[$managedUser->role_type->value] ?? 'badge-neutral' }}">
-                                        {{ $managedUser->role_type->label() }}
-                                    </span>
+                                <td class="whitespace-nowrap px-4 py-3">
+                                    <div>
+                                        <span class="badge {{ $roleBadges[$managedUser->role_type->value] ?? 'badge-neutral' }} text-[10px]">
+                            {{ $managedUser->role_type->label() }}
+                        </span>
+                                    </div>
+                                    <div class="mt-0.5 font-mono text-[10px] text-slate-400">
+                                        NIP/NISN: <span class="text-slate-600 font-medium">{{ $managedUser->nip_nisn ?: '—' }}</span>
+                                    </div>
                                 </td>
-                                <td class="hidden xl:table-cell">
-                                    <span class="font-mono text-[11px] text-slate-600">{{ $managedUser->nip_nisn ?: '—' }}</span>
-                                </td>
-                                <td class="hidden xl:table-cell">
+                                <td class="whitespace-nowrap px-4 py-3">
                                     @if($managedUser->role_type->value === 'piket_siswa')
-                                        <p class="text-[11px] font-medium text-slate-700">{{ $managedUser->studentProfile?->schoolClass?->name ?? 'Kelas belum diatur' }}</p>
-                                        <p class="mt-0.5 font-mono text-[10px] text-slate-400">NIS {{ $managedUser->studentProfile?->nis ?? '—' }}</p>
+                                        <p class="text-xs font-medium text-slate-700">{{ $managedUser->studentProfile?->schoolClass?->name ?? 'Kelas belum diatur' }}</p>
+                                        <p class="mt-0.5 font-mono text-[10px] text-slate-400">NIS: <span class="text-slate-600 font-medium">{{ $managedUser->studentProfile?->nis ?? '—' }}</span></p>
                                     @else
-                                        <span class="text-[11px] text-slate-400">—</span>
+                                        <p class="text-xs text-slate-600 font-medium">Staf / Pengajar</p>
+                                        <p class="mt-0.5 text-[10px] text-slate-400">Non-Kelas</p>
                                     @endif
                                 </td>
-                                <td>
-                                    <span class="badge {{ $managedUser->is_active ? 'badge-success' : 'badge-danger' }}">
-                                        {{ $managedUser->is_active ? 'Aktif' : 'Nonaktif' }}
-                                    </span>
+                                <td class="whitespace-nowrap px-4 py-3">
+                                    <div>
+                                        <span class="badge {{ $managedUser->is_active ? 'badge-success' : 'badge-danger' }} text-[10px]">
+                            {{ $managedUser->is_active ? 'Aktif' : 'Nonaktif' }}
+                        </span>
+                                    </div>
+                                    <div class="mt-0.5 text-[10px] text-slate-400">
+                                        Masuk: <span class="text-slate-500">{{ $managedUser->last_login_at?->format('d/m/y H:i') ?? 'Belum pernah' }}</span>
+                                    </div>
                                 </td>
-                                <td class="hidden xl:table-cell">
-                                    <span class="text-[11px] text-slate-500">
-                                        {{ $managedUser->last_login_at?->format('d/m/Y H:i') ?? 'Belum pernah' }}
-                                    </span>
-                                </td>
-                                <td>
+                                <td class="text-right whitespace-nowrap px-4 py-3">
                                     <div class="flex items-center justify-end gap-1.5">
                                         <a href="{{ route('users.edit', $managedUser) }}"
-                                            class="btn btn-secondary btn-sm" title="Edit akun {{ $managedUser->name }}">
-                                            <x-icon name="edit" class="h-3.5 w-3.5" />
-                                            Edit
+                                            class="btn btn-secondary btn-sm !py-1 !px-2.5 text-xs inline-flex items-center gap-1"
+                                            title="Edit akun {{ $managedUser->name }}">
+                                            <x-icon name="edit" class="h-3.5 w-3.5 text-slate-400" />
+                                            <span>Edit</span>
                                         </a>
 
-                                        <form method="POST" action="{{ route('users.status', $managedUser) }}">
+                                        <form method="POST" action="{{ route('users.status', $managedUser) }}" class="inline">
                                             @csrf
                                             @method('PATCH')
                                             <button type="button"
                                                 @disabled($isSelf)
                                                 @click="confirmStatus($el.form, @js($managedUser->name), {{ $managedUser->is_active ? 'true' : 'false' }})"
-                                                class="btn btn-sm border {{ $managedUser->is_active ? 'border-rose-200 bg-white text-rose-600 hover:bg-rose-50' : 'border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50' }} disabled:cursor-not-allowed disabled:opacity-40"
+                                                class="btn btn-sm !py-1 !px-2 text-xs border border-slate-200 bg-white text-slate-600 {{ $managedUser->is_active ? 'hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600' : 'hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700' }} disabled:cursor-not-allowed disabled:opacity-40 inline-flex items-center gap-1"
                                                 title="{{ $isSelf ? 'Akun sendiri tidak dapat dinonaktifkan' : ($managedUser->is_active ? 'Nonaktifkan akun' : 'Aktifkan akun') }}">
-                                                <x-icon :name="$managedUser->is_active ? 'x-circle' : 'check-circle'" class="h-3.5 w-3.5" />
-                                                {{ $managedUser->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                                <x-icon :name="$managedUser->is_active ? 'lock' : 'check'" class="h-3.5 w-3.5" />
+                                                <span>{{ $managedUser->is_active ? 'Nonaktif' : 'Aktifkan' }}</span>
                                             </button>
                                         </form>
                                     </div>

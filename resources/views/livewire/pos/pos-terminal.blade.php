@@ -69,14 +69,14 @@
 
                         <div class="flex items-center gap-1.5">
                             <button wire:click="$set('showSpoilageModal', true)"
-                                class="btn btn-sm border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                class="btn btn-sm border border-slate-200 bg-white text-slate-600 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700"
                                 title="Catat barang rusak saat produksi (F6)">
                                 <x-icon name="spoilage" class="h-3.5 w-3.5" />
                                 <span>Rusak</span>
-                                <span class="kbd text-[9px] border-amber-300/50 bg-amber-100/60 text-amber-800">F6</span>
+                                <span class="kbd text-[9px]">F6</span>
                             </button>
                             <button wire:click="$set('showMutationModal', true)"
-                                class="btn btn-sm border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                                class="btn btn-sm border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                                 title="Ambil bahan baku dari etalase (F7)">
                                 <x-icon name="swap" class="h-3.5 w-3.5" />
                                 <span>Bahan</span>
@@ -286,110 +286,122 @@
     <!-- PEMBAYARAN -->
     <!-- ============================================================= -->
     @if($showPaymentModal)
+        @php $change = (float) $amountPaid - $this->grandTotal; @endphp
         <div class="modal-backdrop">
-            <div class="modal-card max-w-xl" @click.outside="$wire.set('showPaymentModal', false)">
-                <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-900">Pembayaran</h3>
-                        <p class="text-[10px] text-slate-500">{{ count($cart) }} item &bull; {{ $customerName }}</p>
+            <div class="modal-card payment-modal max-w-lg" @click.outside="$wire.set('showPaymentModal', false)"
+                x-data x-init="$nextTick(() => { $refs.cashInput?.focus(); $refs.cashInput?.select(); })">
+
+                <!-- Header -->
+                <div class="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-3.5">
+                    <div class="min-w-0">
+                        <h3 class="text-[15px] font-semibold leading-tight text-slate-900">Pembayaran</h3>
+                        <p class="mt-0.5 truncate text-[11px] text-slate-500">
+                            {{ count($cart) }} item &bull; {{ $customerName }}
+                        </p>
                     </div>
-                    <button type="button" wire:click="$set('showPaymentModal', false)" class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <button type="button" wire:click="$set('showPaymentModal', false)"
+                        class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="Tutup">
                         <x-icon name="x" class="h-4 w-4" />
                     </button>
                 </div>
 
-                <div class="space-y-3 px-5 py-4">
-                    <!-- Total Tagihan - Compact -->
-                    <div class="rounded-lg bg-slate-900 px-4 py-3 text-white">
-                        <p class="text-[10px] text-slate-400">Total tagihan</p>
-                        <p class="text-2xl font-bold tracking-tight num-tabular">Rp {{ number_format($this->grandTotal, 0, ',', '.') }}</p>
+                <!-- Body (sengaja tanpa area scroll agar kasir tidak perlu menggulir) -->
+                <div class="px-5 py-4">
+                    <!-- Ringkasan: total & kembalian -->
+                    <div class="grid gap-2.5 {{ $paymentMethod === 'CASH' ? 'grid-cols-5' : 'grid-cols-1' }}">
+                        <div class="rounded-lg bg-slate-900 px-4 py-3 text-white {{ $paymentMethod === 'CASH' ? 'col-span-3' : '' }}">
+                            <p class="text-[10px] font-medium uppercase tracking-[0.08em] text-slate-400">Total tagihan</p>
+                            <p class="mt-1 text-2xl font-semibold leading-none tracking-tight num-tabular">
+                                Rp {{ number_format($this->grandTotal, 0, ',', '.') }}
+                            </p>
+                        </div>
+
+                        @if($paymentMethod === 'CASH')
+                            <div class="col-span-2 rounded-lg border px-4 py-3 {{ $change >= 0 ? 'border-emerald-200 bg-emerald-50/70' : 'border-rose-200 bg-rose-50/70' }}">
+                                <p class="text-[10px] font-medium uppercase tracking-[0.08em] {{ $change >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+                                    {{ $change >= 0 ? 'Kembalian' : 'Kurang bayar' }}
+                                </p>
+                                <p class="mt-1 text-2xl font-semibold leading-none tracking-tight num-tabular {{ $change >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+                                    Rp {{ number_format(abs($change), 0, ',', '.') }}
+                                </p>
+                            </div>
+                        @endif
                     </div>
 
-                    <!-- Metode Pembayaran - Inline -->
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" wire:click="$set('paymentMethod', 'CASH')"
-                            class="flex items-center justify-center gap-1.5 rounded-lg border py-2.5 text-xs font-bold transition
-                            {{ $paymentMethod === 'CASH' ? 'border-brand-600 bg-brand-50 text-brand-800 shadow-sm ring-1 ring-brand-500' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">
+                    <!-- Metode pembayaran -->
+                    <div class="mt-3 grid grid-cols-2 gap-2" role="group" aria-label="Metode pembayaran">
+                        <button type="button" wire:click="$set('paymentMethod', 'CASH')" aria-pressed="{{ $paymentMethod === 'CASH' ? 'true' : 'false' }}"
+                            class="inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold transition
+                            {{ $paymentMethod === 'CASH' ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50' }}">
                             <x-icon name="cash" class="h-4 w-4" />
                             Tunai
                         </button>
-                        <button type="button" wire:click="$set('paymentMethod', 'QRIS')"
-                            class="flex items-center justify-center gap-1.5 rounded-lg border py-2.5 text-xs font-bold transition
-                            {{ $paymentMethod === 'QRIS' ? 'border-brand-600 bg-brand-50 text-brand-800 shadow-sm ring-1 ring-brand-500' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">
+                        <button type="button" wire:click="$set('paymentMethod', 'QRIS')" aria-pressed="{{ $paymentMethod === 'QRIS' ? 'true' : 'false' }}"
+                            class="inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold transition
+                            {{ $paymentMethod === 'QRIS' ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50' }}">
                             <x-icon name="qr" class="h-4 w-4" />
                             QRIS
                         </button>
                     </div>
 
                     @if($paymentMethod === 'CASH')
-                        <!-- Uang Diterima -->
-                        <div>
-                            <label class="mb-1 block text-[10px] font-semibold text-slate-600">Uang diterima</label>
-                            <input type="text" inputmode="numeric" step="1000"
-                                wire:model.live="amountPaid"
-                                data-currency="true"
-                                min="0"
-                                class="input py-2.5 text-xl font-bold text-slate-900 num-tabular">
-                        </div>
-
-                        <!-- Quick Cash Buttons - Optimized Grid -->
-                        <div class="space-y-1.5">
-                            <button type="button"
-                                wire:click="setQuickCash({{ (int) $this->grandTotal }})"
-                                class="w-full rounded-md border border-brand-500 bg-brand-600 py-2 text-xs font-bold text-white transition hover:bg-brand-700">
-                                Uang Pas — Rp {{ number_format((int) $this->grandTotal, 0, ',', '.') }}
-                            </button>
-                            
-                            @php $nominals = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]; @endphp
-                            <div class="grid grid-cols-5 gap-1">
-                                @foreach($nominals as $nominal)
-                                    <button type="button"
-                                        wire:click="setQuickCash({{ $nominal }})"
-                                        class="rounded border border-slate-300 bg-white px-1.5 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700">
-                                        @if($nominal >= 1000)
-                                            {{ $nominal / 1000 }}k
-                                        @else
-                                            {{ $nominal }}
-                                        @endif
-                                    </button>
-                                @endforeach
+                        <!-- Uang diterima + uang pas -->
+                        <div class="mt-3 flex items-end gap-2">
+                            <div class="min-w-0 flex-1">
+                                <label for="pos-amount-paid" class="mb-1 block text-[11px] font-medium text-slate-600">Uang diterima</label>
+                                <div class="relative">
+                                    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-slate-400">Rp</span>
+                                    <input type="text" id="pos-amount-paid" inputmode="numeric" step="1000"
+                                        wire:model.live.debounce.250ms="amountPaid"
+                                        data-currency="true"
+                                        min="0"
+                                        x-ref="cashInput"
+                                        @focus="$event.target.select()"
+                                        wire:keydown.enter="executeCheckout"
+                                        autocomplete="off"
+                                        class="input py-2 pl-8 text-lg font-semibold text-slate-900 num-tabular">
+                                </div>
                             </div>
+                            <button type="button" wire:click="setQuickCash({{ (int) $this->grandTotal }})"
+                                title="Isi tepat sebesar total tagihan"
+                                class="btn btn-secondary h-[46px] shrink-0 px-3">
+                                Uang pas
+                            </button>
                         </div>
 
-                        <!-- Kembalian/Kurang Bayar -->
-                        @php $change = (float) $amountPaid - $this->grandTotal; @endphp
-                        <div class="flex items-center justify-between rounded-lg border px-4 py-2.5
-                            {{ $change >= 0 ? 'border-emerald-300 bg-emerald-50' : 'border-rose-300 bg-rose-50' }}">
-                            <span class="text-xs font-bold {{ $change >= 0 ? 'text-emerald-800' : 'text-rose-800' }}">
-                                {{ $change >= 0 ? 'Kembalian' : 'Kurang' }}
-                            </span>
-                            <span class="text-xl font-bold num-tabular {{ $change >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
-                                Rp {{ number_format(abs($change), 0, ',', '.') }}
-                            </span>
+                        <!-- Nominal cepat -->
+                        <div class="mt-2.5 grid grid-cols-4 gap-1.5 sm:grid-cols-5">
+                            @foreach([100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000] as $nominal)
+                                <button type="button" wire:click="setQuickCash({{ $nominal }})"
+                                    class="rounded-md border border-slate-200 bg-white px-1 py-1.5 text-[10px] font-semibold text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 sm:text-[11px]">
+                                    Rp {{ number_format($nominal, 0, ',', '.') }}
+                                </button>
+                            @endforeach
                         </div>
                     @else
-                        <!-- QRIS - Super Compact -->
-                        <div class="rounded-lg border border-slate-300 bg-slate-50 py-4 text-center">
-                            @php
-                                $qrisImagePath = $this->getQrisImagePath();
-                                $qrisExists = $qrisImagePath && file_exists(storage_path('app/public/' . $qrisImagePath));
-                            @endphp
-                            
+                        @php
+                            $qrisImagePath = $this->getQrisImagePath();
+                            $qrisExists = $qrisImagePath && file_exists(storage_path('app/public/' . $qrisImagePath));
+                        @endphp
+
+                        <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-center">
                             @if($qrisExists)
-                                <img src="{{ asset('storage/' . $qrisImagePath) }}" alt="QRIS Code" class="mx-auto h-48 w-48 rounded-lg bg-white p-2 shadow-sm">
-                                <p class="mt-3 text-xs font-bold text-slate-800">Scan QRIS untuk membayar</p>
-                                <p class="mt-0.5 text-lg font-bold text-brand-700 num-tabular">Rp {{ number_format($this->grandTotal, 0, ',', '.') }}</p>
-                                <p class="mt-1 text-[10px] text-slate-500">Pembayaran masuk ke kas bank</p>
+                                <img src="{{ asset('storage/' . $qrisImagePath) }}" alt="Kode QRIS"
+                                    class="mx-auto h-40 w-40 rounded-md border border-slate-200 bg-white object-contain p-1.5">
+                                <p class="mt-2.5 text-xs font-semibold text-slate-800">Scan QRIS untuk membayar</p>
+                                <p class="mt-1 text-[11px] text-slate-500">Pembayaran otomatis masuk ke kas bank</p>
                             @else
-                                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-white text-slate-700 shadow-sm">
-                                    <x-icon name="qr" class="h-8 w-8" />
+                                <span class="mx-auto flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500">
+                                    <x-icon name="qr" class="h-5 w-5" />
                                 </span>
-                                <p class="mt-2 text-xs font-bold text-slate-800">Tunjukkan QRIS ke pembeli</p>
-                                <p class="mt-0.5 text-[10px] text-slate-500">Pembayaran masuk ke kas bank</p>
+                                <p class="mt-2 text-xs font-semibold text-slate-800">Tunjukkan QRIS ke pembeli</p>
+                                <p class="mt-1 text-[11px] text-slate-500">Pembayaran masuk ke kas bank</p>
                                 @auth
                                     @if(auth()->user()->hasAnyRole(['superadmin', 'admin']))
-                                        <div class="mt-3 rounded bg-amber-50 border border-amber-200 px-3 py-2 text-[10px] text-amber-700">
-                                            <strong>Info:</strong> Upload QR code QRIS di <a href="{{ route('settings.qris') }}" class="underline font-semibold hover:text-amber-900">Pengaturan QRIS</a>
+                                        <div class="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] leading-relaxed text-amber-700">
+                                            Upload QR code QRIS di
+                                            <a href="{{ route('settings.qris') }}" class="font-semibold underline underline-offset-2 hover:text-amber-900">Pengaturan QRIS</a>.
                                         </div>
                                     @endif
                                 @endauth
@@ -398,13 +410,17 @@
                     @endif
                 </div>
 
-                <!-- Footer Actions -->
-                <div class="flex items-center gap-2 border-t border-slate-200 px-5 py-3">
-                    <button type="button" wire:click="$set('showPaymentModal', false)" class="btn btn-secondary flex-1">Batal</button>
+                <!-- Footer -->
+                <div class="flex items-center gap-2 border-t border-slate-100 bg-slate-50 px-5 py-3">
+                    <button type="button" wire:click="$set('showPaymentModal', false)" class="btn btn-secondary flex-1">
+                        Batal
+                        <span class="kbd hidden border-slate-300 bg-white text-[9px] sm:inline-flex">Esc</span>
+                    </button>
                     <button type="button" wire:click="executeCheckout" wire:loading.attr="disabled"
                         class="btn btn-success flex-[2]">
                         <x-icon name="check-circle" class="h-4 w-4" />
-                        Selesaikan
+                        <span wire:loading.remove wire:target="executeCheckout">Selesaikan pembayaran</span>
+                        <span wire:loading wire:target="executeCheckout">Memproses…</span>
                     </button>
                 </div>
             </div>

@@ -36,29 +36,29 @@
             <div class="flex items-center gap-4">
                 <!-- Danger Icon -->
                 <template x-if="dialog.type === 'danger'">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600 ring-8 ring-rose-50">
-                        <x-icon name="spoilage" class="h-6 w-6 text-rose-600" />
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600">
+                        <x-icon name="spoilage" class="h-5 w-5" />
                     </div>
                 </template>
 
                 <!-- Warning Icon -->
                 <template x-if="dialog.type === 'warning'">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 ring-8 ring-amber-50">
-                        <x-icon name="spoilage" class="h-6 w-6 text-amber-600" />
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-600">
+                        <x-icon name="spoilage" class="h-5 w-5" />
                     </div>
                 </template>
 
                 <!-- Success Icon -->
                 <template x-if="dialog.type === 'success'">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 ring-8 ring-emerald-50">
-                        <x-icon name="check-circle" class="h-6 w-6 text-emerald-600" />
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600">
+                        <x-icon name="check-circle" class="h-5 w-5" />
                     </div>
                 </template>
 
                 <!-- Primary / Info Icon -->
                 <template x-if="dialog.type === 'primary' || dialog.type === 'info'">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 ring-8 ring-brand-50">
-                        <x-icon name="check-circle" class="h-6 w-6 text-brand-700" />
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 text-brand-700">
+                        <x-icon name="info" class="h-5 w-5" />
                     </div>
                 </template>
 

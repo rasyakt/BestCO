@@ -281,43 +281,43 @@
 
     /* --- Badges & chips ---------------------------------------------------- */
     .badge {
-        @apply inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium;
+        @apply inline-flex items-center gap-1 whitespace-nowrap rounded-[5px] border px-2 py-[3px] text-[10px] font-semibold leading-none;
     }
 
     .badge-success {
-        @apply bg-emerald-50 text-emerald-700;
+        @apply border-emerald-200 bg-emerald-50 text-emerald-700;
     }
 
     .badge-warning {
-        @apply bg-amber-50 text-amber-700;
+        @apply border-amber-200 bg-amber-50 text-amber-700;
     }
 
     .badge-danger {
-        @apply bg-rose-50 text-rose-700;
+        @apply border-rose-200 bg-rose-50 text-rose-700;
     }
 
     .badge-info {
-        @apply bg-sky-50 text-sky-700;
+        @apply border-sky-200 bg-sky-50 text-sky-700;
     }
 
     .badge-brand {
-        @apply bg-brand-50 text-brand-700;
+        @apply border-brand-200 bg-brand-50 text-brand-700;
     }
 
     .badge-purple {
-        @apply bg-violet-50 text-violet-700;
+        @apply border-violet-200 bg-violet-50 text-violet-700;
     }
 
     .badge-neutral {
-        @apply bg-slate-100 text-slate-600;
+        @apply border-slate-200 bg-slate-50 text-slate-600;
     }
 
     .chip {
-        @apply inline-flex items-center gap-1 whitespace-nowrap rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-600;
+        @apply inline-flex items-center gap-1 whitespace-nowrap rounded-[5px] border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-medium leading-none text-slate-600;
     }
 
     .kbd {
-        @apply inline-flex min-w-[1.4rem] items-center justify-center rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-500;
+        @apply inline-flex min-w-[1.35rem] items-center justify-center rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none text-slate-500;
     }
 
     /* --- Tables ------------------------------------------------------------ */
@@ -371,7 +371,7 @@
 
     /* --- Stat cards -------------------------------------------------------- */
     .stat-icon {
-        @apply flex h-9 w-9 items-center justify-center rounded-md;
+        @apply flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white;
     }
 
     .stat-value {
@@ -440,6 +440,17 @@
         }
     }
 
+    /* Dialog pembayaran POS: konten selalu muat tanpa area gulir. */
+    .payment-modal {
+        max-height: calc(100dvh - 2rem);
+    }
+
+    @media (min-width: 640px) {
+        .payment-modal {
+            max-height: calc(100dvh - 3rem);
+        }
+    }
+
     .modal-header {
         flex-shrink: 0;
         display: flex;
@@ -475,12 +486,12 @@
     }
 
     .empty-state-icon {
-        @apply mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-slate-100 text-slate-400;
+        @apply mb-3 flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-400;
     }
 
     /* --- Misc -------------------------------------------------------------- */
     .avatar {
-        @apply flex shrink-0 items-center justify-center rounded-full bg-brand-700 text-[11px] font-semibold text-white;
+        @apply flex shrink-0 items-center justify-center rounded-full bg-brand-50 text-[11px] font-semibold leading-none text-brand-700 ring-1 ring-inset ring-brand-200;
     }
 
     .progress-track {
