@@ -13,6 +13,32 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * @property int $id
+ * @property string $sku
+ * @property string|null $barcode
+ * @property string $name
+ * @property int $category_id
+ * @property int $unit_id
+ * @property \App\Enums\InventoryType $inventory_type
+ * @property string $current_stock
+ * @property string $min_stock_alert
+ * @property string $average_cost
+ * @property string $last_purchase_price
+ * @property string $selling_price
+ * @property int $inventory_account_id
+ * @property int $cogs_account_id
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Category|null $category
+ * @property-read \App\Models\Unit|null $unit
+ * @property-read \App\Models\ChartOfAccount|null $inventoryAccount
+ * @property-read \App\Models\ChartOfAccount|null $cogsAccount
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\StockLedgerEntry> $stockLedgerEntries
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ServiceBom> $asServiceBom
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ServiceBom> $asRawMaterialBom
+ */
 #[Fillable([
     'sku',
     'barcode',

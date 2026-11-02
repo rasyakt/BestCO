@@ -13,6 +13,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $account_code
+ * @property string $account_name
+ * @property \App\Enums\AccountType $account_type
+ * @property string|null $account_subtype
+ * @property \App\Enums\NormalBalance $normal_balance
+ * @property int|null $parent_id
+ * @property bool $is_postable
+ * @property bool $is_system_locked
+ * @property string $opening_balance
+ * @property string $current_balance
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\ChartOfAccount|null $parent
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ChartOfAccount> $children
+ */
 #[Fillable([
     'account_code',
     'account_name',

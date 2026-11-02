@@ -134,13 +134,14 @@ final class RecordBatchPurchaseInboundAction
                     'last_purchase_price' => $price,
                 ]);
 
-                $unitCode = $product->unit ? $product->unit->code : 'UNIT';
+                $unitCode = $product->unit?->code ?? 'UNIT';
+                $inventoryAccountCode = $product->inventoryAccount?->account_code ?? '1-1301';
                 $formattedQty = rtrim(rtrim($qty, '0'), '.');
                 $formattedPrice = number_format((float) $price, 0, ',', '.');
 
                 // Siapkan baris jurnal debit untuk akun persediaan produk
                 $journalLines[] = new JournalLineData(
-                    chartOfAccountCode: $product->inventoryAccount->account_code,
+                    chartOfAccountCode: $inventoryAccountCode,
                     debit: $lineSubtotal,
                     credit: '0.0000',
                     lineDescription: "Masuk {$product->name} ({$formattedQty} {$unitCode} @ Rp {$formattedPrice})",
