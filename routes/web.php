@@ -12,6 +12,7 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SpoilageController;
 use App\Http\Controllers\StockInboundController;
 use App\Http\Controllers\StockMutationController;
+use App\Http\Controllers\StoreSettingController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
@@ -127,6 +128,10 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/settings/qris', [QrisSettingController::class, 'index'])->name('settings.qris');
         Route::post('/settings/qris/upload', [QrisSettingController::class, 'upload'])->name('settings.qris.upload');
         Route::delete('/settings/qris', [QrisSettingController::class, 'delete'])->name('settings.qris.delete');
+        
+        Route::get('/settings/store', [StoreSettingController::class, 'index'])->name('settings.store');
+        Route::put('/settings/store', [StoreSettingController::class, 'update'])->name('settings.store.update');
+        Route::delete('/settings/store/reset', [StoreSettingController::class, 'reset'])->name('settings.store.reset');
     });
 });
 

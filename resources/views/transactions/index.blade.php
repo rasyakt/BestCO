@@ -1,7 +1,23 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="space-y-6" x-data="{ showVoidModal: false, voidTxId: '', voidTxInvoice: '' }">
+<div class="space-y-6" x-data="{
+    showVoidModal: false,
+    voidTxId: '',
+    voidTxInvoice: '',
+    showReceiptModal: false,
+    activeReceipt: null,
+    formatRp(num) {
+        return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+    },
+    openReceipt(data) {
+        this.activeReceipt = data;
+        this.showReceiptModal = true;
+    },
+    printReceipt() {
+        window.print();
+    }
+}">
     <x-page-header
         title="Riwayat Transaksi"
         subtitle="Cari transaksi, cetak ulang struk, atau batalkan transaksi.">
@@ -13,7 +29,7 @@
         </x-slot:actions>
     </x-page-header>
 
-    <!-- Filter -->
+    <!-- Filter Bar -->
     <div class="card p-4">
         <form method="GET" action="{{ route('transactions.index') }}" class="flex flex-col gap-3 lg:flex-row lg:items-end">
             <div class="flex-1">
@@ -46,105 +62,351 @@
         </form>
     </div>
 
-    <!-- Daftar transaksi -->
-    <div class="space-y-3">
-        @forelse($transactions as $tx)
-            <div class="card overflow-hidden">
-                <div class="flex flex-col gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="flex flex-wrap items-center gap-2.5">
-                        <span class="font-mono text-sm font-semibold text-slate-900">{{ $tx->invoice_number }}</span>
-                        <span class="badge {{ $tx->status === 'COMPLETED' ? 'badge-success' : 'badge-danger' }}">
-                            {{ $tx->status === 'COMPLETED' ? 'Selesai' : 'Dibatalkan' }}
-                        </span>
-                        <span class="text-[11px] text-slate-500">{{ $tx->payment_method->value === 'CASH' ? 'Tunai' : 'QRIS' }}</span>
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
-                        <span>{{ $tx->transaction_date->format('d/m/Y H:i') }} WIB</span>
-                        <span class="hidden h-3 w-px bg-slate-200 sm:block"></span>
-                        <span>Kasir: <strong class="font-medium text-slate-700">{{ $tx->cashier->name }}</strong></span>
-                    </div>
+    <!-- Tabel Data Transaksi Konsisten -->
+    <div class="table-shell">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <div>
+                <h2 class="card-title">Daftar Riwayat Transaksi</h2>
+                <p class="card-subtitle">Menampilkan {{ $transactions->count() }} dari total {{ $transactions->total() }} transaksi tercatat.</p>
+            </div>
+            @if($transactions->total() > 0)
+                <div class="flex items-center gap-2">
+                    <span class="badge badge-success text-[11px] font-medium">{{ $transactions->total() }} Transaksi</span>
                 </div>
+            @endif
+        </div>
 
-                <div class="grid grid-cols-1 gap-5 px-5 py-4 lg:grid-cols-2">
-                    <div>
-                        <p class="section-label mb-2">Rincian barang</p>
-                        <div class="space-y-1.5">
-                            @foreach($tx->items as $it)
-                                <div class="flex items-start justify-between gap-4 text-xs">
-                                    <span class="text-slate-600">{{ $it->item_name_snapshot }} <span class="font-medium text-slate-400">&times; {{ (int) $it->qty }}</span></span>
-                                    <span class="shrink-0 font-semibold text-slate-800 num-tabular">Rp {{ number_format((float) $it->line_net_total, 0, ',', '.') }}</span>
+        <div class="w-full overflow-x-auto">
+            <table class="data-table w-full border-collapse">
+                <thead>
+                    <tr>
+                        <th class="text-left whitespace-nowrap px-4 py-3">No. Bukti / Invoice</th>
+                        <th class="text-left whitespace-nowrap px-4 py-3">Pelanggan & Shift</th>
+                        <th class="text-left whitespace-nowrap px-4 py-3">Item Terjual</th>
+                        <th class="text-left whitespace-nowrap px-4 py-3">Pembayaran & Kasir</th>
+                        <th class="text-right whitespace-nowrap px-4 py-3">Total Nilai</th>
+                        <th class="text-center whitespace-nowrap px-4 py-3">Status</th>
+                        <th class="text-right whitespace-nowrap px-4 py-3 w-[110px]">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($transactions as $tx)
+                        @php
+                            $itemCount = $tx->items->count();
+                            $totalQty = (int) $tx->items->sum('qty');
+                            
+                            $cleanNames = $tx->items->map(function ($it) {
+                                $name = trim(preg_replace('/\[.*?\]/', '', $it->item_name_snapshot));
+                                $qty = (int) $it->qty;
+                                return "{$name} ({$qty})";
+                            })->toArray();
+                            
+                            $fullSummary = implode(', ', $cleanNames);
+                            
+                            $displaySummary = implode(', ', array_slice($cleanNames, 0, 2));
+                            if ($itemCount > 2) {
+                                $displaySummary .= ' +' . ($itemCount - 2) . ' lainnya';
+                            }
+
+                            $txReceiptData = [
+                                'id' => $tx->id,
+                                'invoice' => $tx->invoice_number,
+                                'date' => $tx->transaction_date->format('d/m/Y H:i'),
+                                'cashier' => $tx->cashier->name,
+                                'customer' => $tx->customer_name,
+                                'shift' => $tx->posShift?->shift_number ?? '-',
+                                'payment_method' => $tx->payment_method->value === 'CASH' ? 'Tunai' : 'QRIS',
+                                'status' => $tx->status,
+                                'voided_by' => $tx->voidedByTeacher?->name ?? '',
+                                'void_reason' => $tx->void_reason ?? '',
+                                'subtotal_gross' => (float) ($tx->subtotal_retail + $tx->subtotal_service),
+                                'tier_discount' => (float) $tx->tier_discount_total,
+                                'manual_discount' => (float) $tx->manual_discount_total,
+                                'total_discount' => (float) ($tx->tier_discount_total + $tx->manual_discount_total),
+                                'grand_total' => (float) $tx->grand_total,
+                                'amount_paid' => (float) $tx->amount_paid,
+                                'change_amount' => (float) $tx->change_amount,
+                                'items' => $tx->items->map(function ($it) {
+                                    return [
+                                        'name' => $it->item_name_snapshot,
+                                        'qty' => (int) $it->qty,
+                                        'unit_price' => (float) $it->base_unit_price,
+                                        'subtotal_gross' => (float) $it->line_subtotal_gross,
+                                        'discount' => (float) $it->line_total_discount,
+                                        'net_total' => (float) $it->line_net_total,
+                                    ];
+                                })->values()->all(),
+                            ];
+                        @endphp
+                        <tr>
+                            <td class="whitespace-nowrap px-4 py-3">
+                                <div class="font-mono text-xs font-bold text-slate-800">{{ $tx->invoice_number }}</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">{{ $tx->transaction_date->format('d/m/Y H:i') }} WIB</div>
+                            </td>
+                            <td class="whitespace-nowrap px-4 py-3">
+                                <div class="text-xs font-semibold text-slate-800 truncate max-w-[140px]" title="{{ $tx->customer_name }}">
+                                    {{ $tx->customer_name }}
                                 </div>
-                            @endforeach
-                        </div>
-                    </div>
+                                <div class="text-[10px] text-slate-400 font-mono mt-0.5">
+                                    {{ $tx->posShift?->shift_number ?? 'Non-Shift' }}
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-1.5 text-xs text-slate-700 max-w-[280px]" title="{{ $fullSummary }}">
+                                    <span class="badge badge-neutral text-[10px] px-1.5 py-0.5 shrink-0">{{ $itemCount }} item</span>
+                                    <span class="truncate font-medium text-slate-800 text-[11px]">{{ $displaySummary }}</span>
+                                </div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">
+                                    Total: <span class="font-medium text-slate-600">{{ $totalQty }} unit/lbr</span>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap px-4 py-3">
+                                <div>
+                                    @if($tx->payment_method->value === 'CASH')
+                                        <span class="badge badge-neutral text-[10px] px-1.5 py-0.5">Tunai</span>
+                                    @else
+                                        <span class="badge badge-info text-[10px] px-1.5 py-0.5">QRIS</span>
+                                    @endif
+                                </div>
+                                <div class="text-[11px] text-slate-500 mt-0.5 font-medium truncate max-w-[130px]" title="Kasir: {{ $tx->cashier->name }}">
+                                    {{ $tx->cashier->name }}
+                                </div>
+                            </td>
+                            <td class="text-right whitespace-nowrap px-4 py-3">
+                                <div class="font-bold text-xs text-slate-900 num-tabular">
+                                    Rp {{ number_format((float) $tx->grand_total, 0, ',', '.') }}
+                                </div>
+                                <div class="text-[10px] text-slate-400 num-tabular mt-0.5">
+                                    Bayar: {{ number_format((float) $tx->amount_paid, 0, ',', '.') }}
+                                </div>
+                            </td>
+                            <td class="text-center whitespace-nowrap px-4 py-3">
+                                @if($tx->status === 'COMPLETED')
+                                    <span class="badge badge-success text-[10px] px-2 py-0.5">Selesai</span>
+                                @else
+                                    <span class="badge badge-danger text-[10px] px-2 py-0.5">Dibatalkan</span>
+                                    @if($tx->voidedByTeacher)
+                                        <div class="text-[9px] text-rose-500 mt-0.5 truncate max-w-[100px]" title="Dibatalkan oleh {{ $tx->voidedByTeacher->name }}: {{ $tx->void_reason }}">
+                                            {{ $tx->voidedByTeacher->name }}
+                                        </div>
+                                    @endif
+                                @endif
+                            </td>
+                            <td class="text-right whitespace-nowrap px-4 py-3">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button type="button"
+                                        @click="openReceipt(@js($txReceiptData))"
+                                        class="btn btn-secondary btn-sm !py-1 !px-2.5 text-xs inline-flex items-center gap-1.5 text-slate-700 hover:text-brand-600 hover:border-brand-300"
+                                        title="Lihat & Cetak Struk">
+                                        <x-icon name="receipt" class="h-3.5 w-3.5 text-slate-400" />
+                                        <span class="font-medium">Struk</span>
+                                    </button>
 
-                    <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
-                        <div class="space-y-2 text-xs">
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-slate-500">Pelanggan</span>
-                                <span class="font-medium text-slate-800">{{ $tx->customer_name }}</span>
-                            </div>
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-slate-500">Total</span>
-                                <span class="text-base font-semibold text-slate-900 num-tabular">Rp {{ number_format((float) $tx->grand_total, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex items-center justify-between gap-3 border-t border-slate-200 pt-2">
-                                <span class="text-slate-500">Bayar / kembali</span>
-                                <span class="font-medium text-slate-700 num-tabular">
-                                    Rp {{ number_format((float) $tx->amount_paid, 0, ',', '.') }} / Rp {{ number_format((float) $tx->change_amount, 0, ',', '.') }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                @if($tx->status === 'VOIDED')
-                    <div class="mx-5 mb-4 flex flex-col gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-[11px] text-rose-800 sm:flex-row sm:items-center sm:justify-between">
-                        <span>
-                            <strong class="font-semibold">Dibatalkan oleh {{ $tx->voidedByTeacher?->name ?? 'guru' }}.</strong>
-                            @if($tx->void_reason)
-                                <span class="text-rose-600">Alasan: {{ $tx->void_reason }}</span>
-                            @endif
-                        </span>
-                        <span class="shrink-0 text-[10px] text-rose-500">Stok dan jurnal sudah dikembalikan</span>
-                    </div>
-                @else
-                    <div class="flex justify-end border-t border-slate-100 px-5 py-3">
-                        <button type="button"
-                            @click="showVoidModal = true; voidTxId = '{{ $tx->id }}'; voidTxInvoice = '{{ $tx->invoice_number }}'"
-                            class="btn btn-sm border border-rose-200 bg-white text-rose-600 hover:bg-rose-50">
-                            <x-icon name="x-circle" class="h-3.5 w-3.5" />
-                            Batalkan transaksi
-                        </button>
-                    </div>
-                @endif
-            </div>
-        @empty
-            <div class="card">
-                <div class="empty-state">
-                    <span class="empty-state-icon"><x-icon name="receipt" class="h-5 w-5" /></span>
-                    <p class="text-sm font-semibold text-slate-700">Transaksi tidak ditemukan</p>
-                    <p class="mt-1 max-w-sm text-xs leading-relaxed text-slate-400">Ubah kata kunci, status, atau tanggal.</p>
-                    <a href="{{ route('transactions.index', ['date' => '']) }}" class="btn btn-secondary btn-sm mt-4">Reset filter</a>
-                </div>
-            </div>
-        @endforelse
+                                    @if($tx->status === 'COMPLETED')
+                                        <button type="button"
+                                            @click="showVoidModal = true; voidTxId = '{{ $tx->id }}'; voidTxInvoice = '{{ $tx->invoice_number }}'"
+                                            class="btn btn-sm !py-1 !px-2 text-xs border border-rose-200 bg-rose-50/50 text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition-colors"
+                                            title="Batalkan Transaksi (Void)">
+                                            <x-icon name="x-circle" class="h-3.5 w-3.5" />
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state py-10">
+                                    <span class="empty-state-icon"><x-icon name="receipt" class="h-5 w-5" /></span>
+                                    <p class="text-sm font-semibold text-slate-700">Transaksi tidak ditemukan</p>
+                                    <p class="mt-1 max-w-sm text-xs leading-relaxed text-slate-400">Tidak ada riwayat transaksi yang cocok dengan filter pencarian.</p>
+                                    <a href="{{ route('transactions.index', ['date' => '']) }}" class="btn btn-secondary btn-sm mt-4">Reset filter</a>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
         @if($transactions->hasPages())
-            <div class="card px-4 py-3">
+            <div class="border-t border-slate-100 px-5 py-3.5 bg-slate-50/50">
                 {{ $transactions->links() }}
             </div>
         @endif
     </div>
 
-    <!-- Modal pembatalan -->
+    <!-- ============================================================= -->
+    <!-- MODAL PREVIEW STRUK THERMAL -->
+    <!-- ============================================================= -->
+    <div x-show="showReceiptModal" x-cloak x-transition.opacity class="modal-backdrop">
+        <div class="modal-card max-w-sm" @click.outside="showReceiptModal = false">
+            <div class="modal-header">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900">Preview Struk Transaksi</h3>
+                    <p class="mt-0.5 font-mono text-[11px] text-slate-500" x-text="activeReceipt?.invoice"></p>
+                </div>
+                <button type="button" @click="showReceiptModal = false" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <x-icon name="x" class="h-4 w-4" />
+                </button>
+            </div>
+
+            <div class="modal-body max-h-[72vh] overflow-y-auto">
+                <template x-if="activeReceipt">
+                    <div>
+                        <!-- Alert jika transaksi dibatalkan (VOID) -->
+                        <template x-if="activeReceipt.status === 'VOIDED'">
+                            <div class="mb-3 rounded-lg border border-rose-300 bg-rose-50 p-2.5 text-center text-xs text-rose-800">
+                                <p class="font-bold tracking-wide text-rose-700">*** TRANSAKSI TELAH DIBATALKAN ***</p>
+                                <p class="mt-0.5 text-[10px]" x-show="activeReceipt.void_reason" x-text="'Alasan: ' + activeReceipt.void_reason"></p>
+                                <p class="text-[10px] text-rose-600" x-show="activeReceipt.voided_by" x-text="'Oleh: ' + activeReceipt.voided_by"></p>
+                            </div>
+                        </template>
+
+                        <!-- Thermal Receipt Container -->
+                        <div id="thermal-receipt" class="rounded-xl border border-dashed border-slate-300 bg-white p-4 font-mono text-[10px] leading-relaxed text-slate-900 shadow-sm">
+                            <!-- Toko Info -->
+                            <div class="text-center">
+                                <p class="text-[13px] font-bold tracking-[0.08em]">{{ $storeInfo['store_name'] }}</p>
+                                @if(!empty($storeInfo['store_tagline']))
+                                    <p class="text-[9px] text-slate-500">{{ $storeInfo['store_tagline'] }}</p>
+                                @endif
+                                @if(!empty($storeInfo['store_address_line1']))
+                                    <p class="text-[9px] text-slate-500">{{ $storeInfo['store_address_line1'] }}</p>
+                                @endif
+                                @if(!empty($storeInfo['store_address_line2']))
+                                    <p class="text-[9px] text-slate-500">{{ $storeInfo['store_address_line2'] }}</p>
+                                @endif
+                                @if(!empty($storeInfo['store_phone']) || !empty($storeInfo['store_email']))
+                                    <p class="text-[9px] text-slate-500">
+                                        {{ $storeInfo['store_phone'] }}
+                                        @if(!empty($storeInfo['store_phone']) && !empty($storeInfo['store_email'])) • @endif
+                                        {{ $storeInfo['store_email'] }}
+                                    </p>
+                                @endif
+                                <p class="mt-2 border-y border-dashed border-slate-300 py-1 text-[9px]">
+                                    No: <span class="font-semibold" x-text="activeReceipt.invoice"></span>
+                                </p>
+                            </div>
+
+                            <!-- Metadata Transaksi -->
+                            <div class="mt-2 space-y-0.5 text-[9px]">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Tgl</span>
+                                    <span class="font-medium" x-text="activeReceipt.date + ' WIB'"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Kasir</span>
+                                    <span class="font-medium" x-text="activeReceipt.cashier"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Pelanggan</span>
+                                    <span class="font-medium" x-text="activeReceipt.customer"></span>
+                                </div>
+                                <div class="flex justify-between" x-show="activeReceipt.shift && activeReceipt.shift !== '-'">
+                                    <span class="text-slate-500">Shift</span>
+                                    <span class="font-medium" x-text="activeReceipt.shift"></span>
+                                </div>
+                            </div>
+
+                            <!-- Daftar Item Transaksi -->
+                            <div class="mt-2 space-y-1.5 border-y border-dashed border-slate-300 py-2">
+                                <template x-for="(item, idx) in activeReceipt.items" :key="idx">
+                                    <div>
+                                        <p class="font-bold text-slate-900" x-text="item.name"></p>
+                                        <div class="flex justify-between text-[9px] text-slate-500">
+                                            <span x-text="item.qty + ' x ' + Number(item.unit_price).toLocaleString('id-ID')"></span>
+                                            <span class="font-medium text-slate-800" x-text="Number(item.subtotal_gross).toLocaleString('id-ID')"></span>
+                                        </div>
+                                        <template x-if="item.discount > 0">
+                                            <div class="flex justify-between text-[8px] text-slate-500">
+                                                <span>Diskon</span>
+                                                <span class="text-slate-600" x-text="'-' + Number(item.discount).toLocaleString('id-ID')"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Rincian Subtotal & Diskon -->
+                            <div class="mt-2 space-y-0.5 text-[9px]">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Subtotal</span>
+                                    <span class="font-medium" x-text="formatRp(activeReceipt.subtotal_gross)"></span>
+                                </div>
+                                <template x-if="activeReceipt.total_discount > 0">
+                                    <div class="space-y-0.5">
+                                        <template x-if="activeReceipt.tier_discount > 0">
+                                            <div class="flex justify-between text-slate-500">
+                                                <span>Diskon Grosir</span>
+                                                <span x-text="'-' + formatRp(activeReceipt.tier_discount)"></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="activeReceipt.manual_discount > 0">
+                                            <div class="flex justify-between text-slate-500">
+                                                <span>Diskon Kasir</span>
+                                                <span x-text="'-' + formatRp(activeReceipt.manual_discount)"></span>
+                                            </div>
+                                        </template>
+                                        <div class="flex justify-between border-t border-dashed border-slate-300 pt-0.5 font-semibold">
+                                            <span>Total Diskon</span>
+                                            <span x-text="'-' + formatRp(activeReceipt.total_discount)"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Total, Pembayaran, dan Kembalian -->
+                            <div class="mt-1.5 space-y-0.5 border-t border-dashed border-slate-300 pt-1.5">
+                                <div class="flex justify-between text-[11px] font-bold">
+                                    <span>TOTAL</span>
+                                    <span x-text="formatRp(activeReceipt.grand_total)"></span>
+                                </div>
+                                <div class="flex justify-between text-[9px]">
+                                    <span class="text-slate-500" x-text="'Bayar (' + activeReceipt.payment_method + ')'"></span>
+                                    <span class="font-medium" x-text="formatRp(activeReceipt.amount_paid)"></span>
+                                </div>
+                                <div class="flex justify-between text-[9px]">
+                                    <span class="text-slate-500">Kembalian</span>
+                                    <span class="font-medium" x-text="formatRp(activeReceipt.change_amount)"></span>
+                                </div>
+                            </div>
+
+                            <!-- Footer Struk -->
+                            @if(!empty($storeInfo['receipt_footer_line1']) || !empty($storeInfo['receipt_footer_line2']))
+                                <div class="mt-3 border-t border-dashed border-slate-300 pt-2 text-center text-[9px] text-slate-500">
+                                    @if(!empty($storeInfo['receipt_footer_line1']))
+                                        {{ $storeInfo['receipt_footer_line1'] }}<br>
+                                    @endif
+                                    @if(!empty($storeInfo['receipt_footer_line2']))
+                                        {{ $storeInfo['receipt_footer_line2'] }}
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" @click="showReceiptModal = false" class="btn btn-secondary">Tutup</button>
+                <button type="button" @click="printReceipt()" class="btn btn-dark">
+                    <x-icon name="printer" class="h-4 w-4" />
+                    Cetak Struk
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MODAL PEMBATALAN TRANSAKSI (VOID) -->
+    <!-- ============================================================= -->
     <div x-show="showVoidModal" x-cloak x-transition.opacity class="modal-backdrop">
         <div class="modal-card max-w-md" @click.outside="showVoidModal = false">
             <div class="modal-header">
                 <div>
                     <h3 class="text-sm font-semibold text-slate-900">Batalkan transaksi</h3>
-                    <p class="mt-0.5 text-[11px] text-slate-500">Perlu persetujuan guru</p>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Perlu otorisasi & PIN guru piket</p>
                 </div>
                 <button type="button" @click="showVoidModal = false" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
                     <x-icon name="x" class="h-4 w-4" />
@@ -160,7 +422,7 @@
                     </div>
 
                     <div>
-                        <label class="form-label">Guru <span class="text-rose-600">*</span></label>
+                        <label class="form-label">Guru Piket <span class="text-rose-600">*</span></label>
                         <select name="supervisor_teacher_id" required class="select">
                             @foreach($teachers as $teacher)
                                 <option value="{{ $teacher->id }}">{{ $teacher->name }} (NIP: {{ $teacher->nip_nisn ?? '-' }})</option>
@@ -169,14 +431,14 @@
                     </div>
 
                     <div>
-                        <label class="form-label">PIN guru <span class="text-rose-600">*</span></label>
+                        <label class="form-label">PIN Guru <span class="text-rose-600">*</span></label>
                         <input type="password" name="supervisor_pin" maxlength="6" required placeholder="6 digit"
                             class="input font-mono tracking-[0.3em]">
                     </div>
 
                     <div>
-                        <label class="form-label">Alasan <span class="text-rose-600">*</span></label>
-                        <input type="text" name="void_reason" required placeholder="Contoh: Salah input jumlah lembar"
+                        <label class="form-label">Alasan Pembatalan <span class="text-rose-600">*</span></label>
+                        <input type="text" name="void_reason" required placeholder="Contoh: Salah input jumlah lembar / salah produk"
                             class="input">
                     </div>
                 </div>

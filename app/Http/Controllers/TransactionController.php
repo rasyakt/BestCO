@@ -40,10 +40,11 @@ final class TransactionController extends Controller
             $query->whereDate('transaction_date', $date);
         }
 
-        $transactions = $query->paginate(15);
+        $transactions = $query->paginate(25);
         $teachers = User::where('role_type', 'piket_guru')->where('is_active', true)->get();
+        $storeInfo = StoreSettingController::getStoreInfo();
 
-        return view('transactions.index', compact('transactions', 'search', 'status', 'date', 'teachers'));
+        return view('transactions.index', compact('transactions', 'search', 'status', 'date', 'teachers', 'storeInfo'));
     }
 
     public function void(Request $request, int $id, VoidPosTransactionAction $action): RedirectResponse

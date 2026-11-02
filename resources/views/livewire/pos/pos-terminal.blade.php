@@ -568,11 +568,28 @@
                 </div>
 
                 <div class="modal-body">
+                    @php
+                        $storeInfo = \App\Http\Controllers\StoreSettingController::getStoreInfo();
+                    @endphp
                     <div id="thermal-receipt" class="rounded-xl border border-dashed border-slate-300 bg-white p-4 font-mono text-[10px] leading-relaxed text-slate-900">
                         <div class="text-center">
-                            <p class="text-[13px] font-bold tracking-[0.08em]">BESTCO</p>
-                            <p class="text-[9px] text-slate-500">Teaching Factory MPLB</p>
-                            <p class="text-[9px] text-slate-500">SMK Business Center</p>
+                            <p class="text-[13px] font-bold tracking-[0.08em]">{{ $storeInfo['store_name'] }}</p>
+                            @if($storeInfo['store_tagline'])
+                                <p class="text-[9px] text-slate-500">{{ $storeInfo['store_tagline'] }}</p>
+                            @endif
+                            @if($storeInfo['store_address_line1'])
+                                <p class="text-[9px] text-slate-500">{{ $storeInfo['store_address_line1'] }}</p>
+                            @endif
+                            @if($storeInfo['store_address_line2'])
+                                <p class="text-[9px] text-slate-500">{{ $storeInfo['store_address_line2'] }}</p>
+                            @endif
+                            @if($storeInfo['store_phone'] || $storeInfo['store_email'])
+                                <p class="text-[9px] text-slate-500">
+                                    @if($storeInfo['store_phone']){{ $storeInfo['store_phone'] }}@endif
+                                    @if($storeInfo['store_phone'] && $storeInfo['store_email']) • @endif
+                                    @if($storeInfo['store_email']){{ $storeInfo['store_email'] }}@endif
+                                </p>
+                            @endif
                             <p class="mt-2 border-y border-dashed border-slate-300 py-1 text-[9px]">No: {{ $completedTransaction->invoice_number }}</p>
                         </div>
 
@@ -588,25 +605,77 @@
                                     <p class="font-bold">{{ $it->item_name_snapshot }}</p>
                                     <div class="flex justify-between text-[9px] text-slate-500">
                                         <span>{{ (int) $it->qty }} x {{ number_format((float) $it->base_unit_price, 0, ',', '.') }}</span>
-                                        <span class="text-slate-800">{{ number_format((float) $it->line_net_total, 0, ',', '.') }}</span>
+                                        <span class="text-slate-800">{{ number_format((float) $it->line_subtotal_gross, 0, ',', '.') }}</span>
                                     </div>
                                     @if((float) $it->line_total_discount > 0)
-                                        <p class="text-right text-[8px] text-slate-400">Diskon: -{{ number_format((float) $it->line_total_discount, 0, ',', '.') }}</p>
+                                        <div class="flex justify-between text-[8px] text-slate-500">
+                                            <span>Diskon</span>
+                                            <span class="text-slate-600">-{{ number_format((float) $it->line_total_discount, 0, ',', '.') }}</span>
+                                        </div>
                                     @endif
                                 </div>
                             @endforeach
                         </div>
 
-                        <div class="mt-2 space-y-1">
-                            <div class="flex justify-between font-bold"><span>Total</span><span>Rp {{ number_format((float) $completedTransaction->grand_total, 0, ',', '.') }}</span></div>
-                            <div class="flex justify-between text-[9px]"><span>Bayar ({{ $completedTransaction->payment_method->value }})</span><span>Rp {{ number_format((float) $completedTransaction->amount_paid, 0, ',', '.') }}</span></div>
-                            <div class="flex justify-between text-[9px]"><span>Kembalian</span><span>Rp {{ number_format((float) $completedTransaction->change_amount, 0, ',', '.') }}</span></div>
+                        @php
+                            // Hitung subtotal dari semua item (sebelum diskon)
+                            $subtotalGross = (float) $completedTransaction->subtotal_retail + (float) $completedTransaction->subtotal_service;
+                            $totalDiscount = (float) $completedTransaction->tier_discount_total + (float) $completedTransaction->manual_discount_total;
+                        @endphp
+
+                        <div class="mt-2 space-y-0.5 text-[9px]">
+                            <div class="flex justify-between">
+                                <span>Subtotal</span>
+                                <span>Rp {{ number_format($subtotalGross, 0, ',', '.') }}</span>
+                            </div>
+                            
+                            @if($totalDiscount > 0)
+                                @if((float) $completedTransaction->tier_discount_total > 0)
+                                    <div class="flex justify-between text-slate-500">
+                                        <span>Diskon Grosir</span>
+                                        <span>-Rp {{ number_format((float) $completedTransaction->tier_discount_total, 0, ',', '.') }}</span>
+                                    </div>
+                                @endif
+                                
+                                @if((float) $completedTransaction->manual_discount_total > 0)
+                                    <div class="flex justify-between text-slate-500">
+                                        <span>Diskon Kasir</span>
+                                        <span>-Rp {{ number_format((float) $completedTransaction->manual_discount_total, 0, ',', '.') }}</span>
+                                    </div>
+                                @endif
+                                
+                                <div class="flex justify-between border-t border-dashed border-slate-300 pt-0.5">
+                                    <span class="font-semibold">Total Diskon</span>
+                                    <span class="font-semibold">-Rp {{ number_format($totalDiscount, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         </div>
 
-                        <div class="mt-3 border-t border-dashed border-slate-300 pt-2 text-center text-[9px] text-slate-500">
-                            Terima kasih<br>
-                            Laboratorium Praktik MPLB
+                        <div class="mt-1.5 space-y-0.5 border-t border-dashed border-slate-300 pt-1.5">
+                            <div class="flex justify-between font-bold text-[11px]">
+                                <span>TOTAL</span>
+                                <span>Rp {{ number_format((float) $completedTransaction->grand_total, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex justify-between text-[9px]">
+                                <span>Bayar ({{ $completedTransaction->payment_method->value }})</span>
+                                <span>Rp {{ number_format((float) $completedTransaction->amount_paid, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex justify-between text-[9px]">
+                                <span>Kembalian</span>
+                                <span>Rp {{ number_format((float) $completedTransaction->change_amount, 0, ',', '.') }}</span>
+                            </div>
                         </div>
+
+                        @if($storeInfo['receipt_footer_line1'] || $storeInfo['receipt_footer_line2'])
+                            <div class="mt-3 border-t border-dashed border-slate-300 pt-2 text-center text-[9px] text-slate-500">
+                                @if($storeInfo['receipt_footer_line1'])
+                                    {{ $storeInfo['receipt_footer_line1'] }}<br>
+                                @endif
+                                @if($storeInfo['receipt_footer_line2'])
+                                    {{ $storeInfo['receipt_footer_line2'] }}
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
 
