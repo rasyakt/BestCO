@@ -317,9 +317,9 @@
     <!-- ============================================================= -->
     @if($showPaymentModal)
         @php $change = (float) $amountPaid - $this->grandTotal; @endphp
-        <div class="modal-backdrop">
-            <div class="modal-card payment-modal max-w-lg" @click.outside="$wire.set('showPaymentModal', false)"
-                x-data x-init="$nextTick(() => { $refs.cashInput?.focus(); $refs.cashInput?.select(); })">
+    <div class="modal-backdrop">
+        <div class="modal-card payment-modal max-w-2xl" @click.outside="$wire.set('showPaymentModal', false)"
+            x-data x-init="$nextTick(() => { $refs.cashInput?.focus(); $refs.cashInput?.select(); })">
 
                 <!-- Header -->
                 <div class="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-3.5">
@@ -357,6 +357,28 @@
                                 </p>
                             </div>
                         @endif
+                    </div>
+
+                    <!-- Daftar item keranjang -->
+                    <div class="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+                        <p class="text-[10px] font-medium uppercase tracking-[0.08em] text-slate-400 mb-2">Item Keranjang</p>
+                        <div class="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                            @forelse($cart as $item)
+                                <div class="flex items-center justify-between gap-2 text-xs">
+                                    <div class="min-w-0 flex-1 truncate">
+                                        <span class="block text-slate-800 font-medium leading-tight">{{ $item['name'] }}</span>
+                                        <span class="block text-[9px] text-slate-500 truncate">
+                                            {{ $item['type'] === 'RETAIL' ? 'Barang' : 'Layanan' }} &bull; Rp {{ number_format($item['base_price'], 0, ',', '.') }} / unit
+                                        </span>
+                                    </div>
+                                    <span class="text-right num-tabular font-medium text-slate-700">
+                                        {{ (int) $item['qty'] }} x Rp {{ number_format($item['subtotal_net'], 0, ',', '.') }}
+                                    </span>
+                                </div>
+                            @empty
+                                <p class="text-[10px] text-slate-400 text-center">Keranjang kosong</p>
+                            @endforelse
+                        </div>
                     </div>
 
                     <!-- Metode pembayaran -->
