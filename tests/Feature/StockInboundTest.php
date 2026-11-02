@@ -184,5 +184,41 @@ class StockInboundTest extends TestCase
         ]);
         $responseZero->assertSessionHasErrors(['items.0.qty']);
     }
+
+    public function test_admin_can_record_inbound_stock_funded_by_kas_di_bank(): void
+    {
+        $product = Product::firstOrFail();
+        $initialStock = (float) $product->current_stock;
+        $bankAccount = ChartOfAccount::where('account_code', '1-1103')->firstOrFail();
+
+        $payload = [
+            'account_id' => $bankAccount->id,
+            'invoice_number' => 'INV-BANK-001',
+            'notes' => 'Pembelian via transfer bank',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'qty' => 4,
+                    'price' => 25000,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->admin)->post(route('inventory.inbound.store'), $payload);
+        $response->assertRedirect(route('inventory.inbound'));
+        $response->assertSessionHas('success');
+
+        $product->refresh();
+        $this->assertEquals($initialStock + 4, (float) $product->current_stock);
+
+        $journal = JournalEntry::with('items.chartOfAccount')
+            ->where('journal_type', JournalType::PURCHASE)
+            ->latest('id')
+            ->firstOrFail();
+
+        $creditLine = $journal->items->where('credit', '>', 0)->first();
+        $this->assertEquals('1-1103', $creditLine->chartOfAccount->account_code);
+        $this->assertEquals(100000, (float) $creditLine->credit);
+    }
 }
 

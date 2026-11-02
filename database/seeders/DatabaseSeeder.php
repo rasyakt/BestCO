@@ -96,7 +96,7 @@ class DatabaseSeeder extends Seeder
             // Aset
             ['code' => '1-1101', 'name' => 'Kas Laci Kasir (POS Cash)', 'type' => AccountType::ASSET, 'subtype' => 'CASH_BANK', 'normal' => NormalBalance::DEBIT, 'postable' => true],
             ['code' => '1-1102', 'name' => 'Kas di Tangan', 'type' => AccountType::ASSET, 'subtype' => 'CASH_BANK', 'normal' => NormalBalance::DEBIT, 'postable' => true],
-            ['code' => '1-1103', 'name' => 'Bank Operasional / QRIS', 'type' => AccountType::ASSET, 'subtype' => 'CASH_BANK', 'normal' => NormalBalance::DEBIT, 'postable' => true],
+            ['code' => '1-1103', 'name' => 'Kas di Bank', 'type' => AccountType::ASSET, 'subtype' => 'CASH_BANK', 'normal' => NormalBalance::DEBIT, 'postable' => true],
             ['code' => '1-1301', 'name' => 'Persediaan Barang Dagang (Etalase)', 'type' => AccountType::ASSET, 'subtype' => 'INVENTORY_RETAIL', 'normal' => NormalBalance::DEBIT, 'postable' => true],
             ['code' => '1-1302', 'name' => 'Persediaan Bahan Baku Jasa', 'type' => AccountType::ASSET, 'subtype' => 'INVENTORY_RAW', 'normal' => NormalBalance::DEBIT, 'postable' => true],
             // Kewajiban

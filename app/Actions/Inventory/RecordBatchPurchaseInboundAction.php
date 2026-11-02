@@ -19,7 +19,7 @@ use InvalidArgumentException;
 
 final class RecordBatchPurchaseInboundAction
 {
-    private const FUNDING_ACCOUNT_CODES = ['1-1102', '2-1101'];
+    private const FUNDING_ACCOUNT_CODES = ['1-1102', '1-1103', '2-1101'];
 
     /**
      * Catat barang masuk / restock multi-produk secara batch dalam satu transaksi atomik.
@@ -59,7 +59,7 @@ final class RecordBatchPurchaseInboundAction
             $coaCashOrDebt = ChartOfAccount::where('id', $accountId)->lockForUpdate()->firstOrFail();
 
             if (! in_array($coaCashOrDebt->account_code, self::FUNDING_ACCOUNT_CODES, true)) {
-                throw new InvalidArgumentException('Akun pendanaan harus Kas Besar atau Utang Usaha.');
+                throw new InvalidArgumentException('Akun pendanaan harus Kas di Tangan, Kas di Bank, atau Utang Usaha.');
             }
 
             $period = AccountingPeriod::where('is_closed', false)

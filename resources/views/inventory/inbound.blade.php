@@ -68,7 +68,7 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <p class="mt-1 text-[11px] text-slate-500">Kas di Tangan</p>
+                            <p class="mt-1 text-[11px] text-slate-500">Kas di Tangan, Kas di Bank, atau Utang Usaha (Vendor)</p>
                         </div>
 
                         <div>

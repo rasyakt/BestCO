@@ -29,8 +29,10 @@ final class StockInboundController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Akun pendanaan: Kas Besar Brankas (1-1102) atau Utang Usaha (2-1101)
-        $fundingAccounts = ChartOfAccount::whereIn('account_code', ['1-1102', '2-1101'])->get();
+        // Akun pendanaan: Kas di Tangan (1-1102), Kas di Bank (1-1103), atau Utang Usaha (2-1101)
+        $fundingAccounts = ChartOfAccount::whereIn('account_code', ['1-1102', '1-1103', '2-1101'])
+            ->orderBy('account_code')
+            ->get();
 
         // Riwayat transaksi pengadaan barang masuk
         $recentPurchases = JournalEntry::with(['items.chartOfAccount', 'createdBy'])
@@ -49,7 +51,7 @@ final class StockInboundController extends Controller
         $validated = $request->validate([
             'account_id' => [
                 'required',
-                Rule::exists('chart_of_accounts', 'id')->whereIn('account_code', ['1-1102', '2-1101']),
+                Rule::exists('chart_of_accounts', 'id')->whereIn('account_code', ['1-1102', '1-1103', '2-1101']),
             ],
             'invoice_number' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:255'],
@@ -62,8 +64,8 @@ final class StockInboundController extends Controller
             'items.*.qty' => ['required', new StrictQuantity(allowDecimal: true, min: 0.0001)],
             'items.*.price' => ['required', new StrictCurrency(min: 0.0001)],
         ], [
-            'account_id.required' => 'Pilih akun sumber dana (Kas Besar atau Utang Usaha).',
-            'account_id.exists' => 'Akun pendanaan tidak valid. Gunakan Kas Besar atau Utang Usaha.',
+            'account_id.required' => 'Pilih akun sumber dana (Kas di Tangan, Kas di Bank, atau Utang Usaha).',
+            'account_id.exists' => 'Akun pendanaan tidak valid. Gunakan Kas di Tangan, Kas di Bank, atau Utang Usaha.',
             'items.required' => 'Minimal satu produk harus ditambahkan ke daftar barang masuk.',
             'items.min' => 'Minimal satu produk harus ditambahkan ke daftar barang masuk.',
             'items.*.product_id.required' => 'Pilih produk untuk setiap baris.',
