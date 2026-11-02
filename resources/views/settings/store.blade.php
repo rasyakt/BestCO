@@ -13,20 +13,6 @@
         <p class="mt-1 text-sm text-slate-500">Kelola informasi toko yang tampil di struk pembayaran</p>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success mb-6">
-            <x-icon name="check-circle" class="h-4 w-4 shrink-0" />
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="alert alert-danger mb-6">
-            <x-icon name="x-circle" class="h-4 w-4 shrink-0" />
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
-
     <div class="grid gap-6 lg:grid-cols-3">
         <!-- Form Settings -->
         <div class="lg:col-span-2">

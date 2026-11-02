@@ -25,15 +25,6 @@
         </x-slot:actions>
     </x-page-header>
 
-    @if(session('success'))
-        <div class="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50/90 p-4 text-emerald-900 shadow-xs">
-            <x-icon name="check-circle" class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-            <div class="flex-1 text-xs">
-                <p class="font-semibold">{{ session('success') }}</p>
-            </div>
-        </div>
-    @endif
-
     @if($errors->any())
         <div class="flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50/90 p-4 text-rose-900 shadow-xs">
             <x-icon name="x-circle" class="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />

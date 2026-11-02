@@ -28,18 +28,21 @@
             });
         }
     }"
-    x-init="initShortcuts()">
-
-    <!-- Feedback -->
-    @if($feedbackMessage)
-        <div class="alert shrink-0 {{ $feedbackType === 'success' ? 'alert-success' : 'alert-danger' }}">
-            <x-icon :name="$feedbackType === 'success' ? 'check-circle' : 'x-circle'" class="mt-0.5 h-4 w-4 shrink-0" />
-            <span class="flex-1 leading-relaxed">{{ $feedbackMessage }}</span>
-            <button wire:click="$set('feedbackMessage', null)" class="rounded p-0.5 opacity-60 transition hover:bg-black/5 hover:opacity-100">
-                <x-icon name="x" class="h-4 w-4" />
-            </button>
-        </div>
-    @endif
+    x-init="
+        initShortcuts();
+        $watch('$wire.feedbackMessage', val => {
+            if (val && window.bestcoToast) {
+                window.bestcoToast.show(val, $wire.feedbackType || 'info');
+                $wire.set('feedbackMessage', null);
+            }
+        });
+        @if($feedbackMessage)
+            if (window.bestcoToast) {
+                window.bestcoToast.show('{{ addslashes($feedbackMessage) }}', '{{ $feedbackType === 'success' ? 'success' : 'danger' }}');
+                $wire.set('feedbackMessage', null);
+            }
+        @endif
+    ">
 
     <div class="grid min-h-0 flex-1 grid-cols-1 items-stretch gap-4 lg:grid-cols-12">
         <!-- Katalog -->

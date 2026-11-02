@@ -357,38 +357,6 @@
             <main class="app-main mx-auto w-full max-w-[1700px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8
                 {{ $isPosLayout ? 'lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:py-4' : '' }}"
                 :class="(posFocus && {{ $isPosLayout ? 'true' : 'false' }}) ? 'lg:px-4 lg:py-3.5' : ''">
-                @if(session('success'))
-                    <div x-data="{ show: true }" x-show="show" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                        class="mb-5 flex items-start gap-3.5 rounded-xl border border-emerald-200/80 bg-emerald-50/90 p-4 text-xs shadow-xs text-emerald-900">
-                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-emerald-200 bg-white/80 text-emerald-600">
-                            <x-icon name="check-circle" class="h-4 w-4" />
-                        </div>
-                        <div class="flex-1 pt-0.5">
-                            <p class="font-semibold text-emerald-950">Berhasil</p>
-                            <p class="mt-0.5 leading-relaxed text-emerald-800">{{ session('success') }}</p>
-                        </div>
-                        <button type="button" @click="show = false" class="rounded-md p-1 text-emerald-700/60 transition hover:bg-emerald-100 hover:text-emerald-900" aria-label="Tutup">
-                            <x-icon name="x" class="h-4 w-4" />
-                        </button>
-                    </div>
-                @endif
-
-                @if(session('error') || $errors->has('error'))
-                    <div x-data="{ show: true }" x-show="show" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                        class="mb-5 flex items-start gap-3.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-4 text-xs shadow-xs text-rose-900">
-                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-rose-200 bg-white/80 text-rose-600">
-                            <x-icon name="x-circle" class="h-4 w-4" />
-                        </div>
-                        <div class="flex-1 pt-0.5">
-                            <p class="font-semibold text-rose-950">Perhatian</p>
-                            <p class="mt-0.5 leading-relaxed text-rose-800">{{ session('error') ?? $errors->first('error') }}</p>
-                        </div>
-                        <button type="button" @click="show = false" class="rounded-md p-1 text-rose-700/60 transition hover:bg-rose-100 hover:text-rose-900" aria-label="Tutup">
-                            <x-icon name="x" class="h-4 w-4" />
-                        </button>
-                    </div>
-                @endif
-
                 <div class="page-enter {{ $isPosLayout ? 'lg:flex lg:min-h-0 lg:flex-1 lg:flex-col' : '' }}">
                     @yield('content')
                     {{ $slot ?? '' }}
@@ -410,5 +378,8 @@
 
     <!-- Global Custom Confirmation & Alert Dialog -->
     <x-global-dialog />
+
+    <!-- Global Floating Toast Notification System (Non-intrusive Popup) -->
+    <x-toast-container />
 </body>
 </html>
