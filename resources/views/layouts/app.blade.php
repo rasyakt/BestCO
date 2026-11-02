@@ -137,13 +137,8 @@
 
             <!-- Brand -->
             <div class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-4">
-                <a href="{{ $user ? ($user->hasRole('piket_siswa') ? route('pos.terminal') : route('dashboard')) : route('login') }}" class="flex items-center gap-3">
-                    <img src="{{ asset('img/best.png') }}" alt="BESTCO"
-                        class="h-10 w-20 shrink-0 object-cover object-center">
-                    <div class="leading-tight">
-                        <span class="block text-sm font-semibold tracking-wide text-slate-900">BESTCO</span>
-                        <span class="mt-0.5 block text-[11px] text-slate-500">Teaching Factory MPLB</span>
-                    </div>
+                <a href="{{ $user ? ($user->hasRole('piket_siswa') ? route('pos.terminal') : route('dashboard')) : route('login') }}" class="flex items-center">
+                    <x-bestco-logo theme="light" size="sm" />
                 </a>
 
                 <button type="button" @click="sidebarOpen = false"
