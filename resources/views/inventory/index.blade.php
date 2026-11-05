@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="space-y-6" x-data="inventoryManager()" @keydown.escape.window="closeMenu()">
+<div class="space-y-6" x-data="inventoryManager()" @keydown.escape.window="closeMenu()" @scroll.window="closeMenu()" @resize.window="closeMenu()">
     <x-page-header
         title="Persediaan"
         subtitle="Stok barang etalase dan bahan baku jasa.">
@@ -191,14 +191,15 @@
 
                                         <div x-show="activeMenuId === 'p-{{ $p->id }}'"
                                             x-cloak
-                                            x-transition:enter="transition ease-out duration-100"
-                                            x-transition:enter-start="transform opacity-0 scale-95"
-                                            x-transition:enter-end="transform opacity-100 scale-100"
-                                            x-transition:leave="transition ease-in duration-75"
-                                            x-transition:leave-start="transform opacity-100 scale-100"
-                                            x-transition:leave-end="transform opacity-0 scale-95"
-                                            :class="isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'"
-                                            class="absolute right-0 z-50 w-44 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-lg ring-1 ring-black/5">
+                                            x-transition.opacity.duration.100ms
+                                            :style="{
+                                                position: 'fixed',
+                                                top: menuPos.top,
+                                                bottom: menuPos.bottom,
+                                                right: menuPos.right,
+                                                zIndex: 9999
+                                            }"
+                                            class="w-44 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
 
                                             <button type="button"
                                                 @click="closeMenu(); openRestockModal(@js($p->id))"
@@ -267,8 +268,15 @@
                                     </button>
                                     <div x-show="activeMenuId === 'pm-{{ $p->id }}'"
                                         x-cloak
-                                        x-transition.opacity
-                                        class="absolute right-0 z-50 mt-1 w-44 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-lg ring-1 ring-black/5">
+                                        x-transition.opacity.duration.100ms
+                                        :style="{
+                                            position: 'fixed',
+                                            top: menuPos.top,
+                                            bottom: menuPos.bottom,
+                                            right: menuPos.right,
+                                            zIndex: 9999
+                                        }"
+                                        class="w-44 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
                                         <button type="button"
                                             @click="closeMenu(); openRestockModal(@js($p->id))"
                                             class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-700">
@@ -457,14 +465,15 @@
 
                                         <div x-show="activeMenuId === 's-{{ $srv->id }}'"
                                             x-cloak
-                                            x-transition:enter="transition ease-out duration-100"
-                                            x-transition:enter-start="transform opacity-0 scale-95"
-                                            x-transition:enter-end="transform opacity-100 scale-100"
-                                            x-transition:leave="transition ease-in duration-75"
-                                            x-transition:leave-start="transform opacity-100 scale-100"
-                                            x-transition:leave-end="transform opacity-0 scale-95"
-                                            :class="isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'"
-                                            class="absolute right-0 z-50 w-44 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-lg ring-1 ring-black/5">
+                                            x-transition.opacity.duration.100ms
+                                            :style="{
+                                                position: 'fixed',
+                                                top: menuPos.top,
+                                                bottom: menuPos.bottom,
+                                                right: menuPos.right,
+                                                zIndex: 9999
+                                            }"
+                                            class="w-44 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
 
                                             @if(auth()->user()?->hasAnyRole(['superadmin', 'admin']))
                                                 <button type="button"
@@ -1124,9 +1133,10 @@ function inventoryManager() {
         selectedProductId: productsData[0]?.id || null,
 
         activeMenuId: null,
-        isNearBottom: false,
+        menuPos: { top: '0px', right: '0px', bottom: 'auto' },
 
         toggleMenu(id, event) {
+            if (event) event.stopPropagation();
             if (this.activeMenuId === id) {
                 this.activeMenuId = null;
                 return;
@@ -1134,8 +1144,13 @@ function inventoryManager() {
             this.activeMenuId = id;
             if (event) {
                 const rect = event.currentTarget.getBoundingClientRect();
-                // Jika tombol berada di 200px terbawah dari layar, buka ke atas
-                this.isNearBottom = (window.innerHeight - rect.bottom) < 200;
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const openUp = spaceBelow < 170 && rect.top > 170;
+                this.menuPos = {
+                    top: openUp ? 'auto' : (rect.bottom + 4) + 'px',
+                    bottom: openUp ? (window.innerHeight - rect.top + 4) + 'px' : 'auto',
+                    right: Math.max(12, window.innerWidth - rect.right) + 'px',
+                };
             }
         },
 

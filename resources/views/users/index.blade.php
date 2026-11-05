@@ -13,7 +13,7 @@
 
 <div class="space-y-6" x-data="{
     activeMenuId: null,
-    isNearBottom: false,
+    menuPos: { top: '0px', right: '0px', bottom: 'auto' },
     toggleMenu(id, event) {
         if (event) event.stopPropagation();
         if (this.activeMenuId === id) {
@@ -23,7 +23,13 @@
         this.activeMenuId = id;
         if (event) {
             const rect = event.currentTarget.getBoundingClientRect();
-            this.isNearBottom = (window.innerHeight - rect.bottom) < 200;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const openUp = spaceBelow < 170 && rect.top > 170;
+            this.menuPos = {
+                top: openUp ? 'auto' : (rect.bottom + 4) + 'px',
+                bottom: openUp ? (window.innerHeight - rect.top + 4) + 'px' : 'auto',
+                right: Math.max(12, window.innerWidth - rect.right) + 'px',
+            };
         }
     },
     closeMenu() {
@@ -44,7 +50,7 @@
             }
         });
     }
-}" @keydown.escape.window="closeMenu()">
+}" @keydown.escape.window="closeMenu()" @scroll.window="closeMenu()" @resize.window="closeMenu()">
     <x-page-header
         title="Kelola Pengguna"
         subtitle="Atur akun, role, dan status akses sesuai tingkatan kewenangan Anda.">
@@ -167,7 +173,7 @@
                 </a>
             </div>
         @else
-            <div class="w-full overflow-x-auto">
+            <div class="w-full overflow-x-auto" @scroll.passive="closeMenu()">
                 <table class="data-table w-full border-collapse">
                     <thead>
                         <tr>
@@ -248,14 +254,15 @@
 
                                         <div x-show="activeMenuId === 'u-{{ $managedUser->id }}'"
                                             x-cloak
-                                            x-transition:enter="transition ease-out duration-100"
-                                            x-transition:enter-start="transform opacity-0 scale-95"
-                                            x-transition:enter-end="transform opacity-100 scale-100"
-                                            x-transition:leave="transition ease-in duration-75"
-                                            x-transition:leave-start="transform opacity-100 scale-100"
-                                            x-transition:leave-end="transform opacity-0 scale-95"
-                                            :class="isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'"
-                                            class="absolute right-0 z-50 w-44 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
+                                            x-transition.opacity.duration.100ms
+                                            :style="{
+                                                position: 'fixed',
+                                                top: menuPos.top,
+                                                bottom: menuPos.bottom,
+                                                right: menuPos.right,
+                                                zIndex: 9999
+                                            }"
+                                            class="w-44 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
 
                                             <a href="{{ route('users.edit', $managedUser) }}"
                                                 @click="closeMenu()"
