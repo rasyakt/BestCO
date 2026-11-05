@@ -32,6 +32,17 @@ final class QrisSettingController extends Controller
             'qris_image.max' => 'Ukuran file maksimal 2MB.',
         ]);
 
+        // Validasi magic bytes — pastikan konten file benar-benar gambar
+        $file = $request->file('qris_image');
+        $realMime = (new \finfo(FILEINFO_MIME_TYPE))->file($file->getPathname());
+        $allowedMimes = ['image/png', 'image/jpeg'];
+
+        if (! in_array($realMime, $allowedMimes, true)) {
+            return back()->withErrors([
+                'qris_image' => 'File ditolak: konten file tidak sesuai dengan ekstensi gambar yang diizinkan.',
+            ]);
+        }
+
         try {
             // Hapus file lama jika ada
             $oldPath = $this->getQrisImagePath();
