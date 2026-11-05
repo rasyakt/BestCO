@@ -4,12 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#111827">
-    <title>{{ $title ?? 'BESTCO — Kasir & Persediaan' }}</title>
+    @php
+        $appIdentity = \App\Services\Setting\AppIdentityService::get();
+    @endphp
+    <title>{{ $title ?? ($appIdentity['app_name'] . ' — ' . $appIdentity['app_tagline']) }}</title>
 
     @include('partials.theme-script')
 
-    <link rel="icon" type="image/png" href="{{ asset('img/best.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('img/best.png') }}">
+    <link rel="icon" type="image/png" href="{{ $appIdentity['has_custom_logo'] ? $appIdentity['app_logo_url'] : asset('img/best.png') }}">
+    <link rel="apple-touch-icon" href="{{ $appIdentity['has_custom_logo'] ? $appIdentity['app_logo_url'] : asset('img/best.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,10 +57,11 @@
             request()->routeIs('settings.store*') => 'Informasi Toko',
             request()->routeIs('settings.qris*') => 'Pengaturan QRIS',
             request()->routeIs('settings.features*') => 'Pengaturan Fitur',
+            request()->routeIs('dev.*') => 'Developer Console',
             request()->routeIs('theme.*') => 'Tema',
             request()->routeIs('users.*') => 'Kelola Pengguna',
             request()->routeIs('profile.*') => 'Profil Akun',
-            default => 'BESTCO',
+            default => $appIdentity['app_name'],
         };
 
         $featureManager = app(\App\Services\Feature\FeatureManager::class);
@@ -102,6 +106,7 @@
                     ['label' => 'Pengaturan QRIS', 'route' => 'settings.qris', 'icon' => 'qr', 'active' => 'settings.qris*', 'feature' => 'settings_qris'],
                     ['label' => 'Tema', 'route' => 'theme.index', 'icon' => 'palette', 'active' => 'theme.*', 'feature' => 'theme'],
                     ['label' => 'Pengaturan Fitur', 'route' => 'settings.features', 'icon' => 'shield', 'active' => 'settings.features*', 'roles' => ['superadmin']],
+                    ['label' => 'Developer', 'route' => 'dev.index', 'icon' => 'code', 'active' => 'dev.*', 'roles' => ['superadmin']],
                 ],
             ],
         ];
@@ -344,6 +349,10 @@
                                                 <x-icon name="shield" class="h-4 w-4 text-slate-400" />
                                                 Pengaturan Fitur
                                             </a>
+                                            <a href="{{ route('dev.index') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-brand-600 transition hover:bg-brand-50 hover:text-brand-700 dark:text-brand-400 dark:hover:bg-slate-800">
+                                                <x-icon name="code" class="h-4 w-4 text-brand-500" />
+                                                Developer Console
+                                            </a>
                                             <a href="{{ route('theme.index') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                                                 <x-icon name="palette" class="h-4 w-4 text-slate-400" />
                                                 Tema
@@ -388,8 +397,8 @@
             @unless($isPosLayout)
             <footer class="no-print border-t border-slate-200 px-4 py-4 sm:px-6 lg:px-8">
                 <div class="mx-auto flex max-w-[1600px] flex-col items-center justify-between gap-1 text-[11px] text-slate-400 sm:flex-row">
-                    <span>&copy; {{ now()->year }} BESTCO — Teaching Factory MPLB</span>
-                    <span>Sistem kasir dan persediaan sekolah</span>
+                    <span>&copy; {{ now()->year }} {{ $appIdentity['app_name'] }} — {{ $appIdentity['app_tagline'] }}</span>
+                    <span>{{ $appIdentity['footer_text'] }}</span>
                 </div>
             </footer>
             @endunless

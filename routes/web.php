@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeveloperController;
 use App\Http\Controllers\FeatureSettingController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PiketAttendanceController;
@@ -189,5 +190,12 @@ Route::middleware('auth')->group(function (): void {
         Route::put('/settings/features', [FeatureSettingController::class, 'update'])->name('settings.features.update');
         Route::post('/settings/features/reset', [FeatureSettingController::class, 'reset'])->name('settings.features.reset');
         Route::post('/settings/features/enable-all', [FeatureSettingController::class, 'enableAll'])->name('settings.features.enableAll');
+
+        // DEVELOPER CONSOLE (KHUSUS SUPERADMIN MURNI - BEBAS DARI MATRIKS FEATURE)
+        Route::get('/developer', [DeveloperController::class, 'index'])->name('dev.index');
+        Route::put('/developer/identity', [DeveloperController::class, 'updateIdentity'])->name('dev.identity.update');
+        Route::delete('/developer/identity/logo', [DeveloperController::class, 'resetLogo'])->name('dev.identity.resetLogo');
+        Route::delete('/developer/logs', [DeveloperController::class, 'clearLogs'])->name('dev.logs.clear');
+        Route::get('/developer/logs/download', [DeveloperController::class, 'downloadLogs'])->name('dev.logs.download');
     });
 });

@@ -4,12 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
-    <title>Masuk — BESTCO Teaching Factory</title>
+    @php $appIdentity = \App\Services\Setting\AppIdentityService::get(); @endphp
+    <title>Masuk — {{ $appIdentity['app_name'] }} {{ $appIdentity['app_tagline'] }}</title>
 
     @include('partials.theme-script')
 
-    <link rel="icon" type="image/png" href="{{ asset('img/best.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('img/best.png') }}">
+    <link rel="icon" type="image/png" href="{{ $appIdentity['has_custom_logo'] ? $appIdentity['app_logo_url'] : asset('img/best.png') }}">
+    <link rel="apple-touch-icon" href="{{ $appIdentity['has_custom_logo'] ? $appIdentity['app_logo_url'] : asset('img/best.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
