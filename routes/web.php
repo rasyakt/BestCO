@@ -126,6 +126,20 @@ Route::middleware('auth')->group(function (): void {
             ->middleware('role:superadmin,admin')
             ->name('inventory.restock');
         Route::get('/inventory/{id}/ledger', [InventoryController::class, 'ledger'])->name('inventory.ledger');
+
+        // Dynamic Master Data: Kategori & Satuan
+        Route::post('/inventory/categories', [InventoryController::class, 'storeCategory'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.categories.store');
+        Route::delete('/inventory/categories/{id}', [InventoryController::class, 'destroyCategory'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.categories.destroy');
+        Route::post('/inventory/units', [InventoryController::class, 'storeUnit'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.units.store');
+        Route::delete('/inventory/units/{id}', [InventoryController::class, 'destroyUnit'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.units.destroy');
     });
 
     // Barang Masuk (Inbound)

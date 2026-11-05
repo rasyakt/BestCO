@@ -35,27 +35,59 @@
                         x-transition:leave="transition ease-in duration-75"
                         x-transition:leave-start="transform opacity-100 scale-100"
                         x-transition:leave-end="transform opacity-0 scale-95"
-                        class="absolute right-0 z-50 mt-1.5 w-56 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-lg ring-1 ring-black/5">
+                        class="absolute right-0 z-50 mt-1.5 w-64 rounded-xl border border-slate-200/90 bg-white p-1.5 text-left shadow-xl ring-1 ring-slate-900/5">
+
+                        <div class="px-2.5 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Pendaftaran Baru
+                        </div>
 
                         <button type="button" @click="addMenuOpen = false; openAddProductModal()"
-                            class="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-700">
-                            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-brand-50 text-brand-600">
+                            class="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-slate-50">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-slate-50 text-slate-700 transition group-hover:border-slate-300 group-hover:bg-white group-hover:text-slate-900">
                                 <x-icon name="package" class="h-4 w-4" />
                             </div>
-                            <div class="text-left">
-                                <p class="font-semibold text-slate-800">Tambah Produk</p>
-                                <p class="text-[10px] text-slate-400">Barang etalase & bahan baku</p>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold text-slate-800 transition group-hover:text-slate-900">Tambah Produk</p>
+                                <p class="text-[11px] text-slate-500">Barang etalase & bahan baku</p>
                             </div>
                         </button>
 
                         <button type="button" @click="addMenuOpen = false; openAddServiceModal()"
-                            class="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-700">
-                            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-600">
-                                <x-icon name="sparkles" class="h-4 w-4" />
+                            class="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-slate-50">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-slate-50 text-slate-700 transition group-hover:border-slate-300 group-hover:bg-white group-hover:text-slate-900">
+                                <x-icon name="printer" class="h-4 w-4" />
                             </div>
-                            <div class="text-left">
-                                <p class="font-semibold text-slate-800">Tambah Layanan</p>
-                                <p class="text-[10px] text-slate-400">Fotocopy, print, laminating, dsb</p>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold text-slate-800 transition group-hover:text-slate-900">Tambah Layanan</p>
+                                <p class="text-[11px] text-slate-500">Fotocopy, print, jilid, laminating</p>
+                            </div>
+                        </button>
+
+                        <div class="my-1.5 border-t border-slate-100"></div>
+
+                        <div class="px-2.5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Master Data
+                        </div>
+
+                        <button type="button" @click="addMenuOpen = false; openManageCategoriesModal()"
+                            class="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-slate-50">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-slate-50 text-slate-700 transition group-hover:border-slate-300 group-hover:bg-white group-hover:text-slate-900">
+                                <x-icon name="layers" class="h-4 w-4" />
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold text-slate-800 transition group-hover:text-slate-900">Kelola Kategori</p>
+                                <p class="text-[11px] text-slate-500">Struktur grup & kategori master</p>
+                            </div>
+                        </button>
+
+                        <button type="button" @click="addMenuOpen = false; openManageUnitsModal()"
+                            class="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-slate-50">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-slate-50 text-slate-700 transition group-hover:border-slate-300 group-hover:bg-white group-hover:text-slate-900">
+                                <x-icon name="scale" class="h-4 w-4" />
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold text-slate-800 transition group-hover:text-slate-900">Kelola Satuan</p>
+                                <p class="text-[11px] text-slate-500">Standar satuan & nilai desimal</p>
                             </div>
                         </button>
                     </div>
@@ -537,7 +569,11 @@
                         <div class="grid grid-cols-2 gap-3">
                             <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition"
                                 :class="newProd.inventory_type === 'RETAIL' ? 'border-brand-500 bg-brand-50/50 ring-1 ring-brand-500' : 'border-slate-200 bg-white hover:bg-slate-50'">
-                                <input type="radio" name="inventory_type" value="RETAIL" x-model="newProd.inventory_type" class="mt-0.5 text-brand-600 focus:ring-brand-500">
+                                <input type="radio" name="inventory_type" value="RETAIL"
+                                <input type="radio" name="inventory_type" value="RETAIL"
+                                    x-model="newProd.inventory_type"
+                                    @change="onInventoryTypeChange('RETAIL')"
+                                    class="mt-0.5 text-brand-600 focus:ring-brand-500">
                                 <div>
                                     <p class="text-xs font-semibold text-slate-900">Barang Etalase (Ritel)</p>
                                     <p class="mt-0.5 text-[11px] text-slate-500">Dijual langsung di kasir POS (ATK, pulpen, buku, dll).</p>
@@ -545,7 +581,10 @@
                             </label>
                             <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition"
                                 :class="newProd.inventory_type === 'RAW_MATERIAL' ? 'border-brand-500 bg-brand-50/50 ring-1 ring-brand-500' : 'border-slate-200 bg-white hover:bg-slate-50'">
-                                <input type="radio" name="inventory_type" value="RAW_MATERIAL" x-model="newProd.inventory_type" class="mt-0.5 text-brand-600 focus:ring-brand-500">
+                                <input type="radio" name="inventory_type" value="RAW_MATERIAL"
+                                    x-model="newProd.inventory_type"
+                                    @change="onInventoryTypeChange('RAW_MATERIAL')"
+                                    class="mt-0.5 text-brand-600 focus:ring-brand-500">
                                 <div>
                                     <p class="text-xs font-semibold text-slate-900">Bahan Baku Jasa</p>
                                     <p class="mt-0.5 text-[11px] text-slate-500">Dipakai operasional jasa (kertas fotocopy, toner, plastik laminating).</p>
@@ -567,14 +606,25 @@
                         </div>
 
                         <div>
-                            <label for="prod_category_id" class="form-label flex items-center gap-1.5">
-                                <span>Kategori</span>
-                                <span class="text-rose-500">*</span>
-                            </label>
-                            <select id="prod_category_id" name="category_id" class="select input w-full" required>
-                                @foreach($categories as $cat)
-                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                @endforeach
+                            <div class="flex items-center justify-between">
+                                <label for="prod_category_id" class="form-label flex items-center gap-1.5 mb-0">
+                                    <span>Kategori</span>
+                                    <span class="text-rose-500">*</span>
+                                </label>
+                                <button type="button" @click="openQuickAddCategory(newProd.inventory_type)"
+                                    class="text-[11px] font-semibold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1">
+                                    <x-icon name="plus" class="h-3 w-3" />
+                                    <span>Kategori Baru</span>
+                                </button>
+                            </div>
+                            <select id="prod_category_id" name="category_id" x-model="newProd.category_id" class="select input w-full mt-1" required>
+                                <template x-for="cat in categoriesList" :key="cat.id">
+                                    <option :value="cat.id"
+                                        x-text="cat.name"
+                                        :hidden="newProd.inventory_type !== cat.category_scope && cat.category_scope !== 'SERVICE'"
+                                        :disabled="newProd.inventory_type !== cat.category_scope">
+                                    </option>
+                                </template>
                             </select>
                         </div>
                     </div>
@@ -582,14 +632,21 @@
                     <!-- Satuan & SKU / Barcode -->
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                         <div>
-                            <label for="prod_unit_id" class="form-label flex items-center gap-1.5">
-                                <span>Satuan</span>
-                                <span class="text-rose-500">*</span>
-                            </label>
-                            <select id="prod_unit_id" name="unit_id" class="select input w-full" required>
-                                @foreach($units as $u)
-                                    <option value="{{ $u->id }}">{{ $u->code }} ({{ $u->name }})</option>
-                                @endforeach
+                            <div class="flex items-center justify-between">
+                                <label for="prod_unit_id" class="form-label flex items-center gap-1.5 mb-0">
+                                    <span>Satuan</span>
+                                    <span class="text-rose-500">*</span>
+                                </label>
+                                <button type="button" @click="openQuickAddUnit()"
+                                    class="text-[11px] font-semibold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1">
+                                    <x-icon name="plus" class="h-3 w-3" />
+                                    <span>Satuan Baru</span>
+                                </button>
+                            </div>
+                            <select id="prod_unit_id" name="unit_id" x-model="newProd.unit_id" class="select input w-full mt-1" required>
+                                <template x-for="u in unitsList" :key="u.id">
+                                    <option :value="u.id" x-text="u.code + ' (' + u.name + ')'"></option>
+                                </template>
                             </select>
                         </div>
 
@@ -892,9 +949,9 @@
                         <div>
                             <label class="form-label">Satuan</label>
                             <select name="unit_id" x-model="editProd.unit_id" class="select input w-full" required>
-                                @foreach($units as $u)
-                                    <option value="{{ $u->id }}">{{ $u->code }} ({{ $u->name }})</option>
-                                @endforeach
+                                <template x-for="u in unitsList" :key="u.id">
+                                    <option :value="u.id" x-text="u.code + ' (' + u.name + ')'"></option>
+                                </template>
                             </select>
                         </div>
                     </div>
@@ -1121,14 +1178,339 @@
             </form>
         </div>
     </div>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL: KELOLA KATEGORI MASTER                                           -->
+    <!-- ====================================================================== -->
+    <div x-show="showManageCategoriesModal" x-cloak x-transition.opacity class="modal-backdrop">
+        <div class="modal-card max-w-2xl" @click.outside="showManageCategoriesModal = false">
+            <div class="modal-header">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <x-icon name="layers" class="h-4 w-4 text-slate-700" />
+                        <span>Kelola Kategori Master</span>
+                    </h3>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Tambah kategori baru atau hapus kategori yang belum digunakan.</p>
+                </div>
+                <button type="button" @click="showManageCategoriesModal = false" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <x-icon name="x" class="h-4 w-4" />
+                </button>
+            </div>
+
+            <div class="modal-body space-y-4">
+                <div x-show="catForm.error" x-cloak class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+                    <span x-text="catForm.error"></span>
+                </div>
+
+                <!-- Form Tambah Kategori -->
+                <div class="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5">
+                    <h4 class="text-xs font-semibold text-slate-800 mb-2">Tambah Kategori Baru</h4>
+                    <form @submit.prevent="saveCategory(false)" class="flex flex-col sm:flex-row gap-2">
+                        <div class="flex-1">
+                            <input type="text" x-model="catForm.name" placeholder="Nama kategori baru..." required
+                                class="input w-full text-xs">
+                        </div>
+                        <div class="w-full sm:w-48">
+                            <select x-model="catForm.category_scope" class="select input w-full text-xs" required>
+                                <option value="RETAIL">Barang Etalase (Ritel)</option>
+                                <option value="RAW_MATERIAL">Bahan Baku Jasa</option>
+                                <option value="SERVICE">Layanan Jasa</option>
+                            </select>
+                        </div>
+                        <button type="submit" :disabled="catForm.loading" class="btn btn-primary text-xs shrink-0 inline-flex items-center gap-1.5">
+                            <x-icon name="plus" class="h-3.5 w-3.5" />
+                            <span x-text="catForm.loading ? 'Menyimpan...' : 'Tambah'"></span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tabel Daftar Kategori -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-800 mb-2 flex items-center justify-between">
+                        <span>Daftar Kategori</span>
+                        <span class="text-[11px] font-normal text-slate-500" x-text="categoriesList.length + ' kategori terdaftar'"></span>
+                    </h4>
+                    <div class="overflow-x-auto rounded-lg border border-slate-200 max-h-64 overflow-y-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-50 text-[11px] font-semibold text-slate-500 sticky top-0 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-3 py-2">Nama Kategori</th>
+                                    <th class="px-3 py-2">Jenis / Scope</th>
+                                    <th class="px-3 py-2 text-center">Penggunaan</th>
+                                    <th class="px-3 py-2 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="cat in categoriesList" :key="cat.id">
+                                    <tr class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="px-3 py-2.5 font-medium text-slate-900" x-text="cat.name"></td>
+                                        <td class="px-3 py-2.5">
+                                            <span x-show="cat.category_scope === 'RETAIL'" class="badge badge-brand text-[10px]">Ritel</span>
+                                            <span x-show="cat.category_scope === 'RAW_MATERIAL'" class="badge bg-purple-50 text-purple-700 border-purple-200 text-[10px]">Bahan Baku</span>
+                                            <span x-show="cat.category_scope === 'SERVICE'" class="badge bg-amber-50 text-amber-700 border-amber-200 text-[10px]">Layanan</span>
+                                        </td>
+                                        <td class="px-3 py-2.5 text-center text-[11px] text-slate-500">
+                                            <span x-text="(cat.products_count || 0) + ' produk' + (cat.category_scope === 'SERVICE' ? ', ' + (cat.services_count || 0) + ' layanan' : '')"></span>
+                                        </td>
+                                        <td class="px-3 py-2.5 text-right">
+                                            <template x-if="(cat.products_count || 0) === 0 && (cat.services_count || 0) === 0">
+                                                <button type="button" @click="deleteCategory(cat)"
+                                                    class="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:underline">
+                                                    <x-icon name="trash" class="h-3.5 w-3.5" />
+                                                    <span>Hapus</span>
+                                                </button>
+                                            </template>
+                                            <template x-if="(cat.products_count || 0) > 0 || (cat.services_count || 0) > 0">
+                                                <span class="text-[10px] text-slate-400 italic">Digunakan</span>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" @click="showManageCategoriesModal = false" class="btn btn-secondary">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL: KELOLA SATUAN MASTER                                             -->
+    <!-- ====================================================================== -->
+    <div x-show="showManageUnitsModal" x-cloak x-transition.opacity class="modal-backdrop">
+        <div class="modal-card max-w-2xl" @click.outside="showManageUnitsModal = false">
+            <div class="modal-header">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <x-icon name="scale" class="h-4 w-4 text-slate-700" />
+                        <span>Kelola Satuan (Unit) Master</span>
+                    </h3>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Tambah satuan baru atau hapus satuan yang belum digunakan dalam inventaris.</p>
+                </div>
+                <button type="button" @click="showManageUnitsModal = false" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <x-icon name="x" class="h-4 w-4" />
+                </button>
+            </div>
+
+            <div class="modal-body space-y-4">
+                <div x-show="unitForm.error" x-cloak class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+                    <span x-text="unitForm.error"></span>
+                </div>
+
+                <!-- Form Tambah Satuan -->
+                <div class="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5">
+                    <h4 class="text-xs font-semibold text-slate-800 mb-2">Tambah Satuan Baru</h4>
+                    <form @submit.prevent="saveUnit(false)" class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-medium text-slate-600">Kode Satuan (Singkatan)</label>
+                                <input type="text" x-model="unitForm.code" placeholder="Contoh: BUKU, PACK, KG" required
+                                    class="input w-full text-xs font-mono uppercase mt-0.5">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-medium text-slate-600">Nama Satuan (Lengkap)</label>
+                                <input type="text" x-model="unitForm.name" placeholder="Contoh: Buku, Pack, Kilogram" required
+                                    class="input w-full text-xs mt-0.5">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                                <input type="checkbox" x-model="unitForm.allow_decimal" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                                <span>Izinkan angka desimal / pecahan (contoh: Kilogram, Meter, Liter)</span>
+                            </label>
+                            <button type="submit" :disabled="unitForm.loading" class="btn btn-primary text-xs shrink-0 inline-flex items-center gap-1.5">
+                                <x-icon name="plus" class="h-3.5 w-3.5" />
+                                <span x-text="unitForm.loading ? 'Menyimpan...' : 'Tambah Satuan'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tabel Daftar Satuan -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-800 mb-2 flex items-center justify-between">
+                        <span>Daftar Satuan</span>
+                        <span class="text-[11px] font-normal text-slate-500" x-text="unitsList.length + ' satuan terdaftar'"></span>
+                    </h4>
+                    <div class="overflow-x-auto rounded-lg border border-slate-200 max-h-64 overflow-y-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-50 text-[11px] font-semibold text-slate-500 sticky top-0 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-3 py-2">Kode</th>
+                                    <th class="px-3 py-2">Nama Satuan</th>
+                                    <th class="px-3 py-2 text-center">Desimal?</th>
+                                    <th class="px-3 py-2 text-center">Penggunaan</th>
+                                    <th class="px-3 py-2 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="u in unitsList" :key="u.id">
+                                    <tr class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="px-3 py-2.5 font-mono font-bold text-slate-900" x-text="u.code"></td>
+                                        <td class="px-3 py-2.5 font-medium text-slate-700" x-text="u.name"></td>
+                                        <td class="px-3 py-2.5 text-center">
+                                            <span x-show="u.allow_decimal" class="badge badge-success text-[10px]">Ya</span>
+                                            <span x-show="!u.allow_decimal" class="badge badge-slate text-[10px]">Tidak</span>
+                                        </td>
+                                        <td class="px-3 py-2.5 text-center text-[11px] text-slate-500">
+                                            <span x-text="(u.products_count || 0) + ' produk'"></span>
+                                        </td>
+                                        <td class="px-3 py-2.5 text-right">
+                                            <template x-if="(u.products_count || 0) === 0">
+                                                <button type="button" @click="deleteUnit(u)"
+                                                    class="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:underline">
+                                                    <x-icon name="trash" class="h-3.5 w-3.5" />
+                                                    <span>Hapus</span>
+                                                </button>
+                                            </template>
+                                            <template x-if="(u.products_count || 0) > 0">
+                                                <span class="text-[10px] text-slate-400 italic">Digunakan</span>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" @click="showManageUnitsModal = false" class="btn btn-secondary">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL: QUICK ADD KATEGORI                                               -->
+    <!-- ====================================================================== -->
+    <div x-show="showQuickAddCategoryModal" x-cloak x-transition.opacity class="modal-backdrop">
+        <div class="modal-card max-w-md" @click.outside="showQuickAddCategoryModal = false">
+            <div class="modal-header">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <x-icon name="layers" class="h-4 w-4 text-slate-700" />
+                        <span>Tambah Kategori Baru</span>
+                    </h3>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Kategori baru akan otomatis terpilih pada produk ini.</p>
+                </div>
+                <button type="button" @click="showQuickAddCategoryModal = false" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <x-icon name="x" class="h-4 w-4" />
+                </button>
+            </div>
+
+            <form @submit.prevent="saveCategory(true)" class="flex min-h-0 flex-1 flex-col">
+                <div class="modal-body space-y-3">
+                    <div x-show="quickCat.error" x-cloak class="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700">
+                        <span x-text="quickCat.error"></span>
+                    </div>
+
+                    <div>
+                        <label class="form-label flex items-center gap-1">
+                            <span>Nama Kategori</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" x-model="quickCat.name" placeholder="Contoh: Alat Tulis Kantor, Kertas Cetak..." required
+                            class="input w-full">
+                    </div>
+
+                    <div>
+                        <label class="form-label flex items-center gap-1">
+                            <span>Jenis Persediaan</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <select x-model="quickCat.category_scope" class="select input w-full" required>
+                            <option value="RETAIL">Barang Etalase (Ritel)</option>
+                            <option value="RAW_MATERIAL">Bahan Baku Jasa</option>
+                            <option value="SERVICE">Layanan Jasa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" @click="showQuickAddCategoryModal = false" class="btn btn-secondary">Batal</button>
+                    <button type="submit" :disabled="quickCat.loading" class="btn btn-primary">
+                        <x-icon name="check" class="h-4 w-4" />
+                        <span x-text="quickCat.loading ? 'Menyimpan...' : 'Simpan & Pilih Kategori'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL: QUICK ADD SATUAN                                                 -->
+    <!-- ====================================================================== -->
+    <div x-show="showQuickAddUnitModal" x-cloak x-transition.opacity class="modal-backdrop">
+        <div class="modal-card max-w-md" @click.outside="showQuickAddUnitModal = false">
+            <div class="modal-header">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <x-icon name="scale" class="h-4 w-4 text-slate-700" />
+                        <span>Tambah Satuan Baru</span>
+                    </h3>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Satuan baru akan langsung terdaftar dan dapat dipilih.</p>
+                </div>
+                <button type="button" @click="showQuickAddUnitModal = false" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup">
+                    <x-icon name="x" class="h-4 w-4" />
+                </button>
+            </div>
+
+            <form @submit.prevent="saveUnit(true)" class="flex min-h-0 flex-1 flex-col">
+                <div class="modal-body space-y-3">
+                    <div x-show="quickUnit.error" x-cloak class="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700">
+                        <span x-text="quickUnit.error"></span>
+                    </div>
+
+                    <div>
+                        <label class="form-label flex items-center gap-1">
+                            <span>Kode Satuan (Singkatan)</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" x-model="quickUnit.code" placeholder="Contoh: BUKU, PACK, ROLL" required
+                            class="input w-full font-mono uppercase">
+                    </div>
+
+                    <div>
+                        <label class="form-label flex items-center gap-1">
+                            <span>Nama Satuan (Lengkap)</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" x-model="quickUnit.name" placeholder="Contoh: Buku, Pack, Roll" required
+                            class="input w-full">
+                    </div>
+
+                    <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer pt-1">
+                        <input type="checkbox" x-model="quickUnit.allow_decimal" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                        <span>Izinkan angka desimal / pecahan (misal: Meter, Kg)</span>
+                    </label>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" @click="showQuickAddUnitModal = false" class="btn btn-secondary">Batal</button>
+                    <button type="submit" :disabled="quickUnit.loading" class="btn btn-primary">
+                        <x-icon name="check" class="h-4 w-4" />
+                        <span x-text="quickUnit.loading ? 'Menyimpan...' : 'Simpan & Pilih Satuan'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
 function inventoryManager() {
     const rawMaterials = @js($rawMaterials);
     const productsData = @js($products);
+    const categoriesData = @js($categories);
+    const unitsData = @js($units);
 
     return {
+        csrfToken: '{{ csrf_token() }}',
         showRestockModal: false,
         selectedProductId: productsData[0]?.id || null,
 
@@ -1158,16 +1540,194 @@ function inventoryManager() {
             this.activeMenuId = null;
         },
 
+        categoriesList: categoriesData,
+        unitsList: unitsData,
+
+        showManageCategoriesModal: false,
+        showManageUnitsModal: false,
+        showQuickAddCategoryModal: false,
+        showQuickAddUnitModal: false,
+
+        catForm: { name: '', category_scope: 'RETAIL', loading: false, error: null },
+        unitForm: { code: '', name: '', allow_decimal: false, loading: false, error: null },
+
+        quickCat: { name: '', category_scope: 'RETAIL', loading: false, error: null },
+        quickUnit: { code: '', name: '', allow_decimal: false, loading: false, error: null },
+
+        openManageCategoriesModal() {
+            this.catForm = { name: '', category_scope: 'RETAIL', loading: false, error: null };
+            this.showManageCategoriesModal = true;
+        },
+
+        openManageUnitsModal() {
+            this.unitForm = { code: '', name: '', allow_decimal: false, loading: false, error: null };
+            this.showManageUnitsModal = true;
+        },
+
+        openQuickAddCategory(defaultScope = 'RETAIL') {
+            this.quickCat = { name: '', category_scope: defaultScope || 'RETAIL', loading: false, error: null };
+            this.showQuickAddCategoryModal = true;
+        },
+
+        openQuickAddUnit() {
+            this.quickUnit = { code: '', name: '', allow_decimal: false, loading: false, error: null };
+            this.showQuickAddUnitModal = true;
+        },
+
+        async saveCategory(isQuick = false) {
+            const form = isQuick ? this.quickCat : this.catForm;
+            if (!form.name.trim()) {
+                form.error = 'Nama kategori wajib diisi.';
+                return;
+            }
+            form.loading = true;
+            form.error = null;
+            try {
+                const res = await fetch('{{ route('inventory.categories.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': this.csrfToken
+                    },
+                    body: JSON.stringify({
+                        name: form.name.trim(),
+                        category_scope: form.category_scope
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    form.error = data.message || 'Gagal menyimpan kategori.';
+                    return;
+                }
+                this.categoriesList.push(data.category);
+                if (isQuick) {
+                    this.newProd.category_id = data.category.id;
+                    this.showQuickAddCategoryModal = false;
+                } else {
+                    form.name = '';
+                }
+            } catch (e) {
+                form.error = 'Terjadi kesalahan koneksi server.';
+            } finally {
+                form.loading = false;
+            }
+        },
+
+        async deleteCategory(cat) {
+            if (!confirm(`Hapus kategori "${cat.name}"?`)) return;
+            try {
+                const res = await fetch(`/inventory/categories/${cat.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': this.csrfToken
+                    }
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.message || 'Gagal menghapus kategori.');
+                    return;
+                }
+                this.categoriesList = this.categoriesList.filter(c => c.id !== cat.id);
+                if (this.newProd.category_id == cat.id) {
+                    const fallback = this.categoriesList.find(c => c.category_scope === this.newProd.inventory_type);
+                    this.newProd.category_id = fallback ? fallback.id : '';
+                }
+            } catch (e) {
+                alert('Terjadi kesalahan jaringan.');
+            }
+        },
+
+        async saveUnit(isQuick = false) {
+            const form = isQuick ? this.quickUnit : this.unitForm;
+            if (!form.code.trim() || !form.name.trim()) {
+                form.error = 'Kode dan nama satuan wajib diisi.';
+                return;
+            }
+            form.loading = true;
+            form.error = null;
+            try {
+                const res = await fetch('{{ route('inventory.units.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': this.csrfToken
+                    },
+                    body: JSON.stringify({
+                        code: form.code.trim().toUpperCase(),
+                        name: form.name.trim(),
+                        allow_decimal: !!form.allow_decimal
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    form.error = data.message || 'Gagal menyimpan satuan.';
+                    return;
+                }
+                this.unitsList.push(data.unit);
+                if (isQuick) {
+                    this.newProd.unit_id = data.unit.id;
+                    this.showQuickAddUnitModal = false;
+                } else {
+                    form.code = '';
+                    form.name = '';
+                    form.allow_decimal = false;
+                }
+            } catch (e) {
+                form.error = 'Terjadi kesalahan koneksi server.';
+            } finally {
+                form.loading = false;
+            }
+        },
+
+        async deleteUnit(u) {
+            if (!confirm(`Hapus satuan "${u.code} (${u.name})"?`)) return;
+            try {
+                const res = await fetch(`/inventory/units/${u.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': this.csrfToken
+                    }
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.message || 'Gagal menghapus satuan.');
+                    return;
+                }
+                this.unitsList = this.unitsList.filter(item => item.id !== u.id);
+                if (this.newProd.unit_id == u.id) {
+                    this.newProd.unit_id = this.unitsList[0]?.id || '';
+                }
+            } catch (e) {
+                alert('Terjadi kesalahan jaringan.');
+            }
+        },
+
         showAddProductModal: false,
         newProd: {
             name: '',
             sku: '',
             barcode: '',
             inventory_type: 'RETAIL',
+            category_id: categoriesData.find(c => c.category_scope === 'RETAIL')?.id || '',
+            unit_id: unitsData[0]?.id || '',
             average_cost: 0,
             selling_price: 0,
             min_stock_alert: 5,
             initial_stock: 0
+        },
+
+        onInventoryTypeChange(type) {
+            this.newProd.inventory_type = type;
+            const match = this.categoriesList.find(c => c.category_scope === type);
+            if (match) {
+                this.newProd.category_id = match.id;
+            }
         },
 
         showEditProductModal: false,
@@ -1210,11 +1770,15 @@ function inventoryManager() {
         },
 
         openAddProductModal() {
+            const defaultCat = this.categoriesList.find(c => c.category_scope === 'RETAIL')?.id || '';
+            const defaultUnit = this.unitsList[0]?.id || '';
             this.newProd = {
                 name: '',
                 sku: '',
                 barcode: '',
                 inventory_type: 'RETAIL',
+                category_id: defaultCat,
+                unit_id: defaultUnit,
                 average_cost: 0,
                 selling_price: 0,
                 min_stock_alert: 5,

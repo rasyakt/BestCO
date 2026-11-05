@@ -18,8 +18,10 @@ use App\Models\Unit;
 use App\Rules\StrictCurrency;
 use App\Rules\StrictNumeric;
 use App\Rules\StrictQuantity;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -70,9 +72,9 @@ final class InventoryController extends Controller
             ? $servicesQuery->orderBy('service_group')->orderBy('name')->paginate(10)->withQueryString()
             : null;
 
-        // Data master untuk modal Tambah & Edit Produk/Layanan
-        $categories = Category::all();
-        $units = Unit::all();
+        // Data master untuk modal Tambah & Edit Produk/Layanan serta Kelola Master
+        $categories = Category::withCount(['products', 'services'])->orderBy('name')->get();
+        $units = Unit::withCount(['products', 'unitConversionsAsSource', 'unitConversionsAsTarget'])->orderBy('code')->get();
         $rawMaterials = Product::where('inventory_type', 'RAW_MATERIAL')
             ->where('is_active', true)
             ->with('unit')
@@ -285,5 +287,142 @@ final class InventoryController extends Controller
             ->paginate(10);
 
         return view('inventory.ledger', compact('product', 'movements'));
+    }
+
+    /**
+     * Tambahkan kategori baru secara dinamis.
+     */
+    public function storeCategory(Request $request): JsonResponse|RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'category_scope' => ['required', 'in:RETAIL,RAW_MATERIAL,SERVICE'],
+        ]);
+
+        $baseSlug = Str::slug($validated['name']);
+        $slug = $baseSlug !== '' ? $baseSlug : 'kategori';
+        $originalSlug = $slug;
+        $counter = 1;
+        while (Category::where('slug', $slug)->exists()) {
+            $slug = "{$originalSlug}-{$counter}";
+            $counter++;
+        }
+
+        $category = Category::create([
+            'name' => trim($validated['name']),
+            'slug' => $slug,
+            'category_scope' => $validated['category_scope'],
+        ]);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Kategori '{$category->name}' berhasil ditambahkan.",
+                'category' => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'category_scope' => $category->category_scope,
+                    'products_count' => 0,
+                    'services_count' => 0,
+                ],
+            ], 201);
+        }
+
+        return redirect()->back()->with('success', "Kategori '{$category->name}' berhasil ditambahkan.");
+    }
+
+    /**
+     * Hapus kategori jika belum pernah digunakan.
+     */
+    public function destroyCategory(int $id, Request $request): JsonResponse|RedirectResponse
+    {
+        $category = Category::withCount(['products', 'services'])->findOrFail($id);
+
+        if ($category->products_count > 0 || $category->services_count > 0) {
+            $message = "Kategori '{$category->name}' tidak dapat dihapus karena masih digunakan oleh produk atau layanan.";
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return redirect()->back()->with('error', $message);
+        }
+
+        $name = $category->name;
+        $category->delete();
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Kategori '{$name}' berhasil dihapus.",
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Kategori '{$name}' berhasil dihapus.");
+    }
+
+    /**
+     * Tambahkan satuan unit baru secara dinamis.
+     */
+    public function storeUnit(Request $request): JsonResponse|RedirectResponse
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:15', 'unique:units,code'],
+            'name' => ['required', 'string', 'max:50'],
+            'allow_decimal' => ['nullable', 'boolean'],
+        ]);
+
+        $unit = Unit::create([
+            'code' => strtoupper(trim($validated['code'])),
+            'name' => trim($validated['name']),
+            'allow_decimal' => $request->boolean('allow_decimal'),
+        ]);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Satuan '{$unit->code} ({$unit->name})' berhasil ditambahkan.",
+                'unit' => [
+                    'id' => $unit->id,
+                    'code' => $unit->code,
+                    'name' => $unit->name,
+                    'allow_decimal' => (bool) $unit->allow_decimal,
+                    'products_count' => 0,
+                ],
+            ], 201);
+        }
+
+        return redirect()->back()->with('success', "Satuan '{$unit->code}' berhasil ditambahkan.");
+    }
+
+    /**
+     * Hapus satuan jika belum pernah digunakan.
+     */
+    public function destroyUnit(int $id, Request $request): JsonResponse|RedirectResponse
+    {
+        $unit = Unit::withCount(['products', 'unitConversionsAsSource', 'unitConversionsAsTarget'])->findOrFail($id);
+
+        $inUse = $unit->products_count > 0
+            || $unit->unit_conversions_as_source_count > 0
+            || $unit->unit_conversions_as_target_count > 0;
+
+        if ($inUse) {
+            $message = "Satuan '{$unit->code}' tidak dapat dihapus karena sedang digunakan dalam produk atau konversi satuan.";
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return redirect()->back()->with('error', $message);
+        }
+
+        $code = $unit->code;
+        $unit->delete();
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Satuan '{$code}' berhasil dihapus.",
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Satuan '{$code}' berhasil dihapus.");
     }
 }

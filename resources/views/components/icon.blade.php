@@ -480,6 +480,32 @@
             <line x1="10" y1="12" x2="14" y2="12" />
             @break
 
+        @case('layers')
+            <polygon points="12 2 2 7 12 12 22 7 12 2" />
+            <polyline points="2 17 12 22 22 17" />
+            <polyline points="2 12 12 17 22 12" />
+            @break
+
+        @case('scale')
+            <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+            <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+            <path d="M7 21h10" />
+            <path d="M12 3v18" />
+            <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
+            @break
+
+        @case('folder-tree')
+            <path d="M20 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-.9-1.2A1 1 0 0 0 15 3h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z" />
+            <path d="M20 21a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-2.9a1 1 0 0 1-.88-.53l-.42-.85a1 1 0 0 0-.9-.62H13a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z" />
+            <path d="M3 5v14a2 2 0 0 0 2 2h3" />
+            <path d="M3 12h5" />
+            @break
+
+        @case('briefcase')
+            <rect width="20" height="14" x="2" y="7" rx="2" />
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+            @break
+
         @default
             <circle cx="12" cy="12" r="9" />
             <line x1="12" y1="8" x2="12" y2="12" />

@@ -14,10 +14,12 @@ use App\Enums\AbsenceStatus;
 use App\Enums\InventoryType;
 use App\Enums\PaymentMethod;
 use App\Models\AccountingPeriod;
+use App\Models\Category;
 use App\Models\ChartOfAccount;
 use App\Models\PosShift;
 use App\Models\PosTransaction;
 use App\Models\Product;
+use App\Models\Unit;
 use App\Models\User;
 use App\Services\Theme\DynamicThemeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -277,6 +279,75 @@ class NewModulesFeatureTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Pindah Stok');
         $response->assertSee('Nilai stok dipindah');
+    }
+
+    public function test_admin_can_create_and_delete_dynamic_category(): void
+    {
+        $response = $this->actingAs($this->admin)->postJson(route('inventory.categories.store'), [
+            'name' => 'Kategori Buku Gambar',
+            'category_scope' => 'RETAIL',
+        ]);
+
+        $response->assertStatus(201);
+        $response->assertJson([
+            'success' => true,
+            'category' => [
+                'name' => 'Kategori Buku Gambar',
+                'category_scope' => 'RETAIL',
+            ],
+        ]);
+
+        $categoryId = $response->json('category.id');
+        $this->assertDatabaseHas('categories', ['id' => $categoryId, 'name' => 'Kategori Buku Gambar']);
+
+        // Delete the category
+        $delResponse = $this->actingAs($this->admin)->deleteJson(route('inventory.categories.destroy', $categoryId));
+        $delResponse->assertStatus(200);
+        $this->assertDatabaseMissing('categories', ['id' => $categoryId]);
+    }
+
+    public function test_cannot_delete_category_in_use(): void
+    {
+        $category = Category::where('category_scope', 'RETAIL')->firstOrFail();
+
+        $delResponse = $this->actingAs($this->admin)->deleteJson(route('inventory.categories.destroy', $category->id));
+        $delResponse->assertStatus(422);
+        $delResponse->assertJson(['success' => false]);
+    }
+
+    public function test_admin_can_create_and_delete_dynamic_unit(): void
+    {
+        $response = $this->actingAs($this->admin)->postJson(route('inventory.units.store'), [
+            'code' => 'KOTAK',
+            'name' => 'Kotak Sedang',
+            'allow_decimal' => false,
+        ]);
+
+        $response->assertStatus(201);
+        $response->assertJson([
+            'success' => true,
+            'unit' => [
+                'code' => 'KOTAK',
+                'name' => 'Kotak Sedang',
+            ],
+        ]);
+
+        $unitId = $response->json('unit.id');
+        $this->assertDatabaseHas('units', ['id' => $unitId, 'code' => 'KOTAK']);
+
+        // Delete the unit
+        $delResponse = $this->actingAs($this->admin)->deleteJson(route('inventory.units.destroy', $unitId));
+        $delResponse->assertStatus(200);
+        $this->assertDatabaseMissing('units', ['id' => $unitId]);
+    }
+
+    public function test_cannot_delete_unit_in_use(): void
+    {
+        $unit = Unit::where('code', 'PCS')->firstOrFail();
+
+        $delResponse = $this->actingAs($this->admin)->deleteJson(route('inventory.units.destroy', $unit->id));
+        $delResponse->assertStatus(422);
+        $delResponse->assertJson(['success' => false]);
     }
 
     private function openShift(): PosShift
