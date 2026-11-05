@@ -502,7 +502,7 @@
                     </button>
                 </div>
 
-                <div class="modal-body">
+                <div class="modal-body space-y-4">
                     <div class="alert alert-warning">
                         <x-icon name="info" class="mt-0.5 h-4 w-4 shrink-0" />
                         <span class="leading-relaxed">Stok barang/bahan akan berkurang dan otomatis dibukukan ke beban kerugian kerusakan.</span>
@@ -558,27 +558,42 @@
                         </div>
                         <div>
                             <label class="form-label">Penyebab</label>
-                            <select wire:model="spoilageReason" class="select">
+                            <select wire:model.live="spoilageReason" class="select">
                                 @if($spoilageSource === 'SERVICE_PRODUCTION')
                                     <option value="PAPER_JAM">Kertas macet</option>
                                     <option value="STREAKED_PRINT">Hasil bergaris</option>
                                     <option value="LAMINATING_WRINKLE">Laminating kusut</option>
                                     <option value="MISPRINT_OPERATOR">Salah setting</option>
                                     <option value="TONER_SMEAR">Nodaan tinta</option>
-                                    <option value="OTHER">Lainnya</option>
+                                    <option value="OTHER">Lainnya (Input manual)</option>
                                 @else
                                     <option value="PHYSICAL_DAMAGE">Cacat fisik / Kemasan rusak / Pecah</option>
-                                    <option value="OTHER">Basah / Bocor / Lainnya</option>
+                                    <option value="OTHER">Lainnya (Input manual)</option>
                                 @endif
                             </select>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="form-label">Keterangan</label>
-                        <input type="text" wire:model="spoilageDescription" placeholder="{{ $spoilageSource === 'SERVICE_PRODUCTION' ? 'Contoh: Kertas nyangkut di roller pemanas' : 'Contoh: Barang jatuh kemasan sobek/pecah' }}"
-                            class="input">
-                    </div>
+                    @if($spoilageReason === 'OTHER')
+                        <div class="rounded-lg border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/50 dark:bg-amber-950/40 space-y-2">
+                            <label class="form-label flex items-center justify-between text-amber-900 dark:text-amber-200 mb-0">
+                                <span class="font-semibold">Maksud / Keterangan "Lainnya"</span>
+                                <span class="text-xs font-bold text-rose-600">* Wajib diisi manual</span>
+                            </label>
+                            <input type="text"
+                                wire:model="spoilageDescription"
+                                required
+                                placeholder="Jelaskan secara spesifik apa penyebab kerusakannya (contoh: Basah tersiram air, bocor, dll)..."
+                                class="input bg-white dark:bg-slate-900 border-amber-300 focus:border-amber-500 focus:ring-amber-500 w-full">
+                            <p class="text-[11px] text-amber-700 dark:text-amber-400">Wajib menyebutkan secara jelas penyebab kerusakan saat memilih opsi Lainnya.</p>
+                        </div>
+                    @else
+                        <div>
+                            <label class="form-label">Catatan Tambahan (Opsional)</label>
+                            <input type="text" wire:model="spoilageDescription" placeholder="{{ $spoilageSource === 'SERVICE_PRODUCTION' ? 'Contoh: Kertas nyangkut di roller pemanas' : 'Contoh: Barang jatuh dari etalase' }}"
+                                class="input">
+                        </div>
+                    @endif
 
                     <div>
                         <label class="form-label">PIN guru</label>
@@ -614,7 +629,7 @@
                     </button>
                 </div>
 
-                <div class="modal-body">
+                <div class="modal-body space-y-4">
                     <div class="alert alert-info">
                         <x-icon name="info" class="mt-0.5 h-4 w-4 shrink-0" />
                         <span class="leading-relaxed">Stok dipindah dari etalase ke bahan baku. 1 rim menjadi 500 lembar.</span>

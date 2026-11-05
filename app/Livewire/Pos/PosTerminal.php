@@ -205,6 +205,7 @@ final class PosTerminal extends Component
 
     public function updatedSpoilageSource($value): void
     {
+        $this->spoilageDescription = '';
         if ($value === 'RETAIL_DAMAGE') {
             $firstRetail = Product::where('inventory_type', 'RETAIL')->where('is_active', true)->first();
             $this->spoilageProductId = $firstRetail?->id;
@@ -217,6 +218,13 @@ final class PosTerminal extends Component
             $firstService = Service::where('is_active', true)->first();
             $this->spoilageServiceId = $firstService?->id;
             $this->spoilageReason = 'PAPER_JAM';
+        }
+    }
+
+    public function updatedSpoilageReason($value): void
+    {
+        if ($value !== 'OTHER') {
+            $this->spoilageDescription = '';
         }
     }
 
@@ -663,6 +671,14 @@ final class PosTerminal extends Component
             return;
         }
 
+        // Jika memilih opsi "Lainnya", pengguna WAJIB menginput keterangan penyebab secara manual
+        if ($this->spoilageReason === 'OTHER' && trim($this->spoilageDescription) === '') {
+            $this->feedbackMessage = 'Wajib mengisi keterangan secara manual jika memilih penyebab "Lainnya".';
+            $this->feedbackType = 'error';
+
+            return;
+        }
+
         try {
             if ($this->spoilageSource === 'RETAIL_DAMAGE' || $this->spoilageSource === 'RAW_MATERIAL_DAMAGE') {
                 if (! $this->spoilageProductId) {
@@ -675,13 +691,18 @@ final class PosTerminal extends Component
                 $product = Product::findOrFail($this->spoilageProductId);
                 $qty = number_format((float) $this->spoilageFailedQty, 4, '.', '');
 
+                $reasonDesc = trim($this->spoilageDescription);
+                if ($reasonDesc === '') {
+                    $reasonDesc = 'Barang rusak: ' . $product->name;
+                }
+
                 $log = $action->execute(new SpoilageData(
                     posShiftId: (string) $activeShift->id,
                     spoilageSource: $this->spoilageSource,
                     serviceId: null,
                     failedOutputQty: '0.0000',
                     reasonCategory: SpoilageReason::tryFrom($this->spoilageReason) ?? SpoilageReason::PHYSICAL_DAMAGE,
-                    reasonDescription: $this->spoilageDescription ?: ('Barang rusak: ' . $product->name),
+                    reasonDescription: $reasonDesc,
                     reportedByUserId: (string) auth()->id(),
                     verifiedByUserId: (string) $teacher->id,
                     directItems: [
@@ -693,13 +714,18 @@ final class PosTerminal extends Component
                     ],
                 ));
             } else {
+                $reasonDesc = trim($this->spoilageDescription);
+                if ($reasonDesc === '') {
+                    $reasonDesc = 'Kertas macet / gagal cetak fotocopy';
+                }
+
                 $log = $action->execute(new SpoilageData(
                     posShiftId: (string) $activeShift->id,
                     spoilageSource: 'SERVICE_PRODUCTION',
                     serviceId: (string) $this->spoilageServiceId,
                     failedOutputQty: number_format((float) $this->spoilageFailedQty, 4, '.', ''),
                     reasonCategory: SpoilageReason::tryFrom($this->spoilageReason) ?? SpoilageReason::PAPER_JAM,
-                    reasonDescription: $this->spoilageDescription ?: 'Kertas macet / gagal cetak fotocopy',
+                    reasonDescription: $reasonDesc,
                     reportedByUserId: (string) auth()->id(),
                     verifiedByUserId: (string) $teacher->id,
                     directItems: [],
@@ -708,6 +734,7 @@ final class PosTerminal extends Component
 
             $this->showSpoilageModal = false;
             $this->spoilageTeacherPin = '';
+            $this->spoilageDescription = '';
             $this->feedbackMessage = 'Barang rusak '.$log->spoilage_number.' berhasil dicatat (HPP terbebankan: Rp '.number_format((float) $log->total_spoilage_cost, 0, ',', '.').')';
             $this->feedbackType = 'success';
         } catch (\Throwable $e) {
