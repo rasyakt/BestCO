@@ -59,7 +59,11 @@ final class PosTerminal extends Component
     // Spoilage Modal State (F6)
     public bool $showSpoilageModal = false;
 
+    public string $spoilageSource = 'SERVICE_PRODUCTION';
+
     public ?int $spoilageServiceId = null;
+
+    public ?int $spoilageProductId = null;
 
     public string $spoilageFailedQty = '1';
 
@@ -199,6 +203,23 @@ final class PosTerminal extends Component
         $this->spoilageFailedQty = $this->sanitizeNumericInput($value, allowDecimal: false);
     }
 
+    public function updatedSpoilageSource($value): void
+    {
+        if ($value === 'RETAIL_DAMAGE') {
+            $firstRetail = Product::where('inventory_type', 'RETAIL')->where('is_active', true)->first();
+            $this->spoilageProductId = $firstRetail?->id;
+            $this->spoilageReason = 'PHYSICAL_DAMAGE';
+        } elseif ($value === 'RAW_MATERIAL_DAMAGE') {
+            $firstRaw = Product::where('inventory_type', 'RAW_MATERIAL')->where('is_active', true)->first();
+            $this->spoilageProductId = $firstRaw?->id;
+            $this->spoilageReason = 'PHYSICAL_DAMAGE';
+        } else {
+            $firstService = Service::where('is_active', true)->first();
+            $this->spoilageServiceId = $firstService?->id;
+            $this->spoilageReason = 'PAPER_JAM';
+        }
+    }
+
     public function updatedMutationSourceQty($value): void
     {
         $this->mutationSourceQty = $this->sanitizeNumericInput($value, allowDecimal: false);
@@ -214,6 +235,11 @@ final class PosTerminal extends Component
         $firstService = Service::first();
         if ($firstService) {
             $this->spoilageServiceId = $firstService->id;
+        }
+
+        $firstRetail = Product::where('inventory_type', 'RETAIL')->where('is_active', true)->first();
+        if ($firstRetail) {
+            $this->spoilageProductId = $firstRetail->id;
         }
     }
 
@@ -638,17 +664,47 @@ final class PosTerminal extends Component
         }
 
         try {
-            $log = $action->execute(new SpoilageData(
-                posShiftId: (string) $activeShift->id,
-                spoilageSource: 'SERVICE_PRODUCTION',
-                serviceId: (string) $this->spoilageServiceId,
-                failedOutputQty: number_format((float) $this->spoilageFailedQty, 4, '.', ''),
-                reasonCategory: SpoilageReason::from($this->spoilageReason),
-                reasonDescription: $this->spoilageDescription ?: 'Kertas macet / gagal cetak fotocopy',
-                reportedByUserId: (string) auth()->id(),
-                verifiedByUserId: (string) $teacher->id,
-                directItems: [],
-            ));
+            if ($this->spoilageSource === 'RETAIL_DAMAGE' || $this->spoilageSource === 'RAW_MATERIAL_DAMAGE') {
+                if (! $this->spoilageProductId) {
+                    $this->feedbackMessage = 'Silakan pilih produk yang rusak.';
+                    $this->feedbackType = 'error';
+
+                    return;
+                }
+
+                $product = Product::findOrFail($this->spoilageProductId);
+                $qty = number_format((float) $this->spoilageFailedQty, 4, '.', '');
+
+                $log = $action->execute(new SpoilageData(
+                    posShiftId: (string) $activeShift->id,
+                    spoilageSource: $this->spoilageSource,
+                    serviceId: null,
+                    failedOutputQty: '0.0000',
+                    reasonCategory: SpoilageReason::tryFrom($this->spoilageReason) ?? SpoilageReason::PHYSICAL_DAMAGE,
+                    reasonDescription: $this->spoilageDescription ?: ('Barang rusak: ' . $product->name),
+                    reportedByUserId: (string) auth()->id(),
+                    verifiedByUserId: (string) $teacher->id,
+                    directItems: [
+                        [
+                            'product_id' => (string) $product->id,
+                            'qty_wasted' => $qty,
+                            'unit_cost' => (string) $product->average_cost,
+                        ],
+                    ],
+                ));
+            } else {
+                $log = $action->execute(new SpoilageData(
+                    posShiftId: (string) $activeShift->id,
+                    spoilageSource: 'SERVICE_PRODUCTION',
+                    serviceId: (string) $this->spoilageServiceId,
+                    failedOutputQty: number_format((float) $this->spoilageFailedQty, 4, '.', ''),
+                    reasonCategory: SpoilageReason::tryFrom($this->spoilageReason) ?? SpoilageReason::PAPER_JAM,
+                    reasonDescription: $this->spoilageDescription ?: 'Kertas macet / gagal cetak fotocopy',
+                    reportedByUserId: (string) auth()->id(),
+                    verifiedByUserId: (string) $teacher->id,
+                    directItems: [],
+                ));
+            }
 
             $this->showSpoilageModal = false;
             $this->spoilageTeacherPin = '';
@@ -730,6 +786,17 @@ final class PosTerminal extends Component
 
         $unitConversions = UnitConversion::with(['sourceProduct', 'targetProduct'])->get();
         $allServices = Service::all();
+        $allRetailProducts = Product::where('inventory_type', 'RETAIL')
+            ->where('is_active', true)
+            ->with('unit')
+            ->orderBy('name')
+            ->get();
+        $allRawMaterials = Product::where('inventory_type', 'RAW_MATERIAL')
+            ->where('is_active', true)
+            ->with('unit')
+            ->orderBy('name')
+            ->get();
+
         $completedTransaction = $this->completedTransactionId
             ? PosTransaction::with(['items.product', 'items.service', 'cashier'])->find($this->completedTransactionId)
             : null;
@@ -744,6 +811,8 @@ final class PosTerminal extends Component
             'services',
             'unitConversions',
             'allServices',
+            'allRetailProducts',
+            'allRawMaterials',
             'completedTransaction',
             'activeShift'
         ))->layout('layouts.app', ['title' => 'Terminal POS Kasir — BESTCO']);

@@ -67,6 +67,7 @@
                     <option value="INK_SMUDGE" {{ $category === 'INK_SMUDGE' ? 'selected' : '' }}>Tinta bergaris</option>
                     <option value="MACHINE_ERROR" {{ $category === 'MACHINE_ERROR' ? 'selected' : '' }}>Mesin rusak</option>
                     <option value="OPERATOR_ERROR" {{ $category === 'OPERATOR_ERROR' ? 'selected' : '' }}>Salah operator</option>
+                    <option value="PHYSICAL_DAMAGE" {{ $category === 'PHYSICAL_DAMAGE' ? 'selected' : '' }}>Kerusakan fisik / cacat</option>
                     <option value="OTHER" {{ $category === 'OTHER' ? 'selected' : '' }}>Lainnya</option>
                 </select>
             </div>
@@ -85,7 +86,7 @@
                 <h2 class="card-title">Riwayat barang rusak</h2>
                 <p class="card-subtitle">{{ $logs->total() }} kejadian</p>
             </div>
-            <span class="text-[11px] text-slate-500">Bahan yang terbuang</span>
+            <span class="text-[11px] text-slate-500">Persediaan yang terbuang / rusak</span>
         </div>
 
         <div class="w-full">
@@ -93,9 +94,9 @@
                 <thead>
                     <tr>
                         <th class="text-left whitespace-nowrap px-3 py-2.5">No. Bukti & Waktu</th>
-                        <th class="text-left whitespace-nowrap px-3 py-2.5">Layanan & Hasil Gagal</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Sumber & Item Rusak</th>
                         <th class="text-left whitespace-nowrap px-3 py-2.5">Penyebab</th>
-                        <th class="text-left whitespace-nowrap px-3 py-2.5">Bahan Terbuang</th>
+                        <th class="text-left whitespace-nowrap px-3 py-2.5">Item Dipotong</th>
                         <th class="text-right whitespace-nowrap px-3 py-2.5 w-px">Kerugian</th>
                         <th class="text-left whitespace-nowrap px-3 py-2.5">Pelapor & Shift</th>
                     </tr>
@@ -105,11 +106,12 @@
                         @php
                             $reasonLabel = match ($log->reason_category) {
                                 'PAPER_JAM' => 'Kertas macet',
-                                'INK_SMUDGE' => 'Tinta bergaris',
-                                'PRINT_STREAK' => 'Hasil bergaris',
+                                'INK_SMUDGE', 'TONER_SMEAR' => 'Nodaan tinta / toner',
+                                'PRINT_STREAK', 'STREAKED_PRINT' => 'Hasil bergaris',
                                 'MACHINE_ERROR' => 'Mesin rusak',
-                                'LAMINATION_WRINKLE' => 'Laminating kusut',
-                                'OPERATOR_ERROR' => 'Salah operator',
+                                'LAMINATION_WRINKLE', 'LAMINATING_WRINKLE' => 'Laminating kusut',
+                                'OPERATOR_ERROR', 'MISPRINT_OPERATOR' => 'Salah operator',
+                                'PHYSICAL_DAMAGE' => 'Kerusakan fisik / cacat',
                                 default => 'Lainnya',
                             };
 
@@ -124,11 +126,34 @@
                                 <span class="font-mono text-[10px] text-slate-400 whitespace-nowrap block mt-0.5">{{ $log->logged_at?->format('d/m/Y H:i') }}</span>
                             </td>
                             <td class="whitespace-nowrap px-3 py-2.5">
-                                <span class="font-semibold text-xs text-slate-900 whitespace-nowrap block">{{ $log->service?->name ?? 'Etalase / lainnya' }}</span>
-                                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 whitespace-nowrap mt-0.5">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                                    {{ number_format((float) $log->failed_output_qty, 0, ',', '.') }} lembar gagal
-                                </span>
+                                @if($log->spoilage_source === 'RETAIL_DAMAGE')
+                                    <span class="badge badge-purple text-[10px] font-semibold mb-0.5 inline-block">Produk Ritel</span>
+                                    <span class="font-semibold text-xs text-slate-900 whitespace-nowrap block">
+                                        {{ $log->items->first()?->product?->name ?? 'Barang Dagangan' }}
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 whitespace-nowrap mt-0.5">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                                        {{ rtrim(rtrim((string) ($log->items->first()?->qty_wasted ?? 0), '0'), '.') }} {{ $log->items->first()?->product?->unit?->code }} rusak
+                                    </span>
+                                @elseif($log->spoilage_source === 'RAW_MATERIAL_DAMAGE')
+                                    <span class="badge badge-blue text-[10px] font-semibold mb-0.5 inline-block">Bahan Baku</span>
+                                    <span class="font-semibold text-xs text-slate-900 whitespace-nowrap block">
+                                        {{ $log->items->first()?->product?->name ?? 'Bahan Baku' }}
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 whitespace-nowrap mt-0.5">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                        {{ rtrim(rtrim((string) ($log->items->first()?->qty_wasted ?? 0), '0'), '.') }} {{ $log->items->first()?->product?->unit?->code }} rusak
+                                    </span>
+                                @else
+                                    <span class="badge badge-gray text-[10px] font-semibold mb-0.5 inline-block">Layanan Jasa</span>
+                                    <span class="font-semibold text-xs text-slate-900 whitespace-nowrap block">
+                                        {{ $log->service?->name ?? 'Jasa Produksi' }}
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 whitespace-nowrap mt-0.5">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                        {{ number_format((float) $log->failed_output_qty, 0, ',', '.') }} lembar gagal
+                                    </span>
+                                @endif
                             </td>
                             <td class="whitespace-nowrap px-3 py-2.5">
                                 <span class="badge badge-danger text-[10px] whitespace-nowrap px-1.5 py-0.5">{{ $reasonLabel }}</span>

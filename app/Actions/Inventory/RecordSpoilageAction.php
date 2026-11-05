@@ -35,7 +35,9 @@ final class RecordSpoilageAction
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $failedOutputQty = $this->normalizePositiveQty($data->failedOutputQty, 'Jumlah output gagal');
+            $failedOutputQty = $data->spoilageSource === 'SERVICE_PRODUCTION'
+                ? $this->normalizePositiveQty($data->failedOutputQty, 'Jumlah output gagal')
+                : '0.0000';
 
             // Hitung total biaya kerusakan dan kumpulkan item yang terbuang.
             $items = [];

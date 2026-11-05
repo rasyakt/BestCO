@@ -505,21 +505,52 @@
                 <div class="modal-body">
                     <div class="alert alert-warning">
                         <x-icon name="info" class="mt-0.5 h-4 w-4 shrink-0" />
-                        <span class="leading-relaxed">Stok bahan berkurang dan otomatis dicatat sebagai beban kerusakan.</span>
+                        <span class="leading-relaxed">Stok barang/bahan akan berkurang dan otomatis dibukukan ke beban kerugian kerusakan.</span>
                     </div>
 
                     <div>
-                        <label class="form-label">Layanan yang gagal</label>
-                        <select wire:model="spoilageServiceId" class="select">
-                            @foreach($allServices as $srv)
-                                <option value="{{ $srv->id }}">{{ $srv->name }}</option>
-                            @endforeach
+                        <label class="form-label">Kategori Kerusakan</label>
+                        <select wire:model.live="spoilageSource" class="select font-medium">
+                            <option value="SERVICE_PRODUCTION">Layanan Jasa (Gagal Fotocopy / Print / Laminating)</option>
+                            <option value="RETAIL_DAMAGE">Produk Ritel (Barang Dagangan / ATK Rusak / Pecah)</option>
+                            <option value="RAW_MATERIAL_DAMAGE">Bahan Baku (Kertas HVS / Toner Langsung Rusak)</option>
                         </select>
                     </div>
 
+                    @if($spoilageSource === 'SERVICE_PRODUCTION')
+                        <div>
+                            <label class="form-label">Layanan yang gagal</label>
+                            <select wire:model="spoilageServiceId" class="select">
+                                @foreach($allServices as $srv)
+                                    <option value="{{ $srv->id }}">{{ $srv->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @elseif($spoilageSource === 'RETAIL_DAMAGE')
+                        <div>
+                            <label class="form-label">Pilih Produk Ritel Rusak</label>
+                            <select wire:model="spoilageProductId" class="select">
+                                @foreach($allRetailProducts as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }} (Sisa Stok: {{ rtrim(rtrim((string)$p->current_stock, '0'), '.') }} {{ $p->unit?->code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @else
+                        <div>
+                            <label class="form-label">Pilih Bahan Baku Rusak</label>
+                            <select wire:model="spoilageProductId" class="select">
+                                @foreach($allRawMaterials as $raw)
+                                    <option value="{{ $raw->id }}">{{ $raw->name }} (Sisa Stok: {{ rtrim(rtrim((string)$raw->current_stock, '0'), '.') }} {{ $raw->unit?->code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
-                            <label class="form-label">Jumlah lembar gagal</label>
+                            <label class="form-label">
+                                {{ $spoilageSource === 'SERVICE_PRODUCTION' ? 'Jumlah lembar gagal' : 'Jumlah barang rusak' }}
+                            </label>
                             <input type="text" inputmode="numeric" step="1" min="1"
                                 wire:model="spoilageFailedQty"
                                 data-quantity="true"
@@ -528,17 +559,24 @@
                         <div>
                             <label class="form-label">Penyebab</label>
                             <select wire:model="spoilageReason" class="select">
-                                <option value="PAPER_JAM">Kertas macet</option>
-                                <option value="STREAKED_PRINT">Hasil bergaris</option>
-                                <option value="LAMINATING_WRINKLE">Laminating kusut</option>
-                                <option value="MISPRINT_OPERATOR">Salah setting</option>
+                                @if($spoilageSource === 'SERVICE_PRODUCTION')
+                                    <option value="PAPER_JAM">Kertas macet</option>
+                                    <option value="STREAKED_PRINT">Hasil bergaris</option>
+                                    <option value="LAMINATING_WRINKLE">Laminating kusut</option>
+                                    <option value="MISPRINT_OPERATOR">Salah setting</option>
+                                    <option value="TONER_SMEAR">Nodaan tinta</option>
+                                    <option value="OTHER">Lainnya</option>
+                                @else
+                                    <option value="PHYSICAL_DAMAGE">Cacat fisik / Kemasan rusak / Pecah</option>
+                                    <option value="OTHER">Basah / Bocor / Lainnya</option>
+                                @endif
                             </select>
                         </div>
                     </div>
 
                     <div>
                         <label class="form-label">Keterangan</label>
-                        <input type="text" wire:model="spoilageDescription" placeholder="Contoh: Kertas nyangkut di mesin"
+                        <input type="text" wire:model="spoilageDescription" placeholder="{{ $spoilageSource === 'SERVICE_PRODUCTION' ? 'Contoh: Kertas nyangkut di roller pemanas' : 'Contoh: Barang jatuh kemasan sobek/pecah' }}"
                             class="input">
                     </div>
 

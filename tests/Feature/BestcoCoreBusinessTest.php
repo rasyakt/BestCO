@@ -184,4 +184,49 @@ class BestcoCoreBusinessTest extends TestCase
             bcsub((string) $spoilageAccount->current_balance, $initialSpoilageExpense, 4)
         );
     }
+
+    public function test_records_retail_product_spoilage_deducting_inventory_and_posting_journal(): void
+    {
+        $pen = Product::where('sku', 'ATK-PULPEN-PACK')->firstOrFail();
+        $initialPenStock = (string) $pen->current_stock;
+        $retailInventoryAccount = ChartOfAccount::where('account_code', '1-1301')->firstOrFail();
+        $retailSpoilageExpense = ChartOfAccount::where('account_code', '6-1102')->firstOrFail();
+
+        $initialInventoryBal = (string) $retailInventoryAccount->current_balance;
+        $initialExpenseBal = (string) $retailSpoilageExpense->current_balance;
+
+        $spoilageAction = app(RecordSpoilageAction::class);
+        $spoilageLog = $spoilageAction->execute(new SpoilageData(
+            posShiftId: (string) $this->shift->id,
+            spoilageSource: 'RETAIL_DAMAGE',
+            serviceId: null,
+            failedOutputQty: '0.0000',
+            reasonCategory: SpoilageReason::PHYSICAL_DAMAGE,
+            reasonDescription: 'Kemasan pulpen pecah / bocor tinta',
+            reportedByUserId: (string) $this->student->id,
+            verifiedByUserId: (string) $this->teacher->id,
+            directItems: [
+                [
+                    'product_id' => (string) $pen->id,
+                    'qty_wasted' => '2.0000',
+                    'unit_cost' => (string) $pen->average_cost,
+                ],
+            ],
+        ));
+
+        $pen->refresh();
+        $retailInventoryAccount->refresh();
+        $retailSpoilageExpense->refresh();
+
+        $this->assertSame('2.0000', bcsub($initialPenStock, (string) $pen->current_stock, 4));
+        $expectedCost = bcmul('2.0000', (string) $pen->average_cost, 4);
+        $this->assertSame(
+            number_format((float) $expectedCost, 4, '.', ''),
+            number_format((float) $spoilageLog->total_spoilage_cost, 4, '.', '')
+        );
+        $this->assertSame(
+            number_format((float) $expectedCost, 4, '.', ''),
+            bcsub((string) $retailSpoilageExpense->current_balance, $initialExpenseBal, 4)
+        );
+    }
 }
