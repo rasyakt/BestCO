@@ -7,6 +7,23 @@
     voidTxInvoice: '',
     showReceiptModal: false,
     activeReceipt: null,
+    activeMenuId: null,
+    isNearBottom: false,
+    toggleMenu(id, event) {
+        if (event) event.stopPropagation();
+        if (this.activeMenuId === id) {
+            this.activeMenuId = null;
+            return;
+        }
+        this.activeMenuId = id;
+        if (event) {
+            const rect = event.currentTarget.getBoundingClientRect();
+            this.isNearBottom = (window.innerHeight - rect.bottom) < 200;
+        }
+    },
+    closeMenu() {
+        this.activeMenuId = null;
+    },
     formatRp(num) {
         return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
     },
@@ -17,7 +34,7 @@
     printReceipt() {
         window.print();
     }
-}">
+}" @keydown.escape.window="closeMenu()">
     <x-page-header
         title="Riwayat Transaksi"
         subtitle="Cari transaksi, cetak ulang struk, atau batalkan transaksi.">
@@ -86,7 +103,7 @@
                         <th class="text-left whitespace-nowrap px-4 py-3">Pembayaran & Kasir</th>
                         <th class="text-right whitespace-nowrap px-4 py-3">Total Nilai</th>
                         <th class="text-center whitespace-nowrap px-4 py-3">Status</th>
-                        <th class="text-right whitespace-nowrap px-4 py-3 w-[110px]">Aksi</th>
+                        <th class="text-right whitespace-nowrap px-4 py-3 w-[56px]">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -140,7 +157,7 @@
                                 })->values()->all(),
                             ];
                         @endphp
-                        <tr>
+                        <tr :class="activeMenuId === 'tx-{{ $tx->id }}' ? 'relative z-30 bg-slate-50/80 dark:bg-slate-800/80' : ''">
                             <td class="whitespace-nowrap px-4 py-3">
                                 <div class="font-mono text-xs font-bold text-slate-800">{{ $tx->invoice_number }}</div>
                                 <div class="text-[11px] text-slate-400 mt-0.5">{{ $tx->transaction_date->format('d/m/Y H:i') }} WIB</div>
@@ -195,23 +212,42 @@
                                 @endif
                             </td>
                             <td class="text-right whitespace-nowrap px-4 py-3">
-                                <div class="flex items-center justify-end gap-1.5">
+                                <div class="relative inline-block text-left" @click.outside="if (activeMenuId === 'tx-{{ $tx->id }}') closeMenu()">
                                     <button type="button"
-                                        @click="openReceipt(@js($txReceiptData))"
-                                        class="btn btn-secondary btn-sm !py-1 !px-2.5 text-xs inline-flex items-center gap-1.5 text-slate-700 hover:text-brand-600 hover:border-brand-300"
-                                        title="Lihat & Cetak Struk">
-                                        <x-icon name="receipt" class="h-3.5 w-3.5 text-slate-400" />
-                                        <span class="font-medium">Struk</span>
+                                        @click="toggleMenu('tx-{{ $tx->id }}', $event)"
+                                        class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 shadow-2xs transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                                        title="Menu Aksi">
+                                        <x-icon name="more-vertical" class="h-3.5 w-3.5" />
                                     </button>
 
-                                    @if($tx->status === 'COMPLETED')
+                                    <div x-show="activeMenuId === 'tx-{{ $tx->id }}'"
+                                        x-cloak
+                                        x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="transform opacity-0 scale-95"
+                                        x-transition:enter-end="transform opacity-100 scale-100"
+                                        x-transition:leave="transition ease-in duration-75"
+                                        x-transition:leave-start="transform opacity-100 scale-100"
+                                        x-transition:leave-end="transform opacity-0 scale-95"
+                                        :class="isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'"
+                                        class="absolute right-0 z-50 w-48 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
+
                                         <button type="button"
-                                            @click="showVoidModal = true; voidTxId = '{{ $tx->id }}'; voidTxInvoice = '{{ $tx->invoice_number }}'"
-                                            class="btn btn-sm !py-1 !px-2 text-xs border border-rose-200 bg-rose-50/50 text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition-colors"
-                                            title="Batalkan Transaksi (Void)">
-                                            <x-icon name="x-circle" class="h-3.5 w-3.5" />
+                                            @click="closeMenu(); openReceipt(@js($txReceiptData))"
+                                            class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-brand-400">
+                                            <x-icon name="receipt" class="h-3.5 w-3.5 text-slate-400" />
+                                            <span>Lihat & Cetak Struk</span>
                                         </button>
-                                    @endif
+
+                                        @if($tx->status === 'COMPLETED')
+                                            <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
+                                            <button type="button"
+                                                @click="closeMenu(); showVoidModal = true; voidTxId = '{{ $tx->id }}'; voidTxInvoice = '{{ $tx->invoice_number }}'"
+                                                class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40">
+                                                <x-icon name="x-circle" class="h-3.5 w-3.5 text-rose-500" />
+                                                <span>Batalkan Transaksi</span>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                         </tr>

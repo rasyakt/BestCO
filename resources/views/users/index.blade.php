@@ -12,6 +12,23 @@
 @endphp
 
 <div class="space-y-6" x-data="{
+    activeMenuId: null,
+    isNearBottom: false,
+    toggleMenu(id, event) {
+        if (event) event.stopPropagation();
+        if (this.activeMenuId === id) {
+            this.activeMenuId = null;
+            return;
+        }
+        this.activeMenuId = id;
+        if (event) {
+            const rect = event.currentTarget.getBoundingClientRect();
+            this.isNearBottom = (window.innerHeight - rect.bottom) < 200;
+        }
+    },
+    closeMenu() {
+        this.activeMenuId = null;
+    },
     confirmStatus(form, name, isActive) {
         window.bestcoDialog.confirm({
             title: isActive ? 'Nonaktifkan akun?' : 'Aktifkan akun?',
@@ -27,7 +44,7 @@
             }
         });
     }
-}">
+}" @keydown.escape.window="closeMenu()">
     <x-page-header
         title="Kelola Pengguna"
         subtitle="Atur akun, role, dan status akses sesuai tingkatan kewenangan Anda.">
@@ -158,7 +175,7 @@
                             <th class="text-left whitespace-nowrap px-4 py-3">Role & NIP/NISN</th>
                             <th class="text-left whitespace-nowrap px-4 py-3">Kelas & NIS</th>
                             <th class="text-left whitespace-nowrap px-4 py-3">Status & Terakhir Masuk</th>
-                            <th class="text-right whitespace-nowrap px-4 py-3 w-[150px]">Aksi</th>
+                            <th class="text-right whitespace-nowrap px-4 py-3 w-[56px]">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -171,7 +188,7 @@
                                     ->implode('');
                                 $isSelf = $managedUser->is($actor);
                             @endphp
-                            <tr>
+                            <tr :class="activeMenuId === 'u-{{ $managedUser->id }}' ? 'relative z-30 bg-slate-50/80 dark:bg-slate-800/80' : ''">
                                 <td class="whitespace-nowrap px-4 py-3">
                                     <div class="flex items-center gap-2.5">
                                         <span class="avatar h-8 w-8 text-xs font-bold shrink-0">{{ $initials }}</span>
@@ -221,26 +238,46 @@
                                     </div>
                                 </td>
                                 <td class="text-right whitespace-nowrap px-4 py-3">
-                                    <div class="flex items-center justify-end gap-1.5">
-                                        <a href="{{ route('users.edit', $managedUser) }}"
-                                            class="btn btn-secondary btn-sm !py-1 !px-2.5 text-xs inline-flex items-center gap-1"
-                                            title="Edit akun {{ $managedUser->name }}">
-                                            <x-icon name="edit" class="h-3.5 w-3.5 text-slate-400" />
-                                            <span>Edit</span>
-                                        </a>
+                                    <div class="relative inline-block text-left" @click.outside="if (activeMenuId === 'u-{{ $managedUser->id }}') closeMenu()">
+                                        <button type="button"
+                                            @click="toggleMenu('u-{{ $managedUser->id }}', $event)"
+                                            class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 shadow-2xs transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                                            title="Menu Aksi">
+                                            <x-icon name="more-vertical" class="h-3.5 w-3.5" />
+                                        </button>
 
-                                        <form method="POST" action="{{ route('users.status', $managedUser) }}" class="inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="button"
-                                                @disabled($isSelf)
-                                                @click="confirmStatus($el.form, @js($managedUser->name), {{ $managedUser->is_active ? 'true' : 'false' }})"
-                                                class="btn btn-sm !py-1 !px-2 text-xs border border-slate-200 bg-white text-slate-600 {{ $managedUser->is_active ? 'hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600' : 'hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700' }} disabled:cursor-not-allowed disabled:opacity-40 inline-flex items-center gap-1"
-                                                title="{{ $isSelf ? 'Akun sendiri tidak dapat dinonaktifkan' : ($managedUser->is_active ? 'Nonaktifkan akun' : 'Aktifkan akun') }}">
-                                                <x-icon :name="$managedUser->is_active ? 'lock' : 'check'" class="h-3.5 w-3.5" />
-                                                <span>{{ $managedUser->is_active ? 'Nonaktif' : 'Aktifkan' }}</span>
-                                            </button>
-                                        </form>
+                                        <div x-show="activeMenuId === 'u-{{ $managedUser->id }}'"
+                                            x-cloak
+                                            x-transition:enter="transition ease-out duration-100"
+                                            x-transition:enter-start="transform opacity-0 scale-95"
+                                            x-transition:enter-end="transform opacity-100 scale-100"
+                                            x-transition:leave="transition ease-in duration-75"
+                                            x-transition:leave-start="transform opacity-100 scale-100"
+                                            x-transition:leave-end="transform opacity-0 scale-95"
+                                            :class="isNearBottom ? 'bottom-full mb-1.5' : 'top-full mt-1.5'"
+                                            class="absolute right-0 z-50 w-44 rounded-lg border border-slate-200 bg-white p-1 text-left shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
+
+                                            <a href="{{ route('users.edit', $managedUser) }}"
+                                                @click="closeMenu()"
+                                                class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-brand-50 hover:text-brand-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-brand-400">
+                                                <x-icon name="edit" class="h-3.5 w-3.5 text-slate-400" />
+                                                <span>Edit Akun</span>
+                                            </a>
+
+                                            @if(! $isSelf)
+                                                <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
+                                                <form method="POST" action="{{ route('users.status', $managedUser) }}" class="m-0">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="button"
+                                                        @click="closeMenu(); confirmStatus($el.form, @js($managedUser->name), {{ $managedUser->is_active ? 'true' : 'false' }})"
+                                                        class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium {{ $managedUser->is_active ? 'text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40' : 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40' }} transition">
+                                                        <x-icon :name="$managedUser->is_active ? 'lock' : 'check'" class="h-3.5 w-3.5" />
+                                                        <span>{{ $managedUser->is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}</span>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
