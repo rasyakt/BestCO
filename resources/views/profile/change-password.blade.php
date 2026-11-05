@@ -1,6 +1,7 @@
-@php $title = 'Ganti Password'; @endphp
+@extends('layouts.app', ['title' => 'Ganti Password — BESTCO'])
 
-<x-app-layout :title="$title">
+@section('content')
+<div class="space-y-6">
     <x-page-header title="Ganti Password" subtitle="Perbarui password akun Anda. Pastikan menggunakan kombinasi yang kuat." />
 
     <div class="mx-auto max-w-lg">
@@ -26,49 +27,103 @@
             <div class="space-y-5 p-6">
 
                 {{-- Password Saat Ini --}}
-                <div>
+                <div x-data="{ show: false }">
                     <label for="current_password" class="form-label">Password Saat Ini</label>
-                    <input
-                        type="password"
-                        id="current_password"
-                        name="current_password"
-                        autocomplete="current-password"
-                        class="form-input mt-1 @error('current_password') border-rose-500 focus:ring-rose-500 @enderror"
-                        required
-                    >
+                    <div class="relative mt-1">
+                        <input
+                            :type="show ? 'text' : 'password'"
+                            type="password"
+                            id="current_password"
+                            name="current_password"
+                            autocomplete="current-password"
+                            placeholder="Masukkan password saat ini"
+                            class="input !pr-10 @error('current_password') border-rose-400 focus:border-rose-500 focus:ring-rose-500/15 @enderror"
+                            required
+                        >
+                        <button
+                            type="button"
+                            @click="show = !show"
+                            :aria-label="show ? 'Sembunyikan password' : 'Lihat password'"
+                            tabindex="-1"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        >
+                            <span x-show="!show">
+                                <x-icon name="eye" class="h-4 w-4" />
+                            </span>
+                            <span x-show="show" x-cloak>
+                                <x-icon name="eye-off" class="h-4 w-4" />
+                            </span>
+                        </button>
+                    </div>
                     @error('current_password')
-                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                        <p class="form-error">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- Password Baru --}}
-                <div>
+                <div x-data="{ show: false }">
                     <label for="password" class="form-label">Password Baru</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        autocomplete="new-password"
-                        class="form-input mt-1 @error('password') border-rose-500 focus:ring-rose-500 @enderror"
-                        required
-                    >
-                    <p class="mt-1 text-[11px] text-slate-400">Min. 8 karakter, kombinasi huruf besar, kecil, dan angka.</p>
+                    <div class="relative mt-1">
+                        <input
+                            :type="show ? 'text' : 'password'"
+                            type="password"
+                            id="password"
+                            name="password"
+                            autocomplete="new-password"
+                            placeholder="Masukkan password baru"
+                            class="input !pr-10 @error('password') border-rose-400 focus:border-rose-500 focus:ring-rose-500/15 @enderror"
+                            required
+                        >
+                        <button
+                            type="button"
+                            @click="show = !show"
+                            :aria-label="show ? 'Sembunyikan password' : 'Lihat password'"
+                            tabindex="-1"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        >
+                            <span x-show="!show">
+                                <x-icon name="eye" class="h-4 w-4" />
+                            </span>
+                            <span x-show="show" x-cloak>
+                                <x-icon name="eye-off" class="h-4 w-4" />
+                            </span>
+                        </button>
+                    </div>
+                    <p class="form-hint">Min. 8 karakter, kombinasi huruf besar, kecil, dan angka.</p>
                     @error('password')
-                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                        <p class="form-error">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- Konfirmasi Password Baru --}}
-                <div>
+                <div x-data="{ show: false }">
                     <label for="password_confirmation" class="form-label">Konfirmasi Password Baru</label>
-                    <input
-                        type="password"
-                        id="password_confirmation"
-                        name="password_confirmation"
-                        autocomplete="new-password"
-                        class="form-input mt-1"
-                        required
-                    >
+                    <div class="relative mt-1">
+                        <input
+                            :type="show ? 'text' : 'password'"
+                            type="password"
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            autocomplete="new-password"
+                            placeholder="Ulangi password baru"
+                            class="input !pr-10"
+                            required
+                        >
+                        <button
+                            type="button"
+                            @click="show = !show"
+                            :aria-label="show ? 'Sembunyikan password' : 'Lihat password'"
+                            tabindex="-1"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        >
+                            <span x-show="!show">
+                                <x-icon name="eye" class="h-4 w-4" />
+                            </span>
+                            <span x-show="show" x-cloak>
+                                <x-icon name="eye-off" class="h-4 w-4" />
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -82,5 +137,6 @@
         </form>
 
     </div>
-</x-app-layout>
+</div>
+@endsection
 

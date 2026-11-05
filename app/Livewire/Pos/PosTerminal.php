@@ -109,11 +109,30 @@ final class PosTerminal extends Component
         return $cleaned;
     }
 
+    public function canUseManualDiscount(): bool
+    {
+        return app(\App\Services\Feature\FeatureManager::class)->canAccess('pos_manual_discount', auth()->user());
+    }
+
+    public function canUseCoupon(): bool
+    {
+        return app(\App\Services\Feature\FeatureManager::class)->canAccess('pos_coupon', auth()->user());
+    }
+
     /**
      * Hook untuk sanitasi real-time pada property updates
      */
     public function updatedManualDiscountTotal($value): void
     {
+        if (! $this->canUseManualDiscount()) {
+            $this->manualDiscountTotal = '0';
+            $this->feedbackType = 'error';
+            $this->feedbackMessage = 'Akses ditolak: Anda tidak memiliki izin untuk memberikan diskon manual.';
+            $this->recalculateCart();
+
+            return;
+        }
+
         $this->manualDiscountTotal = $this->clampManualDiscount((string) $value);
     }
 
@@ -345,6 +364,14 @@ final class PosTerminal extends Component
 
     public function recalculateCart(): void
     {
+        if (! $this->canUseManualDiscount()) {
+            $this->manualDiscountTotal = '0';
+        }
+
+        if (! $this->canUseCoupon()) {
+            $this->couponCode = '';
+        }
+
         $resolver = app(TieredPricingResolver::class);
 
         foreach ($this->cart as $key => $item) {
@@ -411,6 +438,13 @@ final class PosTerminal extends Component
 
     public function applyCoupon(): void
     {
+        if (! $this->canUseCoupon()) {
+            $this->feedbackType = 'error';
+            $this->feedbackMessage = 'Akses ditolak: Anda tidak memiliki izin untuk menggunakan kupon promo.';
+
+            return;
+        }
+
         $this->recalculateCart();
         if ($this->appliedPromotionId !== null) {
             $this->feedbackType = 'success';
@@ -530,6 +564,22 @@ final class PosTerminal extends Component
         if ($this->paymentMethod === 'CASH' && bccomp($paid, $grand, 4) === -1) {
             $this->feedbackMessage = 'Uang pembayaran tunai kurang dari Grand Total!';
             $this->feedbackType = 'error';
+
+            return;
+        }
+
+        if (bccomp((string) $this->manualDiscountTotal, '0', 4) === 1 && ! $this->canUseManualDiscount()) {
+            $this->feedbackMessage = 'Akses ditolak: Anda tidak memiliki izin untuk memberikan diskon manual.';
+            $this->feedbackType = 'error';
+            $this->showPaymentModal = false;
+
+            return;
+        }
+
+        if ($this->appliedPromotionId !== null && $this->couponCode !== '' && ! $this->canUseCoupon()) {
+            $this->feedbackMessage = 'Akses ditolak: Anda tidak memiliki izin untuk menggunakan kupon promo.';
+            $this->feedbackType = 'error';
+            $this->showPaymentModal = false;
 
             return;
         }

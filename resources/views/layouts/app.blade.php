@@ -53,50 +53,55 @@
             request()->routeIs('reports.*') => 'Laporan',
             request()->routeIs('settings.store*') => 'Informasi Toko',
             request()->routeIs('settings.qris*') => 'Pengaturan QRIS',
+            request()->routeIs('settings.features*') => 'Pengaturan Fitur',
             request()->routeIs('theme.*') => 'Tema',
             request()->routeIs('users.*') => 'Kelola Pengguna',
+            request()->routeIs('profile.*') => 'Profil Akun',
             default => 'BESTCO',
         };
+
+        $featureManager = app(\App\Services\Feature\FeatureManager::class);
 
         $navGroups = [
             [
                 'label' => 'Operasional',
                 'items' => [
-                    ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'dashboard', 'active' => 'dashboard', 'roles' => ['superadmin', 'admin', 'piket_guru']],
-                    ['label' => 'Kasir', 'route' => 'pos.terminal', 'icon' => 'pos', 'active' => 'pos.terminal'],
-                    ['label' => 'Riwayat Transaksi', 'route' => 'transactions.index', 'icon' => 'receipt', 'active' => 'transactions.*'],
-                    ['label' => 'Diskon & Promo', 'route' => 'promotions.index', 'icon' => 'tag', 'active' => 'promotions.*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
+                    ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'dashboard', 'active' => 'dashboard', 'feature' => 'dashboard'],
+                    ['label' => 'Kasir', 'route' => 'pos.terminal', 'icon' => 'pos', 'active' => 'pos.terminal', 'feature' => 'pos'],
+                    ['label' => 'Riwayat Transaksi', 'route' => 'transactions.index', 'icon' => 'receipt', 'active' => 'transactions.*', 'feature' => 'transactions'],
+                    ['label' => 'Diskon & Promo', 'route' => 'promotions.index', 'icon' => 'tag', 'active' => 'promotions.*', 'feature' => 'promotions'],
                 ],
             ],
             [
                 'label' => 'Persediaan',
                 'items' => [
-                    ['label' => 'Persediaan', 'route' => 'inventory.index', 'icon' => 'package', 'active' => 'inventory.index', 'roles' => ['superadmin', 'admin', 'piket_guru']],
-                    ['label' => 'Barang Masuk', 'route' => 'inventory.inbound', 'icon' => 'download', 'active' => 'inventory.inbound*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
-                    ['label' => 'Pindah Stok', 'route' => 'inventory.mutations', 'icon' => 'swap', 'active' => 'inventory.mutations', 'roles' => ['superadmin', 'admin', 'piket_guru']],
-                    ['label' => 'Barang Rusak', 'route' => 'inventory.spoilage', 'icon' => 'spoilage', 'active' => 'inventory.spoilage', 'roles' => ['superadmin', 'admin', 'piket_guru']],
+                    ['label' => 'Persediaan', 'route' => 'inventory.index', 'icon' => 'package', 'active' => 'inventory.index', 'feature' => 'inventory'],
+                    ['label' => 'Barang Masuk', 'route' => 'inventory.inbound', 'icon' => 'download', 'active' => 'inventory.inbound*', 'feature' => 'inventory_inbound'],
+                    ['label' => 'Pindah Stok', 'route' => 'inventory.mutations', 'icon' => 'swap', 'active' => 'inventory.mutations', 'feature' => 'inventory_mutations'],
+                    ['label' => 'Barang Rusak', 'route' => 'inventory.spoilage', 'icon' => 'spoilage', 'active' => 'inventory.spoilage', 'feature' => 'inventory_spoilage'],
                 ],
             ],
             [
                 'label' => 'Tim',
                 'items' => [
-                    ['label' => 'Shift Kasir', 'route' => 'shift.index', 'icon' => 'clock', 'active' => 'shift.*'],
-                    ['label' => 'Presensi Piket', 'route' => 'piket.index', 'icon' => 'users', 'active' => 'piket.*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
+                    ['label' => 'Shift Kasir', 'route' => 'shift.index', 'icon' => 'clock', 'active' => 'shift.*', 'feature' => 'shift'],
+                    ['label' => 'Presensi Piket', 'route' => 'piket.index', 'icon' => 'users', 'active' => 'piket.*', 'feature' => 'piket'],
                 ],
             ],
             [
                 'label' => 'Keuangan',
                 'items' => [
-                    ['label' => 'Laporan', 'route' => 'reports.index', 'icon' => 'chart', 'active' => 'reports.*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
+                    ['label' => 'Laporan', 'route' => 'reports.index', 'icon' => 'chart', 'active' => 'reports.*', 'feature' => 'reports'],
                 ],
             ],
             [
                 'label' => 'Sistem',
                 'items' => [
-                    ['label' => 'Kelola Pengguna', 'route' => 'users.index', 'icon' => 'users', 'active' => 'users.*', 'roles' => ['superadmin', 'admin', 'piket_guru']],
-                    ['label' => 'Informasi Toko', 'route' => 'settings.store', 'icon' => 'store', 'active' => 'settings.store*', 'roles' => ['superadmin', 'admin']],
-                    ['label' => 'Pengaturan QRIS', 'route' => 'settings.qris', 'icon' => 'qr', 'active' => 'settings.qris*', 'roles' => ['superadmin', 'admin']],
-                    ['label' => 'Tema', 'route' => 'theme.index', 'icon' => 'palette', 'active' => 'theme.*', 'roles' => ['superadmin']],
+                    ['label' => 'Kelola Pengguna', 'route' => 'users.index', 'icon' => 'users', 'active' => 'users.*', 'feature' => 'users'],
+                    ['label' => 'Informasi Toko', 'route' => 'settings.store', 'icon' => 'store', 'active' => 'settings.store*', 'feature' => 'settings_store'],
+                    ['label' => 'Pengaturan QRIS', 'route' => 'settings.qris', 'icon' => 'qr', 'active' => 'settings.qris*', 'feature' => 'settings_qris'],
+                    ['label' => 'Tema', 'route' => 'theme.index', 'icon' => 'palette', 'active' => 'theme.*', 'feature' => 'theme'],
+                    ['label' => 'Pengaturan Fitur', 'route' => 'settings.features', 'icon' => 'shield', 'active' => 'settings.features*', 'roles' => ['superadmin']],
                 ],
             ],
         ];
@@ -165,7 +170,15 @@
                 <nav class="flex-1 space-y-5 overflow-y-auto px-3 py-4">
                     @foreach($navGroups as $group)
                         @php
-                            $visibleItems = collect($group['items'])->filter(fn ($item) => ! isset($item['roles']) || $user->hasAnyRole($item['roles']));
+                            $visibleItems = collect($group['items'])->filter(function ($item) use ($featureManager, $user) {
+                                if (isset($item['feature'])) {
+                                    return $featureManager->canAccess($item['feature'], $user);
+                                }
+                                if (isset($item['roles'])) {
+                                    return $user->hasAnyRole($item['roles']);
+                                }
+                                return true;
+                            });
                         @endphp
 
                         @if($visibleItems->isNotEmpty())
@@ -327,11 +340,20 @@
                                             </a>
                                         @endif
                                         @if($user->hasRole('superadmin'))
+                                            <a href="{{ route('settings.features') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                                                <x-icon name="shield" class="h-4 w-4 text-slate-400" />
+                                                Pengaturan Fitur
+                                            </a>
                                             <a href="{{ route('theme.index') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                                                 <x-icon name="palette" class="h-4 w-4 text-slate-400" />
                                                 Tema
                                             </a>
                                         @endif
+                                        <div class="my-1 h-px bg-slate-100"></div>
+                                        <a href="{{ route('profile.password') }}" class="flex items-center gap-2.5 rounded px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                                            <x-icon name="shield" class="h-4 w-4 text-slate-400" />
+                                            Ganti Password
+                                        </a>
                                         <div class="my-1 h-px bg-slate-100"></div>
                                         <form method="POST" action="{{ route('logout') }}">
                                             @csrf

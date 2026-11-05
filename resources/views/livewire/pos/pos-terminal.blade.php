@@ -267,30 +267,34 @@
                             @endif
 
                             <!-- Input Kupon / Promo Manual -->
-                            <div class="flex items-center gap-1.5 pt-1">
-                                <input type="text" placeholder="Kode kupon/promo..."
-                                    wire:model="couponCode" wire:keydown.enter="applyCoupon"
-                                    class="input py-1 px-2.5 text-[10.5px] uppercase placeholder:normal-case flex-1">
-                                <button type="button" wire:click="applyCoupon" class="btn btn-secondary py-1 px-2 text-[10.5px]">
-                                    Pakai
-                                </button>
-                            </div>
-
-                            <div class="flex items-start justify-between gap-3 pt-1">
-                                <span class="text-slate-500">Diskon manual</span>
-                                <div class="text-right">
-                                    <div class="relative w-28">
-                                        <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400">Rp</span>
-                                        <input type="text" inputmode="numeric" step="500" min="0"
-                                            wire:model.live.debounce.300ms="manualDiscountTotal"
-                                            data-currency="true"
-                                            class="input py-1.5 pl-7 text-right text-[11px] font-medium num-tabular">
-                                    </div>
-                                    <p class="mt-1 text-[10px] text-slate-400">
-                                        Maks. Rp {{ number_format($this->maxManualDiscountAmount(), 0, ',', '.') }}
-                                    </p>
+                            @if($this->canUseCoupon())
+                                <div class="flex items-center gap-1.5 pt-1">
+                                    <input type="text" placeholder="Kode kupon/promo..."
+                                        wire:model="couponCode" wire:keydown.enter="applyCoupon"
+                                        class="input py-1 px-2.5 text-[10.5px] uppercase placeholder:normal-case flex-1">
+                                    <button type="button" wire:click="applyCoupon" class="btn btn-secondary py-1 px-2 text-[10.5px]">
+                                        Pakai
+                                    </button>
                                 </div>
-                            </div>
+                            @endif
+
+                            @if($this->canUseManualDiscount())
+                                <div class="flex items-start justify-between gap-3 pt-1">
+                                    <span class="text-slate-500">Diskon manual</span>
+                                    <div class="text-right">
+                                        <div class="relative w-28">
+                                            <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400">Rp</span>
+                                            <input type="text" inputmode="numeric" step="500" min="0"
+                                                wire:model.live.debounce.300ms="manualDiscountTotal"
+                                                data-currency="true"
+                                                class="input py-1.5 pl-7 text-right text-[11px] font-medium num-tabular">
+                                        </div>
+                                        <p class="mt-1 text-[10px] text-slate-400">
+                                            Maks. Rp {{ number_format($this->maxManualDiscountAmount(), 0, ',', '.') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     @endif
 

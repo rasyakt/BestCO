@@ -136,22 +136,65 @@
                 </div>
 
                 <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
+                    <div x-data="{ show: false }">
                         <label for="password" class="form-label">
                             Password {{ $isEdit ? '' : '*' }}
                         </label>
-                        <input type="password" id="password" name="password"
-                            autocomplete="new-password" class="input @error('password') border-rose-300 @enderror"
-                            placeholder="{{ $isEdit ? 'Kosongkan jika tetap' : 'Minimal 8 karakter' }}"
-                            {{ $isEdit ? '' : 'required' }}>
+                        <div class="relative">
+                            <input
+                                :type="show ? 'text' : 'password'"
+                                type="password"
+                                id="password"
+                                name="password"
+                                autocomplete="new-password"
+                                class="input !pr-10 @error('password') border-rose-300 @enderror"
+                                placeholder="{{ $isEdit ? 'Kosongkan jika tetap' : 'Minimal 8 karakter' }}"
+                                {{ $isEdit ? '' : 'required' }}>
+                            <button
+                                type="button"
+                                @click="show = !show"
+                                :aria-label="show ? 'Sembunyikan password' : 'Lihat password'"
+                                tabindex="-1"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                            >
+                                <span x-show="!show">
+                                    <x-icon name="eye" class="h-4 w-4" />
+                                </span>
+                                <span x-show="show" x-cloak>
+                                    <x-icon name="eye-off" class="h-4 w-4" />
+                                </span>
+                            </button>
+                        </div>
                         <p class="form-hint">Minimal 8 karakter.</p>
                         @error('password')<p class="form-error">{{ $message }}</p>@enderror
                     </div>
 
-                    <div>
+                    <div x-data="{ show: false }">
                         <label for="password_confirmation" class="form-label">Ulangi password</label>
-                        <input type="password" id="password_confirmation" name="password_confirmation"
-                            autocomplete="new-password" class="input" placeholder="Ketik ulang password">
+                        <div class="relative">
+                            <input
+                                :type="show ? 'text' : 'password'"
+                                type="password"
+                                id="password_confirmation"
+                                name="password_confirmation"
+                                autocomplete="new-password"
+                                class="input !pr-10"
+                                placeholder="Ketik ulang password">
+                            <button
+                                type="button"
+                                @click="show = !show"
+                                :aria-label="show ? 'Sembunyikan password' : 'Lihat password'"
+                                tabindex="-1"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                            >
+                                <span x-show="!show">
+                                    <x-icon name="eye" class="h-4 w-4" />
+                                </span>
+                                <span x-show="show" x-cloak>
+                                    <x-icon name="eye-off" class="h-4 w-4" />
+                                </span>
+                            </button>
+                        </div>
                     </div>
 
                     <div x-show="role !== 'piket_siswa'" x-cloak>
