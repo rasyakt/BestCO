@@ -60,6 +60,17 @@
                     </span>
                 @endif
             </button>
+            <button type="button" @click="activeTab = 'backup'"
+                :class="activeTab === 'backup' ? 'bg-brand-500 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+                class="inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 transition-all">
+                <x-icon name="database" class="h-4 w-4" />
+                <span>Backup & Restore Database</span>
+                @if(count($backups) > 0)
+                    <span class="ml-1 rounded-full bg-emerald-500 px-1.5 py-0.2 text-[10px] font-bold text-white leading-none">
+                        {{ count($backups) }}
+                    </span>
+                @endif
+            </button>
         </div>
 
         <div class="flex items-center gap-2">
@@ -530,18 +541,287 @@
 
     </div>
 
+    <!-- ============================================================= -->
+    <!-- TAB 4: BACKUP & RESTORE DATABASE                              -->
+    <!-- ============================================================= -->
+    <div x-show="activeTab === 'backup'" x-cloak x-transition.opacity class="space-y-6">
+
+        <!-- Stat Ringkas Database & Backup -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="card p-4 flex items-center gap-3.5">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400">
+                    <x-icon name="database" class="h-6 w-6" />
+                </div>
+                <div>
+                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Total File Backup</span>
+                    <p class="text-lg font-bold text-slate-900 dark:text-white">{{ count($backups) }} file</p>
+                </div>
+            </div>
+
+            <div class="card p-4 flex items-center gap-3.5">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+                    <x-icon name="archive" class="h-6 w-6" />
+                </div>
+                <div>
+                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Total Ukuran File</span>
+                    @php
+                        $totalBackupBytes = array_sum(array_column($backups, 'size'));
+                        $units = ['B', 'KB', 'MB', 'GB'];
+                        $bIdx = 0;
+                        $tSize = $totalBackupBytes;
+                        while ($tSize > 1024 && $bIdx < count($units) - 1) {
+                            $tSize /= 1024;
+                            $bIdx++;
+                        }
+                        $formattedTotal = round($tSize, 2) . ' ' . $units[$bIdx];
+                    @endphp
+                    <p class="text-lg font-bold text-slate-900 dark:text-white">{{ $formattedTotal }}</p>
+                </div>
+            </div>
+
+            <div class="card p-4 flex items-center gap-3.5">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400">
+                    <x-icon name="server" class="h-6 w-6" />
+                </div>
+                <div class="min-w-0">
+                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Target Database</span>
+                    <p class="text-sm font-bold text-slate-900 dark:text-white truncate">
+                        {{ $stats['database']['database_name'] }}
+                        <span class="text-xs font-normal text-slate-500">({{ $stats['database']['driver'] }})</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2 Kolom Aksi: Buat Backup & Restore dari File Luar -->
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+            <!-- Card 1: Buat Backup Baru -->
+            <div class="card flex flex-col justify-between">
+                <div>
+                    <div class="border-b border-slate-100 p-5 dark:border-slate-800">
+                        <div class="flex items-center gap-2.5">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                                <x-icon name="download" class="h-4 w-4" />
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Buat Backup Database Baru</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Cadangkan seluruh struktur skema tabel, indeks, dan isi data baris ke file SQL.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="form-create-backup" method="POST" action="{{ route('dev.backups.create') }}" class="p-5 space-y-4">
+                        @csrf
+                        <div class="rounded-lg border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" name="compress" value="1" checked class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800">
+                                <div class="text-xs">
+                                    <span class="font-medium text-slate-900 dark:text-white">Kompresi GZIP (.sql.gz)</span>
+                                    <p class="text-slate-500 dark:text-slate-400 mt-0.5">Disarankan aktif untuk menghemat ukuran penyimpanan di server hingga 75-85%.</p>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="text-xs text-slate-500 dark:text-slate-400 space-y-1.5">
+                            <p class="flex items-center gap-1.5">
+                                <x-icon name="check-circle" class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                <span>Menyimpan struktur seluruh tabel, relasi foreign key, dan data lengkap.</span>
+                            </p>
+                            <p class="flex items-center gap-1.5">
+                                <x-icon name="check-circle" class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                <span>File otomatis disimpan di direktori <code>storage/app/backups</code>.</span>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="border-t border-slate-100 p-5 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30 flex justify-end">
+                    <button type="submit" form="form-create-backup" class="btn btn-primary btn-sm inline-flex items-center gap-2">
+                        <x-icon name="database" class="h-4 w-4" />
+                        <span>Cadangkan Database Sekarang</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 2: Restore dari File Luar -->
+            <div class="card flex flex-col justify-between">
+                <div>
+                    <div class="border-b border-slate-100 p-5 dark:border-slate-800">
+                        <div class="flex items-center gap-2.5">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
+                                <x-icon name="upload" class="h-4 w-4" />
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Restore dari File (.sql / .sql.gz)</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Unggah file cadangan untuk memulihkan seluruh data database saat ini.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="form-upload-restore" method="POST" action="{{ route('dev.backups.uploadRestore') }}" enctype="multipart/form-data" class="p-5 space-y-4">
+                        @csrf
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                Pilih File Backup (.sql atau .sql.gz)
+                            </label>
+                            <div class="relative">
+                                <input type="file" name="backup_file" id="backup_file_input" accept=".sql,.gz,.sql.gz" @change="previewRestoreFile($event)" class="sr-only">
+                                <label for="backup_file_input" class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-200 p-4 text-center cursor-pointer transition hover:border-brand-500 dark:border-slate-700 dark:hover:border-brand-500">
+                                    <x-icon name="upload" class="h-6 w-6 text-slate-400 mb-1.5" />
+                                    <span class="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400" x-text="restoreFileName || 'Pilih atau seret file .sql / .sql.gz ke sini'"></span>
+                                    <span class="text-[11px] text-slate-400 mt-0.5">Maksimal 100 MB</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300 flex items-start gap-2">
+                            <x-icon name="shield" class="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                            <div>
+                                <span class="font-semibold">Peringatan:</span> Tindakan restore akan menimpa seluruh data tabel saat ini dengan data dari file backup yang dipilih.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="border-t border-slate-100 p-5 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30 flex justify-end">
+                    <button type="button" @click="confirmUploadRestore()" :disabled="!restoreFileName" class="btn btn-danger btn-sm inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <x-icon name="refresh" class="h-4 w-4" />
+                        <span>Restore Database Sekarang</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Tabel Daftar File Backup -->
+        <div class="card overflow-hidden">
+            <div class="border-b border-slate-100 p-5 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Daftar File Backup di Server</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">File backup yang tersimpan di direktori lokal server <code>storage/app/backups</code>.</p>
+                </div>
+                <span class="badge badge-gray text-xs font-mono">
+                    {{ count($backups) }} File
+                </span>
+            </div>
+
+            @if(count($backups) === 0)
+                <div class="p-12 text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 dark:bg-slate-800">
+                        <x-icon name="database" class="h-6 w-6" />
+                    </div>
+                    <p class="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Belum Ada File Backup</p>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                        Klik tombol "Cadangkan Database Sekarang" di atas untuk membuat salinan data database pertama Anda.
+                    </p>
+                </div>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nama File</th>
+                                <th>Format</th>
+                                <th>Ukuran</th>
+                                <th>Tanggal Pembuatan</th>
+                                <th class="text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($backups as $b)
+                                <tr>
+                                    <td>
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="flex h-8 w-8 items-center justify-center rounded-lg {{ $b['is_compressed'] ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400' : 'bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400' }}">
+                                                <x-icon name="{{ $b['is_compressed'] ? 'archive' : 'database' }}" class="h-4 w-4" />
+                                            </div>
+                                            <span class="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                                {{ $b['filename'] }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if($b['is_compressed'])
+                                            <span class="badge badge-purple text-[11px] font-mono">GZIP (.sql.gz)</span>
+                                        @else
+                                            <span class="badge badge-blue text-[11px] font-mono">SQL (.sql)</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="font-mono text-xs text-slate-600 dark:text-slate-400">
+                                            {{ $b['size_formatted'] }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="text-xs text-slate-600 dark:text-slate-400">
+                                            {{ $b['created_at'] }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <!-- Download -->
+                                            <a href="{{ route('dev.backups.download', $b['filename']) }}" class="btn btn-secondary btn-sm inline-flex items-center gap-1" title="Unduh file backup">
+                                                <x-icon name="download" class="h-3.5 w-3.5" />
+                                                <span class="hidden sm:inline">Unduh</span>
+                                            </a>
+
+                                            <!-- Restore Button -->
+                                            <button type="button" @click="confirmRestore('{{ $b['filename'] }}')" class="btn btn-secondary btn-sm text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-amber-200 dark:border-amber-800 inline-flex items-center gap-1" title="Restore database dari file ini">
+                                                <x-icon name="refresh" class="h-3.5 w-3.5" />
+                                                <span class="hidden sm:inline">Restore</span>
+                                            </button>
+
+                                            <!-- Delete Button -->
+                                            <button type="button" @click="confirmDelete('{{ $b['filename'] }}')" class="btn btn-secondary btn-sm text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 dark:border-rose-800 inline-flex items-center gap-1" title="Hapus file backup">
+                                                <x-icon name="trash" class="h-3.5 w-3.5" />
+                                                <span class="hidden sm:inline">Hapus</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+
+        <!-- Hidden Forms untuk Restore & Delete per Baris -->
+        <form id="form-restore-action" method="POST" action="" class="hidden">
+            @csrf
+        </form>
+
+        <form id="form-delete-action" method="POST" action="" class="hidden">
+            @csrf
+            @method('DELETE')
+        </form>
+
+    </div>
+
 </div>
 
 <script>
 function developerConsole() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('tab') || 'branding';
+
     return {
-        activeTab: 'branding',
+        activeTab: ['branding', 'stats', 'logs', 'backup'].includes(initialTab) ? initialTab : 'branding',
         logoFileName: '',
+        restoreFileName: '',
 
         previewLogoFile(event) {
             const file = event.target.files[0];
             if (file) {
                 this.logoFileName = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+            }
+        },
+
+        previewRestoreFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                this.restoreFileName = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
             }
         },
 
@@ -569,6 +849,57 @@ function developerConsole() {
             }).then((confirmed) => {
                 if (confirmed) {
                     document.getElementById('form-clear-logs').submit();
+                }
+            });
+        },
+
+        confirmRestore(filename) {
+            window.bestcoDialog.confirm({
+                title: 'Konfirmasi Restore Database',
+                message: 'Peringatan: Seluruh data dan tabel yang ada saat ini akan ditimpa dengan data dari file backup "' + filename + '". Tindakan ini tidak dapat dibatalkan.',
+                detail: 'Untuk mencegah tindakan yang tidak disengaja, ketik kata RESTORE pada kolom di bawah ini untuk mengaktifkan tombol restore.',
+                type: 'danger',
+                confirmText: 'Ya, Restore Sekarang',
+                cancelText: 'Batal',
+                requireConfirmationText: 'RESTORE',
+            }).then((confirmed) => {
+                if (confirmed) {
+                    const form = document.getElementById('form-restore-action');
+                    form.action = '/developer/backups/' + encodeURIComponent(filename) + '/restore';
+                    form.submit();
+                }
+            });
+        },
+
+        confirmDelete(filename) {
+            window.bestcoDialog.confirm({
+                title: 'Hapus File Backup?',
+                message: 'File backup "' + filename + '" akan dihapus permanen dari server.',
+                type: 'danger',
+                confirmText: 'Ya, Hapus File',
+                cancelText: 'Batal',
+            }).then((confirmed) => {
+                if (confirmed) {
+                    const form = document.getElementById('form-delete-action');
+                    form.action = '/developer/backups/' + encodeURIComponent(filename);
+                    form.submit();
+                }
+            });
+        },
+
+        confirmUploadRestore() {
+            if (!this.restoreFileName) return;
+            window.bestcoDialog.confirm({
+                title: 'Konfirmasi Restore dari File Unggahan',
+                message: 'Peringatan: Seluruh isi tabel database saat ini akan digantikan secara penuh oleh data dari file cadangan yang Anda unggah.',
+                detail: 'Ketik kata RESTORE pada kolom di bawah ini untuk membuka kunci tombol restore.',
+                type: 'danger',
+                confirmText: 'Ya, Unggah & Restore',
+                cancelText: 'Batal',
+                requireConfirmationText: 'RESTORE',
+            }).then((confirmed) => {
+                if (confirmed) {
+                    document.getElementById('form-upload-restore').submit();
                 }
             });
         },

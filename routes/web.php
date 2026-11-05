@@ -197,5 +197,20 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/developer/identity/logo', [DeveloperController::class, 'resetLogo'])->name('dev.identity.resetLogo');
         Route::delete('/developer/logs', [DeveloperController::class, 'clearLogs'])->name('dev.logs.clear');
         Route::get('/developer/logs/download', [DeveloperController::class, 'downloadLogs'])->name('dev.logs.download');
+
+        // Backup & Restore Database (Dilengkapi Rate-Limiting untuk proteksi DoS/Disk Flooding)
+        Route::post('/developer/backups', [DeveloperController::class, 'createBackup'])
+            ->middleware('throttle:15,1')
+            ->name('dev.backups.create');
+        Route::get('/developer/backups/{filename}/download', [DeveloperController::class, 'downloadBackup'])
+            ->name('dev.backups.download');
+        Route::post('/developer/backups/{filename}/restore', [DeveloperController::class, 'restoreBackup'])
+            ->middleware('throttle:10,1')
+            ->name('dev.backups.restore');
+        Route::post('/developer/backups/upload-restore', [DeveloperController::class, 'uploadRestoreBackup'])
+            ->middleware('throttle:10,1')
+            ->name('dev.backups.uploadRestore');
+        Route::delete('/developer/backups/{filename}', [DeveloperController::class, 'deleteBackup'])
+            ->name('dev.backups.delete');
     });
 });

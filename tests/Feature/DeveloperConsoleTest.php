@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Services\Developer\DatabaseBackupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -136,5 +137,39 @@ final class DeveloperConsoleTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('content-type', 'text/plain; charset=UTF-8');
+    }
+
+    public function test_superadmin_can_create_and_delete_backup(): void
+    {
+        $response = $this->actingAs($this->superadmin)->post(route('dev.backups.create'), [
+            'compress' => '0',
+        ]);
+
+        $response->assertRedirect(route('dev.index', ['tab' => 'backup']));
+        $response->assertSessionHas('success');
+
+        $backups = DatabaseBackupService::listBackups();
+        $this->assertNotEmpty($backups);
+
+        $created = $backups[0]['filename'];
+        $this->assertFileExists(DatabaseBackupService::getBackupPath($created));
+
+        // Test download
+        $downloadRes = $this->actingAs($this->superadmin)->get(route('dev.backups.download', $created));
+        $downloadRes->assertOk();
+
+        // Test delete
+        $delRes = $this->actingAs($this->superadmin)->delete(route('dev.backups.delete', $created));
+        $delRes->assertRedirect(route('dev.index', ['tab' => 'backup']));
+        $delRes->assertSessionHas('success');
+
+        $this->assertNull(DatabaseBackupService::getBackupPath($created));
+    }
+
+    public function test_non_superadmin_cannot_access_backup_routes(): void
+    {
+        $this->actingAs($this->admin)->post(route('dev.backups.create'))->assertForbidden();
+        $this->actingAs($this->guru)->post(route('dev.backups.create'))->assertForbidden();
+        $this->actingAs($this->siswa)->post(route('dev.backups.create'))->assertForbidden();
     }
 }

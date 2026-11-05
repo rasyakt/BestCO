@@ -70,12 +70,28 @@
 
             <!-- Body Message -->
             <div class="mt-4">
-                <p class="text-xs text-slate-600 leading-relaxed" x-text="dialog.message"></p>
+                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed" x-text="dialog.message"></p>
 
                 <!-- Detail info box if provided -->
                 <template x-if="dialog.detail">
-                    <div class="mt-3 rounded-lg border border-slate-100 bg-slate-50/80 p-3 text-[11px] leading-relaxed text-slate-500">
+                    <div class="mt-3 rounded-lg border border-slate-100 bg-slate-50/80 p-3 text-[11px] leading-relaxed text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
                         <p x-text="dialog.detail"></p>
+                    </div>
+                </template>
+
+                <!-- Confirmation Text Input if required -->
+                <template x-if="dialog.requireConfirmationText">
+                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                            Ketik <span class="font-mono font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/60 dark:text-rose-400 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900/60" x-text="dialog.requireConfirmationText"></span> untuk mengonfirmasi:
+                        </label>
+                        <input type="text"
+                            x-model="enteredConfirmationText"
+                            @keydown.enter.prevent="if (canConfirm) confirmAction()"
+                            :placeholder="'Ketik ' + dialog.requireConfirmationText"
+                            class="input font-mono text-xs w-full uppercase tracking-wider"
+                            autocomplete="off"
+                            spellcheck="false">
                     </div>
                 </template>
             </div>
@@ -93,13 +109,14 @@
                 <!-- Confirm or OK button -->
                 <button type="button"
                     @click="confirmAction()"
+                    :disabled="!canConfirm"
                     :class="{
                         'btn btn-danger': dialog.type === 'danger',
                         'btn btn-warning': dialog.type === 'warning',
                         'btn btn-success': dialog.type === 'success',
                         'btn btn-primary': dialog.type === 'primary' || dialog.type === 'info'
                     }"
-                    class="px-5 py-2.5 rounded-lg text-xs font-semibold flex-1 sm:flex-initial shadow-xs">
+                    class="px-5 py-2.5 rounded-lg text-xs font-semibold flex-1 sm:flex-initial shadow-xs disabled:opacity-40 disabled:cursor-not-allowed">
                     <span x-text="dialog.confirmText || (isAlert ? 'Mengerti' : 'Lanjutkan')"></span>
                 </button>
             </div>
@@ -112,6 +129,7 @@ function bestcoDialogComponent() {
     return {
         isOpen: false,
         isAlert: false,
+        enteredConfirmationText: '',
         dialog: {
             title: '',
             subtitle: '',
@@ -120,15 +138,22 @@ function bestcoDialogComponent() {
             type: 'primary',
             confirmText: 'Lanjutkan',
             cancelText: 'Batal',
+            requireConfirmationText: '',
             onConfirm: null,
             onCancel: null,
             resolve: null
+        },
+        get canConfirm() {
+            if (this.isAlert) return true;
+            if (!this.dialog.requireConfirmationText) return true;
+            return this.enteredConfirmationText.trim().toUpperCase() === this.dialog.requireConfirmationText.trim().toUpperCase();
         },
         initDialog() {
             window.bestcoDialog = {
                 confirm: (options) => {
                     return new Promise((resolve) => {
                         this.isAlert = false;
+                        this.enteredConfirmationText = '';
                         this.dialog = {
                             title: options.title || 'Konfirmasi Tindakan',
                             subtitle: options.subtitle || '',
@@ -137,6 +162,7 @@ function bestcoDialogComponent() {
                             type: options.type || 'primary',
                             confirmText: options.confirmText || 'Lanjutkan',
                             cancelText: options.cancelText || 'Batal',
+                            requireConfirmationText: options.requireConfirmationText || '',
                             onConfirm: options.onConfirm || null,
                             onCancel: options.onCancel || null,
                             resolve: resolve
@@ -150,6 +176,7 @@ function bestcoDialogComponent() {
                             options = { message: options };
                         }
                         this.isAlert = true;
+                        this.enteredConfirmationText = '';
                         this.dialog = {
                             title: options.title || 'Informasi',
                             subtitle: options.subtitle || '',
@@ -158,6 +185,7 @@ function bestcoDialogComponent() {
                             type: options.type || 'info',
                             confirmText: options.confirmText || 'Mengerti',
                             cancelText: '',
+                            requireConfirmationText: '',
                             onConfirm: options.onConfirm || null,
                             onCancel: null,
                             resolve: resolve
@@ -181,6 +209,7 @@ function bestcoDialogComponent() {
             };
         },
         confirmAction() {
+            if (!this.canConfirm) return;
             const onConfirm = this.dialog.onConfirm;
             const resolve = this.dialog.resolve;
             this.isOpen = false;
