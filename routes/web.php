@@ -25,6 +25,19 @@ use App\Livewire\Pos\PosTerminal;
 use App\Services\Feature\FeatureManager;
 use Illuminate\Support\Facades\Route;
 
+// Testing Error Pages (DEVELOPMENT ONLY - Remove in production)
+if (app()->environment('local')) {
+    Route::prefix('_errors')->group(function () {
+        Route::get('/401', fn() => abort(401));
+        Route::get('/403', fn() => abort(403, 'Anda tidak memiliki akses ke halaman ini.'));
+        Route::get('/404', fn() => abort(404));
+        Route::get('/419', fn() => abort(419));
+        Route::get('/429', fn() => abort(429));
+        Route::get('/500', fn() => abort(500, 'Terjadi kesalahan internal server.'));
+        Route::get('/503', fn() => abort(503));
+    });
+}
+
 // Guest Routes
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

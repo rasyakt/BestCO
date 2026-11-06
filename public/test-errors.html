@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Error Pages - BESTCO</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #1a202c;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .error-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .error-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        .error-code {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .error-name {
+            font-size: 11px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .warning strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Error Pages</h1>
+        <p class="subtitle">Klik untuk melihat halaman error yang sudah diperbaiki</p>
+        
+        <div class="grid">
+            <a href="/_errors/401" class="error-btn" target="_blank">
+                <span class="error-code">401</span>
+                <span class="error-name">Unauthorized</span>
+            </a>
+            <a href="/_errors/403" class="error-btn" target="_blank">
+                <span class="error-code">403</span>
+                <span class="error-name">Forbidden</span>
+            </a>
+            <a href="/_errors/404" class="error-btn" target="_blank">
+                <span class="error-code">404</span>
+                <span class="error-name">Not Found</span>
+            </a>
+            <a href="/_errors/419" class="error-btn" target="_blank">
+                <span class="error-code">419</span>
+                <span class="error-name">CSRF Token</span>
+            </a>
+            <a href="/_errors/429" class="error-btn" target="_blank">
+                <span class="error-code">429</span>
+                <span class="error-name">Too Many Requests</span>
+            </a>
+            <a href="/_errors/500" class="error-btn" target="_blank">
+                <span class="error-code">500</span>
+                <span class="error-name">Server Error</span>
+            </a>
+            <a href="/_errors/503" class="error-btn" target="_blank">
+                <span class="error-code">503</span>
+                <span class="error-name">Maintenance</span>
+            </a>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Peringatan</strong>
+            Route testing ini hanya aktif di environment <code>local</code>. 
+            Hapus kode ini sebelum deploy ke production!
+        </div>
+    </div>
+</body>
+</html>
