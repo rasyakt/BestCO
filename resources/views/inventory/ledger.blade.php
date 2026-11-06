@@ -65,6 +65,7 @@
                                 'POS_SALE' => ['badge-info', 'Penjualan'],
                                 'SERVICE_BOM' => ['badge-purple', 'Pemakaian bahan'],
                                 'SPOILAGE' => ['badge-danger', 'Barang rusak'],
+                                'OPNAME' => ['badge-warning', 'Penyesuaian opname'],
                                 'VOID_RESTORE' => ['badge-success', 'Pembatalan'],
                                 default => ['badge-neutral', 'Lainnya'],
                             };

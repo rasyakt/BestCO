@@ -143,8 +143,17 @@
             </form>
 
             <!-- Reset Form -->
-            <form action="{{ route('settings.store.reset') }}" method="POST" 
-                onsubmit="return confirm('Yakin ingin mengembalikan ke pengaturan default?')" 
+            <form action="{{ route('settings.store.reset') }}" method="POST"
+                x-data
+                @submit.prevent="window.bestcoDialog.confirm({
+                    title: 'Reset Pengaturan Toko?',
+                    message: 'Seluruh identitas dan pengaturan toko akan dikembalikan ke nilai default.',
+                    detail: 'Logo kustom dan perubahan pengaturan sebelumnya akan diganti. Tindakan ini tidak dapat dibatalkan.',
+                    type: 'warning',
+                    confirmText: 'Ya, Reset',
+                    cancelText: 'Batal',
+                    onConfirm: () => $el.submit()
+                })"
                 class="mt-4">
                 @csrf
                 @method('DELETE')

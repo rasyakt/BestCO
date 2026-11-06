@@ -51,6 +51,7 @@
             request()->routeIs('inventory.index') => 'Persediaan',
             request()->routeIs('inventory.mutations') => 'Pindah Stok',
             request()->routeIs('inventory.spoilage') => 'Barang Rusak',
+            request()->routeIs('inventory.opname*') => 'Stok Opname',
             request()->routeIs('inventory.ledger') => 'Kartu Stok',
             request()->routeIs('shift.*') => 'Shift Kasir',
             request()->routeIs('piket.*') => 'Presensi Piket',
@@ -84,6 +85,7 @@
                     ['label' => 'Barang Masuk', 'route' => 'inventory.inbound', 'icon' => 'download', 'active' => 'inventory.inbound*', 'feature' => 'inventory_inbound'],
                     ['label' => 'Pindah Stok', 'route' => 'inventory.mutations', 'icon' => 'swap', 'active' => 'inventory.mutations', 'feature' => 'inventory_mutations'],
                     ['label' => 'Barang Rusak', 'route' => 'inventory.spoilage', 'icon' => 'spoilage', 'active' => 'inventory.spoilage', 'feature' => 'inventory_spoilage'],
+                    ['label' => 'Stok Opname', 'route' => 'inventory.opname', 'icon' => 'scale', 'active' => 'inventory.opname*', 'feature' => 'inventory_opname'],
                 ],
             ],
             [

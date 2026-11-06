@@ -18,6 +18,12 @@
                 <x-icon name="spoilage" class="h-4 w-4" />
                 Barang Rusak
             </a>
+            @if(auth()->user()?->hasAnyRole(['superadmin', 'admin', 'piket_guru']))
+                <a href="{{ route('inventory.opname') }}" class="btn btn-secondary">
+                    <x-icon name="scale" class="h-4 w-4" />
+                    Stok Opname
+                </a>
+            @endif
             @if(auth()->user()?->hasAnyRole(['superadmin', 'admin']))
                 <div class="relative inline-block text-left" x-data="{ addMenuOpen: false }" @click.outside="addMenuOpen = false">
                     <button type="button" @click="addMenuOpen = !addMenuOpen" class="btn btn-primary inline-flex items-center gap-2">
@@ -1615,7 +1621,17 @@ function inventoryManager() {
         },
 
         async deleteCategory(cat) {
-            if (!confirm(`Hapus kategori "${cat.name}"?`)) return;
+            const confirmed = await window.bestcoDialog.confirm({
+                title: 'Hapus Kategori?',
+                message: `Kategori "${cat.name}" akan dihapus permanen.`,
+                detail: 'Kategori yang masih digunakan oleh produk tidak dapat dihapus.',
+                type: 'danger',
+                confirmText: 'Hapus Kategori',
+                cancelText: 'Batal'
+            });
+
+            if (!confirmed) return;
+
             try {
                 const res = await fetch(`/inventory/categories/${cat.id}`, {
                     method: 'DELETE',
@@ -1627,7 +1643,11 @@ function inventoryManager() {
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    alert(data.message || 'Gagal menghapus kategori.');
+                    window.bestcoDialog.alert({
+                        title: 'Gagal Menghapus Kategori',
+                        message: data.message || 'Gagal menghapus kategori.',
+                        type: 'danger'
+                    });
                     return;
                 }
                 this.categoriesList = this.categoriesList.filter(c => c.id !== cat.id);
@@ -1636,7 +1656,11 @@ function inventoryManager() {
                     this.newProd.category_id = fallback ? fallback.id : '';
                 }
             } catch (e) {
-                alert('Terjadi kesalahan jaringan.');
+                window.bestcoDialog.alert({
+                    title: 'Kesalahan Jaringan',
+                    message: 'Terjadi kesalahan jaringan saat menghapus kategori.',
+                    type: 'danger'
+                });
             }
         },
 
@@ -1684,7 +1708,17 @@ function inventoryManager() {
         },
 
         async deleteUnit(u) {
-            if (!confirm(`Hapus satuan "${u.code} (${u.name})"?`)) return;
+            const confirmed = await window.bestcoDialog.confirm({
+                title: 'Hapus Satuan?',
+                message: `Satuan "${u.code} (${u.name})" akan dihapus permanen.`,
+                detail: 'Satuan yang masih digunakan oleh produk tidak dapat dihapus.',
+                type: 'danger',
+                confirmText: 'Hapus Satuan',
+                cancelText: 'Batal'
+            });
+
+            if (!confirmed) return;
+
             try {
                 const res = await fetch(`/inventory/units/${u.id}`, {
                     method: 'DELETE',
@@ -1696,7 +1730,11 @@ function inventoryManager() {
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    alert(data.message || 'Gagal menghapus satuan.');
+                    window.bestcoDialog.alert({
+                        title: 'Gagal Menghapus Satuan',
+                        message: data.message || 'Gagal menghapus satuan.',
+                        type: 'danger'
+                    });
                     return;
                 }
                 this.unitsList = this.unitsList.filter(item => item.id !== u.id);
@@ -1704,7 +1742,11 @@ function inventoryManager() {
                     this.newProd.unit_id = this.unitsList[0]?.id || '';
                 }
             } catch (e) {
-                alert('Terjadi kesalahan jaringan.');
+                window.bestcoDialog.alert({
+                    title: 'Kesalahan Jaringan',
+                    message: 'Terjadi kesalahan jaringan saat menghapus satuan.',
+                    type: 'danger'
+                });
             }
         },
 

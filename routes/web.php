@@ -16,6 +16,7 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SpoilageController;
 use App\Http\Controllers\StockInboundController;
 use App\Http\Controllers\StockMutationController;
+use App\Http\Controllers\StockOpnameController;
 use App\Http\Controllers\StoreSettingController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\TransactionController;
@@ -158,6 +159,26 @@ Route::middleware('auth')->group(function (): void {
     // Barang Rusak (Spoilage)
     Route::middleware('feature:inventory_spoilage')->group(function (): void {
         Route::get('/inventory/spoilage', [SpoilageController::class, 'index'])->name('inventory.spoilage');
+    });
+
+    // Stok Opname (penghitungan fisik & penyesuaian stok)
+    Route::middleware('feature:inventory_opname')->group(function (): void {
+        Route::get('/inventory/opname', [StockOpnameController::class, 'index'])
+            ->name('inventory.opname');
+        Route::get('/inventory/opname/create', [StockOpnameController::class, 'create'])
+            ->middleware('role:superadmin,admin,piket_guru')
+            ->name('inventory.opname.create');
+        Route::post('/inventory/opname', [StockOpnameController::class, 'store'])
+            ->middleware('role:superadmin,admin,piket_guru')
+            ->name('inventory.opname.store');
+        Route::get('/inventory/opname/{opname}', [StockOpnameController::class, 'show'])
+            ->name('inventory.opname.show');
+        Route::post('/inventory/opname/{opname}/approve', [StockOpnameController::class, 'approve'])
+            ->middleware('role:superadmin,admin')
+            ->name('inventory.opname.approve');
+        Route::delete('/inventory/opname/{opname}', [StockOpnameController::class, 'destroy'])
+            ->middleware('role:superadmin,admin,piket_guru')
+            ->name('inventory.opname.destroy');
     });
 
     // Laporan Akuntansi & BKU

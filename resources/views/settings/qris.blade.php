@@ -82,8 +82,17 @@
                             <p class="text-xs font-semibold text-emerald-800">✓ QR Code aktif dan siap digunakan</p>
                         </div>
 
-                        <form action="{{ route('settings.qris.delete') }}" method="POST" 
-                            onsubmit="return confirm('Yakin ingin menghapus QR code QRIS?')">
+                        <form action="{{ route('settings.qris.delete') }}" method="POST"
+                            x-data
+                            @submit.prevent="window.bestcoDialog.confirm({
+                                title: 'Hapus QR Code QRIS?',
+                                message: 'QR code QRIS yang sedang aktif akan dihapus dari sistem.',
+                                detail: 'Pembayaran QRIS tidak dapat digunakan sampai Anda mengunggah QR code baru.',
+                                type: 'danger',
+                                confirmText: 'Ya, Hapus',
+                                cancelText: 'Batal',
+                                onConfirm: () => $el.submit()
+                            })">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger w-full">

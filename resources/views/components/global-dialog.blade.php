@@ -16,7 +16,7 @@
 
         <!-- Modal Dialog Card -->
         <div x-show="isOpen"
-            @click.outside="if (isAlert) close()"
+            @click.outside="close()"
             x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0 scale-95 translate-y-2"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -36,29 +36,29 @@
             <div class="flex items-center gap-4">
                 <!-- Danger Icon -->
                 <template x-if="dialog.type === 'danger'">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600">
-                        <x-icon name="spoilage" class="h-5 w-5" />
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-lg shadow-rose-500/25">
+                        <x-icon name="x-circle" class="h-6 w-6" stroke-width="2" />
                     </div>
                 </template>
 
                 <!-- Warning Icon -->
                 <template x-if="dialog.type === 'warning'">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-600">
-                        <x-icon name="spoilage" class="h-5 w-5" />
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg shadow-amber-500/25">
+                        <x-icon name="spoilage" class="h-6 w-6" stroke-width="2" />
                     </div>
                 </template>
 
                 <!-- Success Icon -->
                 <template x-if="dialog.type === 'success'">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600">
-                        <x-icon name="check-circle" class="h-5 w-5" />
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25">
+                        <x-icon name="check-circle" class="h-6 w-6" stroke-width="2" />
                     </div>
                 </template>
 
                 <!-- Primary / Info Icon -->
                 <template x-if="dialog.type === 'primary' || dialog.type === 'info'">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 text-brand-700">
-                        <x-icon name="info" class="h-5 w-5" />
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-lg shadow-brand-500/25">
+                        <x-icon name="info" class="h-6 w-6" stroke-width="2" />
                     </div>
                 </template>
 
@@ -70,20 +70,20 @@
 
             <!-- Body Message -->
             <div class="mt-4">
-                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed" x-text="dialog.message"></p>
+                <p class="text-xs text-slate-600 leading-relaxed" x-text="dialog.message"></p>
 
                 <!-- Detail info box if provided -->
                 <template x-if="dialog.detail">
-                    <div class="mt-3 rounded-lg border border-slate-100 bg-slate-50/80 p-3 text-[11px] leading-relaxed text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                    <div class="mt-3 rounded-lg border border-slate-100 bg-slate-50/80 p-3 text-[11px] leading-relaxed text-slate-500">
                         <p x-text="dialog.detail"></p>
                     </div>
                 </template>
 
                 <!-- Confirmation Text Input if required -->
                 <template x-if="dialog.requireConfirmationText">
-                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                            Ketik <span class="font-mono font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/60 dark:text-rose-400 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900/60" x-text="dialog.requireConfirmationText"></span> untuk mengonfirmasi:
+                    <div class="mt-4 pt-3 border-t border-slate-100">
+                        <label class="block text-xs font-medium text-slate-700 mb-1.5">
+                            Ketik <span class="font-mono font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200" x-text="dialog.requireConfirmationText"></span> untuk mengonfirmasi:
                         </label>
                         <input type="text"
                             x-model="enteredConfirmationText"
@@ -207,6 +207,81 @@ function bestcoDialogComponent() {
                     console.warn(msg);
                 }
             };
+
+            // Ganti bubble validasi HTML5 bawaan browser dengan dialog kustom.
+            // Validasi tetap memakai aturan HTML5 (required, pattern, min, max, dll).
+            if (! window.bestcoValidationGuardInstalled) {
+                window.bestcoValidationGuardInstalled = true;
+
+                let invalidFields = [];
+                let invalidTimer = null;
+
+                const fieldLabel = (field) => {
+                    const nativeLabel = field.labels && field.labels.length > 0
+                        ? field.labels[0].textContent
+                        : '';
+                    const fallback = field.getAttribute('aria-label')
+                        || field.getAttribute('placeholder')
+                        || field.getAttribute('name')
+                        || 'Kolom';
+
+                    return (nativeLabel || fallback)
+                        .replace(/\s*\*\s*$/, '')
+                        .replace(/:\s*$/, '')
+                        .trim() || 'Kolom';
+                };
+
+                const fieldProblem = (field) => {
+                    const validity = field.validity;
+
+                    if (! validity) return 'nilai tidak valid';
+                    if (validity.valueMissing) return 'wajib diisi';
+                    if (validity.typeMismatch) return 'format tidak valid';
+                    if (validity.patternMismatch) return 'format tidak sesuai';
+                    if (validity.tooShort) return 'minimal ' + field.minLength + ' karakter';
+                    if (validity.tooLong) return 'maksimal ' + field.maxLength + ' karakter';
+                    if (validity.rangeUnderflow) return 'nilai minimal ' + field.min;
+                    if (validity.rangeOverflow) return 'nilai maksimal ' + field.max;
+                    if (validity.stepMismatch) return 'nilai tidak sesuai langkah yang diizinkan';
+                    if (validity.badInput) return 'masukkan angka yang valid';
+                    if (validity.customError) return field.validationMessage;
+
+                    return 'nilai tidak valid';
+                };
+
+                document.addEventListener('invalid', (event) => {
+                    const field = event.target;
+
+                    if (! (field instanceof HTMLElement)) return;
+
+                    event.preventDefault();
+                    invalidFields.push(field);
+
+                    if (invalidTimer !== null) return;
+
+                    invalidTimer = window.setTimeout(() => {
+                        const fields = [...new Set(invalidFields)];
+                        invalidFields = [];
+                        invalidTimer = null;
+
+                        if (fields.length === 0) return;
+
+                        const summary = fields
+                            .slice(0, 3)
+                            .map((item) => fieldLabel(item) + ' ' + fieldProblem(item))
+                            .join(', ');
+                        const rest = fields.length - 3;
+
+                        window.bestcoDialog.alert({
+                            title: fields.length === 1 ? 'Periksa Kolom Input' : 'Periksa Data Formulir',
+                            message: summary + (rest > 0 ? ', dan ' + rest + ' kolom lainnya' : '') + '.',
+                            detail: 'Perbaiki kolom yang ditandai, lalu kirim ulang formulir.',
+                            type: 'warning',
+                            confirmText: 'Mengerti'
+                        }).then(() => fields[0].focus());
+                    }, 0);
+                }, true);
+            }
         },
         confirmAction() {
             if (!this.canConfirm) return;

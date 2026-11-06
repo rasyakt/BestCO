@@ -43,10 +43,10 @@
     <template x-if="visibleCount > 1">
         <div class="flex justify-end pointer-events-auto pr-1">
             <button type="button" @click="clearAll()"
-                class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/90 px-2.5 py-0.5 text-[10.5px] font-medium text-slate-600 shadow-sm backdrop-blur transition hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-300 dark:hover:bg-slate-700"
+                class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/90 px-2.5 py-0.5 text-[10.5px] font-medium text-slate-600 shadow-sm backdrop-blur transition hover:bg-slate-100 hover:text-slate-900"
                 title="Tutup semua notifikasi aktif">
                 <span>Tutup semua</span>
-                <span class="rounded bg-slate-100 px-1 text-[9px] font-bold dark:bg-slate-700" x-text="visibleCount"></span>
+                <span class="rounded bg-slate-100 px-1 text-[9px] font-bold" x-text="visibleCount"></span>
                 <x-icon name="x" class="h-2.5 w-2.5" />
             </button>
         </div>
@@ -62,68 +62,68 @@
             x-transition:leave-end="opacity-0 scale-95 sm:translate-x-3"
             @mouseenter="pauseTimer(toast)"
             @mouseleave="resumeTimer(toast)"
-            class="pointer-events-auto relative w-full overflow-hidden rounded-xl border bg-white/95 p-2.5 px-3 shadow-lg backdrop-blur-md transition-all duration-200 dark:bg-slate-900/95"
+            class="pointer-events-auto relative w-full overflow-hidden rounded-xl border bg-white/95 p-2.5 px-3 shadow-lg backdrop-blur-md transition-all duration-200"
             :class="{
-                'border-emerald-200/90 shadow-emerald-500/10 dark:border-emerald-800/80': toast.type === 'success',
-                'border-rose-200/90 shadow-rose-500/10 dark:border-rose-800/80': toast.type === 'danger' || toast.type === 'error',
-                'border-amber-200/90 shadow-amber-500/10 dark:border-amber-800/80': toast.type === 'warning',
-                'border-sky-200/90 shadow-sky-500/10 dark:border-sky-800/80': toast.type === 'info' || toast.type === 'primary',
+                'border-emerald-200/90 shadow-emerald-500/10': toast.type === 'success',
+                'border-rose-200/90 shadow-rose-500/10': toast.type === 'danger' || toast.type === 'error',
+                'border-amber-200/90 shadow-amber-500/10': toast.type === 'warning',
+                'border-sky-200/90 shadow-sky-500/10': toast.type === 'info' || toast.type === 'primary',
                 'scale-[1.03] ring-2 ring-rose-400/50 shadow-xl': toast.pulsing
             }">
 
             <div class="flex items-start gap-2.5">
-                <!-- Icon Sesuai Type (Ukuran Ramping) -->
-                <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border mt-0.5"
+                <!-- Icon Sesuai Type -->
+                <div class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-white/20 shadow-md"
                     :class="{
-                        'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-400': toast.type === 'success',
-                        'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-400': toast.type === 'danger' || toast.type === 'error',
-                        'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-400': toast.type === 'warning',
-                        'bg-sky-50 text-sky-600 border-sky-200 dark:bg-sky-950/60 dark:border-sky-800 dark:text-sky-400': toast.type === 'info' || toast.type === 'primary'
+                        'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-emerald-500/25': toast.type === 'success',
+                        'bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-rose-500/25': toast.type === 'danger' || toast.type === 'error',
+                        'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-amber-500/25': toast.type === 'warning',
+                        'bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-sky-500/25': toast.type === 'info' || toast.type === 'primary'
                     }">
                     <template x-if="toast.type === 'success'">
-                        <x-icon name="check-circle" class="h-3.5 w-3.5" />
+                        <x-icon name="check-circle" class="h-4 w-4" stroke-width="2" />
                     </template>
                     <template x-if="toast.type === 'danger' || toast.type === 'error'">
-                        <x-icon name="x-circle" class="h-3.5 w-3.5" />
+                        <x-icon name="x-circle" class="h-4 w-4" stroke-width="2" />
                     </template>
                     <template x-if="toast.type === 'warning'">
-                        <x-icon name="spoilage" class="h-3.5 w-3.5" />
+                        <x-icon name="spoilage" class="h-4 w-4" stroke-width="2" />
                     </template>
                     <template x-if="toast.type === 'info' || toast.type === 'primary'">
-                        <x-icon name="info" class="h-3.5 w-3.5" />
+                        <x-icon name="info" class="h-4 w-4" stroke-width="2" />
                     </template>
                 </div>
 
                 <!-- Konten Pesan Ringkas -->
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class="text-[11.5px] font-bold leading-tight text-slate-900 dark:text-white" x-text="toast.title"></span>
+                        <span class="text-[11.5px] font-bold leading-tight text-slate-900" x-text="toast.title"></span>
                         
                         <!-- Badge Counter Duplikat saat Spam -->
                         <template x-if="toast.count > 1">
                             <span class="inline-flex items-center rounded-full px-1.5 py-0.2 text-[9.5px] font-extrabold tracking-wide"
                                 :class="{
-                                    'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300': toast.type === 'success',
-                                    'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-300': toast.type === 'danger' || toast.type === 'error',
-                                    'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300': toast.type === 'warning',
-                                    'bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300': toast.type === 'info' || toast.type === 'primary'
+                                    'bg-emerald-100 text-emerald-800': toast.type === 'success',
+                                    'bg-rose-100 text-rose-800': toast.type === 'danger' || toast.type === 'error',
+                                    'bg-amber-100 text-amber-800': toast.type === 'warning',
+                                    'bg-sky-100 text-sky-800': toast.type === 'info' || toast.type === 'primary'
                                 }"
                                 x-text="`${toast.count}×`"></span>
                         </template>
                     </div>
-                    <p class="mt-0.5 text-[11px] leading-snug text-slate-600 dark:text-slate-300 break-words line-clamp-3" x-text="toast.message"></p>
+                    <p class="mt-0.5 text-[11px] leading-snug text-slate-600 break-words line-clamp-3" x-text="toast.message"></p>
                 </div>
 
                 <!-- Tombol Tutup -->
                 <button type="button" @click="remove(toast.id)"
-                    class="rounded p-0.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none dark:hover:bg-slate-800 dark:hover:text-slate-200 shrink-0"
+                    class="rounded p-0.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none shrink-0"
                     aria-label="Tutup notifikasi">
                     <x-icon name="x" class="h-3 w-3" />
                 </button>
             </div>
 
             <!-- Progress Bar Auto-Dismiss Ramping -->
-            <div class="absolute bottom-0 left-0 h-0.5 w-full bg-slate-100 dark:bg-slate-800">
+            <div class="absolute bottom-0 left-0 h-0.5 w-full bg-slate-100">
                 <div class="h-full transition-all duration-100 ease-linear"
                     :style="`width: ${toast.progress}%`"
                     :class="{

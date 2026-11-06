@@ -114,6 +114,7 @@ class DatabaseSeeder extends Seeder
             ['code' => '4-2103', 'name' => 'Pendapatan Jasa Laminating & Jilid', 'type' => AccountType::REVENUE, 'subtype' => 'SERVICE_REVENUE', 'normal' => NormalBalance::CREDIT, 'postable' => true],
             ['code' => '4-2109', 'name' => 'Potongan Pendapatan Jasa (Tier/Grosir)', 'type' => AccountType::REVENUE, 'subtype' => 'SERVICE_DISCOUNT', 'normal' => NormalBalance::DEBIT, 'postable' => true],
             ['code' => '4-9101', 'name' => 'Pendapatan Selisih Kas Lebih', 'type' => AccountType::REVENUE, 'subtype' => 'CASH_OVERAGE', 'normal' => NormalBalance::CREDIT, 'postable' => true],
+            ['code' => '4-9102', 'name' => 'Pendapatan Selisih Persediaan (Stock Opname)', 'type' => AccountType::REVENUE, 'subtype' => 'INVENTORY_OVERAGE', 'normal' => NormalBalance::CREDIT, 'postable' => true],
             // HPP
             ['code' => '5-1101', 'name' => 'HPP Barang Dagang (Etalase)', 'type' => AccountType::COGS, 'subtype' => 'RETAIL_COGS', 'normal' => NormalBalance::DEBIT, 'postable' => true],
             ['code' => '5-2101', 'name' => 'HPP Bahan Baku Jasa', 'type' => AccountType::COGS, 'subtype' => 'SERVICE_COGS', 'normal' => NormalBalance::DEBIT, 'postable' => true],
@@ -121,6 +122,7 @@ class DatabaseSeeder extends Seeder
             ['code' => '6-1101', 'name' => 'Beban Kerusakan / Kegagalan Produksi Jasa', 'type' => AccountType::EXPENSE, 'subtype' => 'SPOILAGE_EXPENSE', 'normal' => NormalBalance::DEBIT, 'postable' => true],
             ['code' => '6-1102', 'name' => 'Beban Kerusakan Barang Etalase', 'type' => AccountType::EXPENSE, 'subtype' => 'RETAIL_DAMAGE_EXPENSE', 'normal' => NormalBalance::DEBIT, 'postable' => true],
             ['code' => '6-1901', 'name' => 'Beban Selisih Kas Kurang', 'type' => AccountType::EXPENSE, 'subtype' => 'CASH_SHORTAGE', 'normal' => NormalBalance::DEBIT, 'postable' => true],
+            ['code' => '6-1902', 'name' => 'Beban Selisih Persediaan (Stock Opname)', 'type' => AccountType::EXPENSE, 'subtype' => 'INVENTORY_SHORTAGE', 'normal' => NormalBalance::DEBIT, 'postable' => true],
         ];
 
         foreach ($accounts as $account) {

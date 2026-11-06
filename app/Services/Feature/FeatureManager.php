@@ -127,6 +127,15 @@ final class FeatureManager
                 'default_enabled' => true,
                 'default_roles' => ['admin', 'piket_guru'],
             ],
+            'inventory_opname' => [
+                'key' => 'inventory_opname',
+                'label' => 'Stok Opname',
+                'group' => 'Persediaan',
+                'icon' => 'scale',
+                'description' => 'Penghitungan stok fisik, analisis selisih, persetujuan admin, dan penyesuaian stok otomatis ke kartu stok serta jurnal.',
+                'default_enabled' => true,
+                'default_roles' => ['admin', 'piket_guru'],
+            ],
             'shift' => [
                 'key' => 'shift',
                 'label' => 'Shift Kasir',
