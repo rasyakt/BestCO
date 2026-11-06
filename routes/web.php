@@ -164,6 +164,9 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/reports', [ReportController::class, 'index'])
         ->middleware('feature:reports')
         ->name('reports.index');
+    Route::get('/reports/export', [ReportController::class, 'export'])
+        ->middleware('feature:reports')
+        ->name('reports.export');
 
     // Kelola Pengguna (dibatasi juga oleh hierarki peran di controller)
     Route::middleware('feature:users')->group(function (): void {

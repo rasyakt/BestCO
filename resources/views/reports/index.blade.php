@@ -16,10 +16,11 @@
         title="Laporan Keuangan"
         subtitle="Buku kas, jurnal, dan laporan siap cetak.">
         <x-slot:actions>
-            <button type="button" onclick="window.print()" class="btn btn-secondary no-print">
-                <x-icon name="printer" class="h-4 w-4" />
-                Cetak
-            </button>
+            <a href="{{ route('reports.export', ['tab' => $tab, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                class="btn btn-dark no-print">
+                <x-icon name="download" class="h-4 w-4" />
+                Unduh PDF
+            </a>
         </x-slot:actions>
     </x-page-header>
 
@@ -368,7 +369,7 @@
         <!-- Tanda tangan -->
         <div class="border-t border-slate-200 px-5 py-6">
             <div class="mb-6 text-right text-[10px] text-slate-400">
-                Dicetak {{ now()->locale('id')->isoFormat('D MMMM Y, HH:mm') }} WIB
+                Dicetak {{ now()->timezone('Asia/Jakarta')->locale('id')->isoFormat('D MMMM Y, HH:mm') }} WIB
             </div>
 
             <div class="grid grid-cols-1 gap-6 text-center text-[11px] sm:grid-cols-3">

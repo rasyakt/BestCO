@@ -75,7 +75,35 @@ class PosTerminalAndReportTest extends TestCase
         foreach ($tabs as $tab) {
             $response = $this->actingAs($this->teacher)->get('/reports?tab=' . $tab);
             $response->assertStatus(200);
+            $response->assertSee('Unduh PDF');
         }
+    }
+
+    public function test_teacher_can_download_every_financial_report_as_pdf(): void
+    {
+        $tabs = ['bku', 'journal', 'trial_balance', 'income_statement', 'balance_sheet'];
+
+        foreach ($tabs as $tab) {
+            $response = $this->actingAs($this->teacher)->get(
+                '/reports/export?tab=' . $tab . '&start_date=2026-10-01&end_date=2026-10-31'
+            );
+
+            $response->assertOk();
+            $response->assertHeader('Content-Type', 'application/pdf');
+            $response->assertDownload();
+            $this->assertStringStartsWith('%PDF-', $response->getContent());
+        }
+    }
+
+    public function test_report_export_uses_readable_filename_and_falls_back_for_unknown_tab(): void
+    {
+        $response = $this->actingAs($this->teacher)->get(
+            '/reports/export?tab=tidak-dikenal&start_date=2026-10-31&end_date=2026-10-01'
+        );
+
+        $response->assertOk();
+        $response->assertDownload('BESTCO-Buku-Kas-2026-10-01_sd_2026-10-31.pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
     }
 
     public function test_can_add_retail_and_service_to_pos_cart(): void
