@@ -6,6 +6,7 @@ namespace App\Actions\Pos;
 
 use App\Actions\Accounting\CreateReversingJournalAction;
 use App\Enums\PaymentMethod;
+use App\Enums\ShiftStatus;
 use App\Enums\UserRole;
 use App\Models\JournalEntry;
 use App\Models\PosTransaction;
@@ -59,7 +60,7 @@ final class VoidPosTransactionAction
                         'pos_shift_id' => $transaction->pos_shift_id,
                         'reference_type' => 'VOID_RESTORE',
                         'reference_id' => $transaction->id,
-                        'qty_change' => '+' . $restoreQty,
+                        'qty_change' => '+'.$restoreQty,
                         'balance_before' => $oldStock,
                         'balance_after' => $newStock,
                         'unit_cost' => $unitCost,
@@ -81,7 +82,7 @@ final class VoidPosTransactionAction
                             'pos_shift_id' => $transaction->pos_shift_id,
                             'reference_type' => 'VOID_RESTORE',
                             'reference_id' => $transaction->id,
-                            'qty_change' => '+' . $restoreQty,
+                            'qty_change' => '+'.$restoreQty,
                             'balance_before' => $oldStock,
                             'balance_after' => $newStock,
                             'unit_cost' => (string) $bom->unit_cost_snapshot,
@@ -96,8 +97,12 @@ final class VoidPosTransactionAction
             // 2. Buat Jurnal Pembalik (Reversing Journal)
             if ($transaction->journal_entry_id) {
                 $originalJournal = JournalEntry::with('items.chartOfAccount')->findOrFail($transaction->journal_entry_id);
-                $revNumber = 'REV-' . Carbon::now()->format('Ymd') . '-' .
-                    str_pad((string) (JournalEntry::count() + 1), 4, '0', STR_PAD_LEFT);
+                $revSequence = JournalEntry::count() + 1;
+                do {
+                    $revNumber = 'REV-'.Carbon::now()->format('Ymd').'-'.
+                        str_pad((string) $revSequence, 4, '0', STR_PAD_LEFT);
+                    $revSequence++;
+                } while (JournalEntry::where('journal_number', $revNumber)->exists());
 
                 $this->reversingAction->execute($originalJournal, $revNumber, $teacherSupervisor);
             }
@@ -106,7 +111,7 @@ final class VoidPosTransactionAction
             $shift = $transaction->posShift;
             if (
                 $shift
-                && $shift->status->value === 'OPEN'
+                && ($shift->status === ShiftStatus::OPEN || $shift->status->value === 'OPEN')
                 && $transaction->payment_method === PaymentMethod::CASH
             ) {
                 $newExpected = bcsub((string) $shift->system_expected_cash, (string) $transaction->grand_total, 4);
@@ -124,4 +129,3 @@ final class VoidPosTransactionAction
         });
     }
 }
-

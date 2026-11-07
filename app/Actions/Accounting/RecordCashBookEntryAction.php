@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\Accounting;
 
+use App\Enums\JournalType;
 use App\Models\CashBookEntry;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\PosShift;
-use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +23,7 @@ final class RecordCashBookEntryAction
         int|string $cashAccountId,
         \DateTimeInterface $transactionDate,
         string $mutationDirection,
-        \App\Enums\JournalType|string $category,
+        JournalType|string $category,
         string $description,
         string $debitIn,
         string $creditOut,
@@ -78,8 +78,12 @@ final class RecordCashBookEntryAction
 
             $newBalance = bcadd($previousBalance, $delta, 4);
 
-            $bkuNumber = 'BKU-' . $transactionDate->format('Ymd') . '-' .
-                str_pad((string) (CashBookEntry::whereDate('transaction_date', $transactionDate->format('Y-m-d'))->count() + 1), 4, '0', STR_PAD_LEFT);
+            $sequence = CashBookEntry::whereDate('transaction_date', $transactionDate->format('Y-m-d'))->count() + 1;
+            do {
+                $bkuNumber = 'BKU-'.$transactionDate->format('Ymd').'-'.
+                    str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+                $sequence++;
+            } while (CashBookEntry::where('bku_number', $bkuNumber)->exists());
 
             $entry = CashBookEntry::create([
                 'bku_number' => $bkuNumber,

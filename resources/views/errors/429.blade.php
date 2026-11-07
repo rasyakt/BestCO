@@ -1,5 +1,3 @@
-{{ $__env->yieldContent('content') }}
-
 @php
     $statusCode = $statusCode ?? 429;
     $title = $title ?? 'Terlalu Banyak Permintaan';

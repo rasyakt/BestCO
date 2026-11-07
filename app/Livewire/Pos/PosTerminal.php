@@ -20,8 +20,11 @@ use App\Models\PosTransaction;
 use App\Models\Product;
 use App\Models\Service;
 use App\Models\ShiftAttendance;
+use App\Models\SystemSetting;
 use App\Models\UnitConversion;
 use App\Rules\StrictCurrency;
+use App\Services\Feature\FeatureManager;
+use App\Services\Pos\PromotionResolver;
 use App\Services\Pos\TieredPricingResolver;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
@@ -115,12 +118,12 @@ final class PosTerminal extends Component
 
     public function canUseManualDiscount(): bool
     {
-        return app(\App\Services\Feature\FeatureManager::class)->canAccess('pos_manual_discount', auth()->user());
+        return app(FeatureManager::class)->canAccess('pos_manual_discount', auth()->user());
     }
 
     public function canUseCoupon(): bool
     {
-        return app(\App\Services\Feature\FeatureManager::class)->canAccess('pos_coupon', auth()->user());
+        return app(FeatureManager::class)->canAccess('pos_coupon', auth()->user());
     }
 
     /**
@@ -446,7 +449,7 @@ final class PosTerminal extends Component
             ];
         }
 
-        $promoResolver = app(\App\Services\Pos\PromotionResolver::class);
+        $promoResolver = app(PromotionResolver::class);
         $promoResult = $promoResolver->resolve(
             cartItems: $cartForPromo,
             requestedPromotionId: $this->appliedPromotionId,
@@ -557,8 +560,8 @@ final class PosTerminal extends Component
 
     public function getQrisImagePath(): ?string
     {
-        $setting = \App\Models\SystemSetting::where('setting_key', 'pos_qris_image_path')->first();
-        
+        $setting = SystemSetting::where('setting_key', 'pos_qris_image_path')->first();
+
         return $setting?->setting_value['path'] ?? null;
     }
 
@@ -693,7 +696,7 @@ final class PosTerminal extends Component
 
                 $reasonDesc = trim($this->spoilageDescription);
                 if ($reasonDesc === '') {
-                    $reasonDesc = 'Barang rusak: ' . $product->name;
+                    $reasonDesc = 'Barang rusak: '.$product->name;
                 }
 
                 $log = $action->execute(new SpoilageData(
@@ -773,7 +776,9 @@ final class PosTerminal extends Component
 
             $this->showMutationModal = false;
             $this->mutationTeacherPin = '';
-            $this->feedbackMessage = 'Mutasi '.$mutation->mutation_number.' sukses (+500 Lembar kertas bahan baku ditambahkan)!';
+            $addedQtyFormatted = number_format((float) $mutation->target_qty_added, 0, ',', '.');
+            $targetUnitCode = $mutation->targetProduct?->unit?->code ?? 'satuan';
+            $this->feedbackMessage = "Mutasi {$mutation->mutation_number} sukses (+{$addedQtyFormatted} {$targetUnitCode} bahan baku ditambahkan)!";
             $this->feedbackType = 'success';
         } catch (\Throwable $e) {
             $this->feedbackMessage = 'Gagal mutasi internal: '.$e->getMessage();

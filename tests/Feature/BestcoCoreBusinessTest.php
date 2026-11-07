@@ -20,6 +20,8 @@ use App\Models\Service;
 use App\Models\ShiftAttendance;
 use App\Models\UnitConversion;
 use App\Models\User;
+use App\Services\Accounting\FinancialStatementGenerator;
+use App\Services\Inventory\MovingAverageCostCalculator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -28,7 +30,9 @@ class BestcoCoreBusinessTest extends TestCase
     use RefreshDatabase;
 
     private User $teacher;
+
     private User $student;
+
     private PosShift $shift;
 
     protected function setUp(): void
@@ -38,7 +42,7 @@ class BestcoCoreBusinessTest extends TestCase
         $this->teacher = User::where('role_type', 'piket_guru')->firstOrFail();
         $this->student = User::where('role_type', 'piket_siswa')->firstOrFail();
         $this->shift = PosShift::create([
-            'shift_code' => 'SHF-TEST-' . now()->format('YmdHis'),
+            'shift_code' => 'SHF-TEST-'.now()->format('YmdHis'),
             'shift_date' => today(),
             'supervisor_teacher_id' => $this->teacher->id,
             'opened_by_user_id' => $this->teacher->id,
@@ -228,5 +232,83 @@ class BestcoCoreBusinessTest extends TestCase
             number_format((float) $expectedCost, 4, '.', ''),
             bcsub((string) $retailSpoilageExpense->current_balance, $initialExpenseBal, 4)
         );
+    }
+
+    public function test_retail_sale_posts_to_revenue_account_4101_and_updates_financial_statements(): void
+    {
+        $pen = Product::where('sku', 'ATK-PULPEN-PACK')->firstOrFail();
+        $initialPenStock = (string) $pen->current_stock;
+        $sellingPrice = (string) $pen->selling_price;
+        $avgCost = (string) $pen->average_cost;
+
+        $qty = '3.0000';
+        $expectedSubtotalGross = bcmul($qty, $sellingPrice, 4);
+        $expectedCogs = bcmul($qty, $avgCost, 4);
+
+        $checkoutAction = app(CheckoutPosTransactionAction::class);
+        $transaction = $checkoutAction->execute(new CheckoutPayloadData(
+            posShiftId: (string) $this->shift->id,
+            cashierUserId: (string) $this->student->id,
+            customerName: 'Pembeli Pulpen Ritel',
+            paymentMethod: PaymentMethod::CASH,
+            amountPaid: $expectedSubtotalGross,
+            manualDiscountTotal: '0.0000',
+            items: [
+                new CartItemData(
+                    itemType: 'RETAIL_PRODUCT',
+                    productId: (string) $pen->id,
+                    serviceId: null,
+                    qty: $qty,
+                    manualDiscountAmount: '0.0000',
+                ),
+            ],
+        ));
+
+        $pen->refresh();
+        $this->assertSame('3.0000', bcsub($initialPenStock, (string) $pen->current_stock, 4));
+
+        /** @var JournalEntry $journal */
+        $journal = $transaction->journalEntry;
+        $this->assertNotNull($journal);
+
+        // Verifikasi akun 4-1101 (Pendapatan Penjualan Etalase / Ritel) dikredit
+        $revenueItem = $journal->items->first(fn ($i) => $i->chartOfAccount?->account_code === '4-1101');
+        $this->assertNotNull($revenueItem, 'Jurnal transaksi POS ritel harus mengkredit akun 4-1101 (Pendapatan Penjualan Etalase)');
+        $this->assertSame('0.0000', (string) $revenueItem->debit);
+        $this->assertSame($expectedSubtotalGross, (string) $revenueItem->credit);
+
+        // Verifikasi akun 5-1101 (HPP) didebit
+        $cogsItem = $journal->items->first(fn ($i) => $i->chartOfAccount?->account_code === '5-1101');
+        $this->assertNotNull($cogsItem, 'Jurnal transaksi POS ritel harus mendebit akun 5-1101 (HPP)');
+        $this->assertSame($expectedCogs, (string) $cogsItem->debit);
+        $this->assertSame('0.0000', (string) $cogsItem->credit);
+
+        // Verifikasi akun 1-1301 (Persediaan Etalase) dikredit HPP
+        $inventoryItem = $journal->items->first(fn ($i) => $i->chartOfAccount?->account_code === '1-1301');
+        $this->assertNotNull($inventoryItem, 'Jurnal transaksi POS ritel harus mengkredit akun 1-1301 (Persediaan Etalase)');
+        $this->assertSame('0.0000', (string) $inventoryItem->debit);
+        $this->assertSame($expectedCogs, (string) $inventoryItem->credit);
+
+        // Verifikasi Laporan Laba Rugi memuat pendapatan ritel
+        $generator = app(FinancialStatementGenerator::class);
+        $incomeStmt = $generator->getIncomeStatement(today()->format('Y-m-d'), today()->format('Y-m-d'));
+        $this->assertSame(1, bccomp((string) $incomeStmt['retail_revenue_gross'], '0.0000', 4));
+        $this->assertSame($expectedSubtotalGross, (string) $incomeStmt['retail_revenue_gross']);
+    }
+
+    public function test_moving_average_cost_calculator_handles_zero_and_negative_stock(): void
+    {
+        $calculator = app(MovingAverageCostCalculator::class);
+        $product = Product::where('sku', 'ATK-PULPEN-PACK')->firstOrFail();
+
+        // 1. Jika stok awal 0
+        $product->current_stock = '0.0000';
+        $product->average_cost = '0.0000';
+        $newAvg = $calculator->calculate($product, '10.0000', '15000.0000');
+        $this->assertSame('15000.0000', $newAvg);
+
+        // 2. Jika stok baru 0
+        $newAvgZero = $calculator->calculate($product, '0.0000', '15000.0000');
+        $this->assertSame('0.0000', $newAvgZero);
     }
 }

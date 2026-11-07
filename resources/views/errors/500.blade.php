@@ -1,5 +1,3 @@
-{{ $__env->yieldContent('content') }}
-
 @php
     $statusCode = $statusCode ?? 500;
     $title = $title ?? 'Terjadi Kesalahan Server';

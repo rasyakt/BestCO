@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Inventory;
 
+use App\Actions\Accounting\PostDoubleEntryJournalAction;
 use App\DTOs\Accounting\JournalEntryData;
 use App\DTOs\Accounting\JournalLineData;
 use App\Enums\JournalType;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 
 final class RecordPurchaseRestockAction
 {
-    private const FUNDING_ACCOUNT_CODES = ['1-1102', '2-1101'];
+    private const FUNDING_ACCOUNT_CODES = ['1-1102', '1-1103', '2-1101'];
 
     /**
      * Catat pembelian / restock barang etalase atau bahan baku jasa, update stok & HPP,
@@ -71,7 +72,7 @@ final class RecordPurchaseRestockAction
             $coaCashOrDebt = ChartOfAccount::where('id', $accountId)->lockForUpdate()->firstOrFail();
 
             if (! in_array($coaCashOrDebt->account_code, self::FUNDING_ACCOUNT_CODES, true)) {
-                throw new \DomainException('Akun pendanaan harus Kas Besar atau Utang Usaha.');
+                throw new \DomainException('Akun pendanaan harus Kas di Tangan, Kas di Bank, atau Utang Usaha.');
             }
 
             $period = AccountingPeriod::where('is_closed', false)
@@ -114,8 +115,8 @@ final class RecordPurchaseRestockAction
                 journalType: JournalType::PURCHASE,
                 referenceType: 'App\Models\Product',
                 referenceId: $product->id,
-                description: 'Pembelian / restock ' . $qty . ' ' . $product->unit->code .
-                    ' ' . $product->name . ' (Rp ' . $totalInvoiceAmount . ')',
+                description: 'Pembelian / restock '.$qty.' '.$product->unit->code.
+                    ' '.$product->name.' (Rp '.$totalInvoiceAmount.')',
                 lines: [
                     new JournalLineData(
                         chartOfAccountCode: $coaInventory->account_code,
@@ -133,7 +134,7 @@ final class RecordPurchaseRestockAction
                 createdByUserId: (string) $createdByUserId,
             );
 
-            $journalEntry = app(\App\Actions\Accounting\PostDoubleEntryJournalAction::class)
+            $journalEntry = app(PostDoubleEntryJournalAction::class)
                 ->execute($journalData);
 
             StockLedgerEntry::create([
@@ -163,8 +164,8 @@ final class RecordPurchaseRestockAction
         $sequence = JournalEntry::count() + 1;
 
         do {
-            $journalNumber = 'JRN-' . Carbon::now()->format('Ymd') . '-'
-                . str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+            $journalNumber = 'JRN-'.Carbon::now()->format('Ymd').'-'
+                .str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
             $sequence++;
         } while (JournalEntry::where('journal_number', $journalNumber)->exists());
 

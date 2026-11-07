@@ -1,5 +1,3 @@
-{{ $__env->yieldContent('content') }}
-
 @php
     $statusCode = $statusCode ?? 403;
     $title = $title ?? 'Akses Ditolak';

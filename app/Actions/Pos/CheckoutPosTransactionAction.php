@@ -420,7 +420,7 @@ final class CheckoutPosTransactionAction
 
         $inventoryCode = $product->inventoryAccount?->account_code ?? '1-1301';
         $cogsCode = $product->cogsAccount?->account_code ?? '5-1101';
-        $revenueCode = $product->inventoryAccount?->account_code ?? '1-1301';
+        $revenueCode = '4-1101';
 
         $qty = $this->normalizeQuantity($item->qty);
         $manualDiscount = $this->normalizeAmount($item->manualDiscountAmount, 'diskon item');

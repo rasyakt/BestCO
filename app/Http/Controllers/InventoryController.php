@@ -81,8 +81,8 @@ final class InventoryController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Akun pendanaan: Kas Besar Brankas (1-1102), Utang Usaha (2-1101), Modal Awal (3-1101)
-        $fundingAccounts = ChartOfAccount::whereIn('account_code', ['1-1102', '2-1101', '3-1101'])->get();
+        // Akun pendanaan: Kas di Tangan (1-1102), Kas di Bank (1-1103), Utang Usaha (2-1101), Modal Awal (3-1101)
+        $fundingAccounts = ChartOfAccount::whereIn('account_code', ['1-1102', '1-1103', '2-1101', '3-1101'])->get();
 
         return view('inventory.index', compact(
             'products',
@@ -136,6 +136,7 @@ final class InventoryController extends Controller
         ]));
 
         $typeLabel = $product->inventory_type->value === 'RETAIL' ? 'Barang etalase' : 'Bahan baku';
+
         return redirect()->route('inventory.index', ['type' => $product->inventory_type->value])->with(
             'success',
             "Produk baru '{$product->name}' ({$typeLabel}) berhasil ditambahkan! SKU: {$product->sku}"
@@ -205,7 +206,7 @@ final class InventoryController extends Controller
 
         return redirect()->route('inventory.index', ['type' => 'SERVICE'])->with(
             'success',
-            "Layanan baru '{$service->name}' ({$service->service_group->label()}) berhasil ditambahkan! Tarif: Rp " . number_format((float) $service->base_price, 0, ',', '.')
+            "Layanan baru '{$service->name}' ({$service->service_group->label()}) berhasil ditambahkan! Tarif: Rp ".number_format((float) $service->base_price, 0, ',', '.')
         );
     }
 
@@ -238,7 +239,7 @@ final class InventoryController extends Controller
 
         return redirect()->route('inventory.index', ['type' => 'SERVICE'])->with(
             'success',
-            "Data layanan '{$service->name}' berhasil diperbarui! Tarif baru: Rp " . number_format((float) $service->base_price, 0, ',', '.')
+            "Data layanan '{$service->name}' berhasil diperbarui! Tarif baru: Rp ".number_format((float) $service->base_price, 0, ',', '.')
         );
     }
 
@@ -250,10 +251,10 @@ final class InventoryController extends Controller
             'purchase_unit_price' => ['required', new StrictCurrency(min: 0.0001)],
             'account_id' => [
                 'required',
-                Rule::exists('chart_of_accounts', 'id')->whereIn('account_code', ['1-1102', '2-1101']),
+                Rule::exists('chart_of_accounts', 'id')->whereIn('account_code', ['1-1102', '1-1103', '2-1101']),
             ],
         ], [
-            'account_id.exists' => 'Akun pendanaan tidak valid. Gunakan Kas Besar atau Utang Usaha.',
+            'account_id.exists' => 'Akun pendanaan tidak valid. Gunakan Kas di Tangan, Kas di Bank, atau Utang Usaha.',
         ]);
 
         $qty = number_format((float) $validated['qty_purchased'], 4, '.', '');
@@ -273,7 +274,7 @@ final class InventoryController extends Controller
 
         return redirect()->route('inventory.index')->with(
             'success',
-            "Restock {$prod->name} sebanyak {$qty} {$prod->unit?->code} berhasil! HPP baru: Rp " . number_format((float) $result['new_average_cost'], 0, ',', '.')
+            "Restock {$prod->name} sebanyak {$qty} {$prod->unit?->code} berhasil! HPP baru: Rp ".number_format((float) $result['new_average_cost'], 0, ',', '.')
         );
     }
 
@@ -344,6 +345,7 @@ final class InventoryController extends Controller
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $message], 422);
             }
+
             return redirect()->back()->with('error', $message);
         }
 
@@ -410,6 +412,7 @@ final class InventoryController extends Controller
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $message], 422);
             }
+
             return redirect()->back()->with('error', $message);
         }
 

@@ -1,12 +1,21 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\EnsureActiveShift;
+use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Http\Middleware\EnsureRole;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
@@ -18,17 +27,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\EnsureAccountIsActive::class,
+            EnsureAccountIsActive::class,
         ]);
 
         $middleware->alias([
-            'shift.active' => \App\Http\Middleware\EnsureActiveShift::class,
-            'role' => \App\Http\Middleware\EnsureRole::class,
-            'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
+            'shift.active' => EnsureActiveShift::class,
+            'role' => EnsureRole::class,
+            'feature' => EnsureFeatureEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+        $exceptions->render(function (NotFoundHttpException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Halaman tidak ditemukan.'], 404);
             }
@@ -44,7 +53,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ]), 404);
         });
 
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e, $request) {
+        $exceptions->render(function (AccessDeniedHttpException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Akses ditolak.'], 403);
             }
@@ -60,7 +69,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ]), 403);
         });
 
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException $e, $request) {
+        $exceptions->render(function (UnauthorizedHttpException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Autentikasi diperlukan.'], 401);
             }
@@ -78,7 +87,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ]), 401);
         });
 
-        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+        $exceptions->render(function (TokenMismatchException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Sesi kedaluwarsa.'], 419);
             }
@@ -96,7 +105,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ]), 419);
         });
 
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException $e, $request) {
+        $exceptions->render(function (TooManyRequestsHttpException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Terlalu banyak permintaan.'], 429);
             }
@@ -112,26 +121,30 @@ return Application::configure(basePath: dirname(__DIR__))
             ]), 429);
         });
 
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e, $request) {
+        $exceptions->render(function (ServiceUnavailableHttpException $e, $request) {
             if ($request->expectsJson()) {
-                return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
+                return response()->json(['message' => 'Layanan tidak tersedia.'], 503);
             }
 
             return response(view('errors.503', [
                 'exception' => $e,
-                'statusCode' => $e->getStatusCode(),
+                'statusCode' => 503,
                 'title' => 'Layanan Tidak Tersedia',
                 'message' => 'Aplikasi sedang dalam pemeliharaan. Silakan coba lagi dalam beberapa menit.',
                 'illustration' => 'error-503',
                 'primaryColor' => 'slate-600',
                 'accentGradient' => 'from-slate-500 to-slate-800',
-            ]), $e->getStatusCode());
+            ]), 503);
         });
 
-        $exceptions->render(function (\Throwable $e, $request) {
-            // Biarkan AuthenticationException ditangani oleh Laravel secara default
-            // agar redirect ke halaman login berjalan normal.
-            if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+        $exceptions->render(function (Throwable $e, $request) {
+            // Biarkan exception internal Laravel ditangani secara default agar
+            // redirect validasi, autentikasi, otorisasi, dan 404 bekerja normal.
+            if ($e instanceof ValidationException
+                || $e instanceof AuthenticationException
+                || $e instanceof AuthorizationException
+                || $e instanceof ModelNotFoundException
+                || $e instanceof HttpResponseException) {
                 return null;
             }
 

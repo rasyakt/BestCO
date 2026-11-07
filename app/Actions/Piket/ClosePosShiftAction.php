@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Piket;
 
+use App\Actions\Accounting\PostDoubleEntryJournalAction;
 use App\DTOs\Accounting\JournalEntryData;
 use App\DTOs\Accounting\JournalLineData;
 use App\Enums\JournalType;
@@ -96,15 +97,14 @@ final class ClosePosShiftAction
                     // Kas lebih: Dr Kas, Cr Pendapatan Selisih Kas Lebih.
                     $coaRevenue = ChartOfAccount::where('account_code', '4-9101')->lockForUpdate()->firstOrFail();
                     $journalData = new JournalEntryData(
-                        journalNumber: 'JRN-' . Carbon::now()->format('Ymd') . '-' .
-                            str_pad((string) (JournalEntry::count() + 1), 4, '0', STR_PAD_LEFT),
+                        journalNumber: $this->nextJournalNumber(),
                         accountingPeriodId: (string) ($period?->getKey() ?? ''),
                         posShiftId: (string) $shift->id,
                         entryDate: Carbon::now(),
                         journalType: JournalType::CASH_DISCREPANCY,
                         referenceType: 'App\Models\PosShift',
                         referenceId: $shift->id,
-                        description: 'Selisih kas lebih saat tutup shift ' . $shift->shift_code,
+                        description: 'Selisih kas lebih saat tutup shift '.$shift->shift_code,
                         lines: [
                             new JournalLineData(
                                 chartOfAccountCode: $coaCash->account_code,
@@ -126,15 +126,14 @@ final class ClosePosShiftAction
                     $discrepancyAbs = bcmul($discrepancy, '-1', 4);
                     $coaExpense = ChartOfAccount::where('account_code', '6-1901')->lockForUpdate()->firstOrFail();
                     $journalData = new JournalEntryData(
-                        journalNumber: 'JRN-' . Carbon::now()->format('Ymd') . '-' .
-                            str_pad((string) (JournalEntry::count() + 1), 4, '0', STR_PAD_LEFT),
+                        journalNumber: $this->nextJournalNumber(),
                         accountingPeriodId: (string) ($period?->getKey() ?? ''),
                         posShiftId: (string) $shift->id,
                         entryDate: Carbon::now(),
                         journalType: JournalType::CASH_DISCREPANCY,
                         referenceType: 'App\Models\PosShift',
                         referenceId: $shift->id,
-                        description: 'Selisih kas kurang saat tutup shift ' . $shift->shift_code,
+                        description: 'Selisih kas kurang saat tutup shift '.$shift->shift_code,
                         lines: [
                             new JournalLineData(
                                 chartOfAccountCode: $coaExpense->account_code,
@@ -153,10 +152,36 @@ final class ClosePosShiftAction
                     );
                 }
 
-                app(\App\Actions\Accounting\PostDoubleEntryJournalAction::class)->execute($journalData);
+                app(PostDoubleEntryJournalAction::class)->execute($journalData);
             }
 
             return $shift->fresh();
         });
+    }
+
+    private function nextJournalNumber(): string
+    {
+        $sequence = JournalEntry::count() + 1;
+
+        do {
+            $journalNumber = 'JRN-'.Carbon::now()->format('Ymd').'-'
+                .str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+            $sequence++;
+        } while (JournalEntry::where('journal_number', $journalNumber)->exists());
+
+        return $journalNumber;
+    }
+
+    private function nextJournalNumber(): string
+    {
+        $sequence = JournalEntry::count() + 1;
+
+        do {
+            $journalNumber = 'JRN-' . Carbon::now()->format('Ymd') . '-'
+                . str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+            $sequence++;
+        } while (JournalEntry::where('journal_number', $journalNumber)->exists());
+
+        return $journalNumber;
     }
 }

@@ -1,5 +1,3 @@
-{{ $__env->yieldContent('content') }}
-
 @php
     $statusCode = $statusCode ?? 401;
     $title = $title ?? 'Autentikasi Diperlukan';

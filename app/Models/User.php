@@ -11,9 +11,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
@@ -64,9 +64,9 @@ class User extends Authenticatable
      */
     public function hasRole(string|UserRole $role): bool
     {
-        $roleEnum = $role instanceof UserRole ? $role : UserRole::from($role);
+        $roleEnum = $role instanceof UserRole ? $role : UserRole::tryFrom($role);
 
-        return $this->role_type === $roleEnum;
+        return $roleEnum !== null && $this->role_type === $roleEnum;
     }
 
     /**

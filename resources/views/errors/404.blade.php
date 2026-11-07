@@ -1,5 +1,3 @@
-{{ $__env->yieldContent('content') }}
-
 @php
     $statusCode = $statusCode ?? 404;
     $title = $title ?? 'Halaman Tidak Ditemukan';
